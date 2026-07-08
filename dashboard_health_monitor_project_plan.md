@@ -64,7 +64,7 @@ Design principle: every field below is populated purely from what the browser ob
 ```json
 {
   "@timestamp": "<run timestamp>",
-  "cluster": "<dev | qa | prod | ccs>",
+  "cluster": "<hhs | nasa | dos | nara>",
   "dashboard_id": "<saved object id>",
   "dashboard_title": "<dashboard name, as shown in Kibana>",
   "load_time_ms": <int>,
