@@ -1,0 +1,2239 @@
+{
+  "app": "federal_overview",
+  "generated_from": "federal_overview.ndjson",
+  "generated_at": "2026-07-08T15:09:29.029764+00:00",
+  "hub_dashboard_id": "7a339ff0-09ce-11ed-9940-d955314b400b",
+  "dashboard_count": 22,
+  "dashboards": [
+    {
+      "dashboard_id": "7a339ff0-09ce-11ed-9940-d955314b400b",
+      "title": "Federal Overview",
+      "is_hub": true,
+      "panel_count": 9,
+      "data_panel_count": 6,
+      "panels": [
+        {
+          "panel_id": "ed33640f-9920-4008-8ece-a8d5535dd270",
+          "title": "Specific Data Navigation",
+          "panel_type": "links",
+          "saved_object_id": "286254be-3679-47c1-aff2-9508300da06f",
+          "is_data_panel": false
+        },
+        {
+          "panel_id": "4f4c3f89-e2ab-491c-884e-9182303454fc",
+          "title": "Main Navigation",
+          "panel_type": "links",
+          "saved_object_id": "f06f2f1f-4842-4cd9-9bfe-08dc36c55d63",
+          "is_data_panel": false
+        },
+        {
+          "panel_id": "9a28fdb0-3a5a-4182-af28-07b06faab1fe",
+          "title": "DIVIDER - Federal Overview",
+          "panel_type": "visualization",
+          "saved_object_id": "1b65e910-09ce-11ed-9940-d955314b400b",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "55e00ea4-5411-4059-bb92-271a0f12a9a3",
+          "title": "Connected Agencies",
+          "panel_type": "lens",
+          "saved_object_id": "99772160-b7ad-11ed-a168-85809bbfafaf",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "66bef5f6-0846-4430-a064-9907f5caf7f2",
+          "title": "Disconnected Agencies",
+          "panel_type": "lens",
+          "saved_object_id": "ea9a80e0-b7ae-11ed-879d-ad340416f3b7",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "3857b5ea-26c6-4c06-a9b2-c857a89d57e2",
+          "title": "Count of Devices by Device Category",
+          "panel_type": "lens",
+          "saved_object_id": "e27a6e7f-e4f9-41df-bfbc-c04018c754a7",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "5badf3da-579b-4238-87db-0625d3261147",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "054d8090-09d6-11ed-a299-d92566ee6433",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "1a174760-6814-4eb4-a429-5e623d01f4f2",
+          "title": "CDM-Nav-LCKUP",
+          "panel_type": "visualization",
+          "saved_object_id": "37c13bb9-3a50-43d7-bb4e-a77a5578ecf9",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "e3068aa4-b32f-408f-8fd8-ac5f44b22025",
+          "title": "",
+          "panel_type": "links",
+          "saved_object_id": "00cc1919-c1af-4c40-8b81-9e548741f232",
+          "is_data_panel": false
+        }
+      ],
+      "linked_dashboards": [
+        "775e7a40-8396-4105-8f39-3eba7b4ee12c",
+        "499e1290-1742-11ed-a299-d92566ee6433"
+      ]
+    },
+    {
+      "dashboard_id": "499e1290-1742-11ed-a299-d92566ee6433",
+      "title": "Agency Details",
+      "is_hub": false,
+      "panel_count": 15,
+      "data_panel_count": 12,
+      "panels": [
+        {
+          "panel_id": "bab5bdb0-8e76-4421-a095-c34784afc854",
+          "title": "Main Navigation",
+          "panel_type": "links",
+          "saved_object_id": "f06f2f1f-4842-4cd9-9bfe-08dc36c55d63",
+          "is_data_panel": false
+        },
+        {
+          "panel_id": "038c83bf-c4cf-4f43-8941-9815dc0474ce",
+          "title": "Specific Data Navigation",
+          "panel_type": "links",
+          "saved_object_id": "286254be-3679-47c1-aff2-9508300da06f",
+          "is_data_panel": false
+        },
+        {
+          "panel_id": "fa6969f7-eabb-4b42-85ff-0ca29d350277",
+          "title": "DIVIDER - Agency Details",
+          "panel_type": "visualization",
+          "saved_object_id": "1b4032f0-1753-11ed-a299-d92566ee6433",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "8bdb7727-7612-498d-905a-4d748d7e036d",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "8930dd60-1a45-11ed-9940-d955314b400b",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "228b0326-5dcb-41b9-b822-ce37ced9250e",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "dbc3d030-09e4-11ed-bd84-33153167e15c",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "6e462e1d-95b5-4fc0-bb84-dc21b1527f98",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "719ac519-3c6a-4132-ba24-0a211252d613",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "7423b9c4-1ee4-439d-8848-bd0ca07e06ef",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "0607c470-1e51-11ed-9940-d955314b400b",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "e30e4151-6f61-4750-b529-0780641d853a",
+          "title": "DIVIDER - Vulnerabilities and Misconfigurations",
+          "panel_type": "visualization",
+          "saved_object_id": "9dea9f40-1a48-11ed-bd84-33153167e15c",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "d6305107-3e00-42fd-b9eb-a6b10379c38d",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "372b3000-1a4b-11ed-bd84-33153167e15c",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "005a8733-de38-4c1a-b1b8-63b833445c57",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "3e546462-c856-450b-b6ab-1cacfb87fb9e",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "18d2f01b-a7b8-450a-a9d6-989ab3bcd661",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "98529db0-0dbb-11ed-9940-d955314b400b",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "52b25d73-d57c-46c7-9662-7ed40f12f1e4",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "b644e9e0-1e50-11ed-a299-d92566ee6433",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "49659aa2-90fe-49e5-8b7a-21a76c3d032f",
+          "title": "List of System Boundary Records",
+          "panel_type": "search",
+          "saved_object_id": "82214bf0-1d9b-11ed-bd84-33153167e15c",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "aaa715a7-882f-446a-bceb-bf86dbcf99af",
+          "title": "CDM-Nav-LCKUP",
+          "panel_type": "visualization",
+          "saved_object_id": "37c13bb9-3a50-43d7-bb4e-a77a5578ecf9",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "b5a335f0-0bab-4529-9f06-63d9db94b1c3",
+          "title": "",
+          "panel_type": "links",
+          "saved_object_id": "00cc1919-c1af-4c40-8b81-9e548741f232",
+          "is_data_panel": false
+        }
+      ],
+      "linked_dashboards": []
+    },
+    {
+      "dashboard_id": "0401d180-af3c-11ed-84a9-8fda8c5e892a",
+      "title": "AIM Score Overview",
+      "is_hub": false,
+      "panel_count": 10,
+      "data_panel_count": 7,
+      "panels": [
+        {
+          "panel_id": "d7316e5b-367e-46ed-afd3-eca652f76848",
+          "title": "Main Navigation",
+          "panel_type": "links",
+          "saved_object_id": "f06f2f1f-4842-4cd9-9bfe-08dc36c55d63",
+          "is_data_panel": false
+        },
+        {
+          "panel_id": "d7e59c19-a4a6-42b4-911c-76e66849ec3a",
+          "title": "Specific Data Navigation",
+          "panel_type": "links",
+          "saved_object_id": "286254be-3679-47c1-aff2-9508300da06f",
+          "is_data_panel": false
+        },
+        {
+          "panel_id": "73c2a440-98f0-4ee7-bd02-9710c61c157f",
+          "title": "DIVIDER - AIM Score Overview",
+          "panel_type": "visualization",
+          "saved_object_id": "5560cfe0-af3c-11ed-879d-ad340416f3b7",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "6f6f3eab-9d5c-44a9-b609-618978d30b81",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "680080d0-af3e-11ed-879d-ad340416f3b7",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "446e8876-018f-4513-bd4b-2ec78434cfa2",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "08ce6d60-af3f-11ed-a168-85809bbfafaf",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "1758daa3-ed90-42cc-806b-e8c90ae2aed4",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "cf824e50-af3e-11ed-a168-85809bbfafaf",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "e0150a87-55a6-4583-823f-c156432a2cb9",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "4bc11200-af42-11ed-879d-ad340416f3b7",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "88b3b207-3558-428f-a4e4-467d2d40caf3",
+          "title": "Calculating the AIM Score",
+          "panel_type": "visualization",
+          "saved_object_id": "96cda260-af40-11ed-84a9-8fda8c5e892a",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "77233f4b-cd9a-46a5-9143-2d8782e8c674",
+          "title": "CDM-Nav-LCKUP",
+          "panel_type": "visualization",
+          "saved_object_id": "37c13bb9-3a50-43d7-bb4e-a77a5578ecf9",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "102f0197-4b36-4565-8e31-7fbd64d0f910",
+          "title": "",
+          "panel_type": "links",
+          "saved_object_id": "00cc1919-c1af-4c40-8b81-9e548741f232",
+          "is_data_panel": false
+        }
+      ],
+      "linked_dashboards": [
+        "499e1290-1742-11ed-a299-d92566ee6433"
+      ]
+    },
+    {
+      "dashboard_id": "6bd93ba5-c63e-4ad5-9f83-f815f70506a0",
+      "title": "CyHy Overview",
+      "is_hub": false,
+      "panel_count": 12,
+      "data_panel_count": 9,
+      "panels": [
+        {
+          "panel_id": "0035a9f8-0cc0-457c-bcaa-5d95951f442c",
+          "title": "Main Navigation",
+          "panel_type": "links",
+          "saved_object_id": "f06f2f1f-4842-4cd9-9bfe-08dc36c55d63",
+          "is_data_panel": false
+        },
+        {
+          "panel_id": "453e2049-b234-471f-aecd-876dba1aa458",
+          "title": "Specific Data Navigation",
+          "panel_type": "links",
+          "saved_object_id": "286254be-3679-47c1-aff2-9508300da06f",
+          "is_data_panel": false
+        },
+        {
+          "panel_id": "01a6ee7e-1273-43f7-95b3-a36967a972ad",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": null,
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "77a2961c-32cf-44ff-a70c-9353af36a47a",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": null,
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "8ba45772-fa08-40ee-9f7c-463643300a2c",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "1abdf43f-ef36-4b9a-9de9-bdb92beeaab9",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "c74b4907-8d21-46c2-80a3-39564fd6839f",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "2dd90e78-b088-4b97-86f2-f3e0bb215e4d",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "b48ca5b4-5571-4ac6-b73a-7a45bc924700",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "d50b41bd-0465-41ed-90a8-58057897648f",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "2b022f88-360f-4b37-b2e2-432c68648b04",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "f6ca6071-76b0-4f79-bcb0-444bf631baa7",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "8d0cc3ed-8285-4b3d-8475-0d36a79de8e4",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "5a9ab1b4-5aed-46f8-be9e-679e6b4ff68c",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "ef0344b2-e503-48ac-afc3-89e89b01cd2f",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "2691378b-605f-4fe2-87ee-d24f637e53ae",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "b98bf6db-98a8-4f65-8ac8-0ce66d7fe807",
+          "title": "CDM-Nav-LCKUP",
+          "panel_type": "visualization",
+          "saved_object_id": "37c13bb9-3a50-43d7-bb4e-a77a5578ecf9",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "7e358834-7d16-475c-8c95-8873ad4d8363",
+          "title": "",
+          "panel_type": "links",
+          "saved_object_id": "00cc1919-c1af-4c40-8b81-9e548741f232",
+          "is_data_panel": false
+        }
+      ],
+      "linked_dashboards": [
+        "c78fa370-1c34-11ed-a299-d92566ee6433"
+      ]
+    },
+    {
+      "dashboard_id": "e0c843b7-7a67-435a-b6b9-a1ca3d5c6497",
+      "title": "Federal Landing Page",
+      "is_hub": false,
+      "panel_count": 7,
+      "data_panel_count": 7,
+      "panels": [
+        {
+          "panel_id": "46926dfa-9782-4f76-85d2-5694a865e9ab",
+          "title": "CDM-Landing Page Logo",
+          "panel_type": "visualization",
+          "saved_object_id": "901e903b-234f-4272-9971-427622c6a886",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "4317f41f-8f37-4b23-974f-2f8a33c38422",
+          "title": "CDM-Landing Page Welcome",
+          "panel_type": "visualization",
+          "saved_object_id": "0eb18a49-7fef-473d-b292-cc13049b2f03",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "0700c28c-0ae3-4895-a8c4-c10f5bace6e6",
+          "title": "CDM-Landing Page Version",
+          "panel_type": "visualization",
+          "saved_object_id": "4da226cf-e956-444e-9cbc-f5e39c17a533",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "70a63292-19de-4829-a2eb-6d1aef6a0b17",
+          "title": "CDM-Landing Page Capability Table",
+          "panel_type": "visualization",
+          "saved_object_id": "72888bde-6c1b-430f-9d03-f69710bcb405",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "258abdd8-9aab-4658-8da2-5ccd13ce6f45",
+          "title": "CDM-Landing Page Links Custom",
+          "panel_type": "visualization",
+          "saved_object_id": "d1301ad8-356d-4ce1-a537-70d030bcadf2",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "356290cb-4358-4bb3-81b1-d057fb0a38d7",
+          "title": "CDM-Landing Page Links Main",
+          "panel_type": "visualization",
+          "saved_object_id": "edcf8b0b-577e-4a79-81c7-0106ab38d23c",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "e415d1bf-9580-458b-87fc-559ed2f8dfd1",
+          "title": "CDM-Landing Page Resources",
+          "panel_type": "visualization",
+          "saved_object_id": "32b065f6-20b1-47c3-b3c3-c18aabe79a0b",
+          "is_data_panel": true
+        }
+      ],
+      "linked_dashboards": []
+    },
+    {
+      "dashboard_id": "4bcb0fc0-09d0-11ed-bd84-33153167e15c",
+      "title": "Hardware Overview",
+      "is_hub": false,
+      "panel_count": 10,
+      "data_panel_count": 7,
+      "panels": [
+        {
+          "panel_id": "4e003ad9-c235-48c2-aeaf-340a33e2a19d",
+          "title": "Main Navigation",
+          "panel_type": "links",
+          "saved_object_id": "f06f2f1f-4842-4cd9-9bfe-08dc36c55d63",
+          "is_data_panel": false
+        },
+        {
+          "panel_id": "cc1e0a11-b6e6-47f9-a03a-f3e344d0bf28",
+          "title": "Specific Data Navigation",
+          "panel_type": "links",
+          "saved_object_id": "286254be-3679-47c1-aff2-9508300da06f",
+          "is_data_panel": false
+        },
+        {
+          "panel_id": "e48ad1b3-adec-4465-8067-109e09fedb72",
+          "title": "DIVIDER - Hardware Overview",
+          "panel_type": "visualization",
+          "saved_object_id": "375b6ee0-09d0-11ed-bd84-33153167e15c",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "253d8eba-cd58-4a75-b2cb-15dd4ce480f4",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "e4a5e360-09de-11ed-bd84-33153167e15c",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "cfb94c1e-dad3-4912-8f2c-7e70d363f16e",
+          "title": "Trending Count of Devices",
+          "panel_type": "lens",
+          "saved_object_id": "1011515f-dda3-4906-93f2-b8834016b0f1",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "6414c3a3-4022-4073-98d9-1c72b3a81d4e",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "d59f8b5e-f64e-465b-be25-081b6d9b5fa3",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "69ae373a-8ff6-4773-983e-ff3aa6d5a5ac",
+          "title": "Trending IP Version Status of Devices",
+          "panel_type": "lens",
+          "saved_object_id": "699cc07e-6cae-48e6-accb-7fe90b8e89c2",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "eba58e74-5ac2-44f1-ba29-992fda061fc3",
+          "title": "M 21-07 Information",
+          "panel_type": "visualization",
+          "saved_object_id": "b4c43d34-dce6-44c3-bff9-173b71a34d10",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "5d9070c2-c3aa-4088-a21d-8351173206d2",
+          "title": "CDM-Nav-LCKUP",
+          "panel_type": "visualization",
+          "saved_object_id": "37c13bb9-3a50-43d7-bb4e-a77a5578ecf9",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "f93efbdd-2338-4645-96b2-32a9b464f82b",
+          "title": "",
+          "panel_type": "links",
+          "saved_object_id": "00cc1919-c1af-4c40-8b81-9e548741f232",
+          "is_data_panel": false
+        }
+      ],
+      "linked_dashboards": [
+        "499e1290-1742-11ed-a299-d92566ee6433"
+      ]
+    },
+    {
+      "dashboard_id": "e889c7d0-5efb-11ee-ab05-71cf3e789c61",
+      "title": "HVA Devices",
+      "is_hub": false,
+      "panel_count": 9,
+      "data_panel_count": 5,
+      "panels": [
+        {
+          "panel_id": "b831dac9-c8a5-420d-988c-64eb4b7e9e8d",
+          "title": "Main Navigation",
+          "panel_type": "links",
+          "saved_object_id": "f06f2f1f-4842-4cd9-9bfe-08dc36c55d63",
+          "is_data_panel": false
+        },
+        {
+          "panel_id": "7e899971-37c9-40b0-81d8-c36a59953676",
+          "title": "Specific Data Navigation",
+          "panel_type": "links",
+          "saved_object_id": "286254be-3679-47c1-aff2-9508300da06f",
+          "is_data_panel": false
+        },
+        {
+          "panel_id": "2c561329-b931-41b4-8b52-aaa0621a1304",
+          "title": "NAV - HVA",
+          "panel_type": "links",
+          "saved_object_id": "8542f5f9-3f34-4551-86af-290be14dddc5",
+          "is_data_panel": false
+        },
+        {
+          "panel_id": "b7533af7-4f42-407b-b5f6-93d99abb25bf",
+          "title": "HVA Device Counts",
+          "panel_type": "lens",
+          "saved_object_id": "cd9413e0-5efb-11ee-8d92-39c9187977ce",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "3cc77c98-2273-4eb9-8e04-ef39c00d8d45",
+          "title": "HVA Device Count by FIPS-199 Impact Level",
+          "panel_type": "lens",
+          "saved_object_id": "5ce3a2f0-61f8-11ee-8d92-39c9187977ce",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "6431ae02-89b6-4054-b132-f5fbab95561e",
+          "title": "Drilldown of HVA Device Counts",
+          "panel_type": "lens",
+          "saved_object_id": "4f704e40-6142-11ee-bb7d-c31ab34ad066",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "e0946d72-fdb4-4681-9b22-9679eb798571",
+          "title": "List of HVA Devices",
+          "panel_type": "search",
+          "saved_object_id": "f4da9200-6381-11ee-ab05-71cf3e789c61",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "32a354a1-559f-455a-96f4-b2033b42c98d",
+          "title": "CDM-Nav-LCKUP",
+          "panel_type": "visualization",
+          "saved_object_id": "37c13bb9-3a50-43d7-bb4e-a77a5578ecf9",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "b825e654-f28a-4bac-a82d-da10d6050981",
+          "title": "",
+          "panel_type": "links",
+          "saved_object_id": "00cc1919-c1af-4c40-8b81-9e548741f232",
+          "is_data_panel": false
+        }
+      ],
+      "linked_dashboards": []
+    },
+    {
+      "dashboard_id": "592c4970-afda-11ee-b534-dfb0d7976a5a",
+      "title": "HVA Misconfigurations",
+      "is_hub": false,
+      "panel_count": 7,
+      "data_panel_count": 3,
+      "panels": [
+        {
+          "panel_id": "74626cbd-9285-4dbd-acc5-6b153d7319be",
+          "title": "Main Navigation",
+          "panel_type": "links",
+          "saved_object_id": "f06f2f1f-4842-4cd9-9bfe-08dc36c55d63",
+          "is_data_panel": false
+        },
+        {
+          "panel_id": "e7605e84-3880-4601-8bc8-e6c6b072a5fb",
+          "title": "Specific Data Navigation",
+          "panel_type": "links",
+          "saved_object_id": "286254be-3679-47c1-aff2-9508300da06f",
+          "is_data_panel": false
+        },
+        {
+          "panel_id": "135bac99-b348-4700-9502-5e98765b3af4",
+          "title": "NAV - HVA",
+          "panel_type": "links",
+          "saved_object_id": "8542f5f9-3f34-4551-86af-290be14dddc5",
+          "is_data_panel": false
+        },
+        {
+          "panel_id": "218f18ea-6a34-467a-ba58-2371fd8eacf4",
+          "title": "HVA Open Misconfiguration Counts",
+          "panel_type": "lens",
+          "saved_object_id": "92990550-afd9-11ee-ae0a-450e1d1025ea",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "ad4b6058-81f2-44c5-b72a-f784197577ef",
+          "title": "Drilldown of HVA Open Misconfiguration Counts",
+          "panel_type": "lens",
+          "saved_object_id": "5bb990b0-b0ae-11ee-b534-dfb0d7976a5a",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "d42b8a6b-2ef9-421b-915a-970d5ed439f7",
+          "title": "CDM-Nav-LCKUP",
+          "panel_type": "visualization",
+          "saved_object_id": "37c13bb9-3a50-43d7-bb4e-a77a5578ecf9",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "815a3d39-f253-481a-a402-5f56600374ba",
+          "title": "",
+          "panel_type": "links",
+          "saved_object_id": "00cc1919-c1af-4c40-8b81-9e548741f232",
+          "is_data_panel": false
+        }
+      ],
+      "linked_dashboards": []
+    },
+    {
+      "dashboard_id": "1a1cb8b0-9f3f-11ee-ae0a-450e1d1025ea",
+      "title": "HVA Software",
+      "is_hub": false,
+      "panel_count": 7,
+      "data_panel_count": 3,
+      "panels": [
+        {
+          "panel_id": "44c0c82c-865e-43d6-ba83-277b2e8ef9bd",
+          "title": "Main Navigation",
+          "panel_type": "links",
+          "saved_object_id": "f06f2f1f-4842-4cd9-9bfe-08dc36c55d63",
+          "is_data_panel": false
+        },
+        {
+          "panel_id": "b04cb3e3-6eef-4186-868c-e65180dd0be6",
+          "title": "Specific Data Navigation",
+          "panel_type": "links",
+          "saved_object_id": "286254be-3679-47c1-aff2-9508300da06f",
+          "is_data_panel": false
+        },
+        {
+          "panel_id": "3121dc74-f5b3-473d-9171-ad8d8b4da08c",
+          "title": "NAV - HVA",
+          "panel_type": "links",
+          "saved_object_id": "8542f5f9-3f34-4551-86af-290be14dddc5",
+          "is_data_panel": false
+        },
+        {
+          "panel_id": "9ec9c34f-76ec-4028-86a2-3a110a240d63",
+          "title": "HVA Software Counts",
+          "panel_type": "lens",
+          "saved_object_id": "29c7da60-9f44-11ee-9fd6-453a2ecc902d",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "4a274868-9165-49ec-807b-839a8df19f77",
+          "title": "List of HVA Software",
+          "panel_type": "search",
+          "saved_object_id": "a50c72b5-6e5c-4cd7-b268-678d3c330daf",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "3ad8bd78-ca9c-410a-8de4-827e2b052b41",
+          "title": "CDM-Nav-LCKUP",
+          "panel_type": "visualization",
+          "saved_object_id": "37c13bb9-3a50-43d7-bb4e-a77a5578ecf9",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "bdf68f22-0856-4585-94ac-c9bdc99f5c77",
+          "title": "",
+          "panel_type": "links",
+          "saved_object_id": "00cc1919-c1af-4c40-8b81-9e548741f232",
+          "is_data_panel": false
+        }
+      ],
+      "linked_dashboards": []
+    },
+    {
+      "dashboard_id": "10ac5643-c368-43f1-8251-929ce5297b91",
+      "title": "HVA System Boundaries",
+      "is_hub": false,
+      "panel_count": 13,
+      "data_panel_count": 9,
+      "panels": [
+        {
+          "panel_id": "9d1f2507-490c-41aa-b038-10c7c68658bc",
+          "title": "Main Navigation",
+          "panel_type": "links",
+          "saved_object_id": "f06f2f1f-4842-4cd9-9bfe-08dc36c55d63",
+          "is_data_panel": false
+        },
+        {
+          "panel_id": "3ce26c6d-9772-4c54-af60-66b65f590713",
+          "title": "Specific Data Navigation",
+          "panel_type": "links",
+          "saved_object_id": "286254be-3679-47c1-aff2-9508300da06f",
+          "is_data_panel": false
+        },
+        {
+          "panel_id": "e737df65-a57e-46ab-a6d8-98936d87b19c",
+          "title": "NAV - HVA",
+          "panel_type": "links",
+          "saved_object_id": "8542f5f9-3f34-4551-86af-290be14dddc5",
+          "is_data_panel": false
+        },
+        {
+          "panel_id": "02c497bd-40da-44b0-96b4-c4d9962f837c",
+          "title": "Count of System Boundaries",
+          "panel_type": "lens",
+          "saved_object_id": "6a477741-682e-440e-9df5-4c9a092ddf7b",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "47ff8598-5629-49af-93cb-9604b16fc384",
+          "title": "Total Count of HVA System Boundaries",
+          "panel_type": "lens",
+          "saved_object_id": "0641fe65-5c24-4c03-b82d-d0acd016e595",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "20aeba48-0115-4112-bcd3-d3b7a5b20cb2",
+          "title": "Total Count of Non-HVA System Boundaries",
+          "panel_type": "lens",
+          "saved_object_id": "c80cf15e-351b-4780-90f3-3367966a7510",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "4b0fc9d0-93fb-4f6a-bfa6-e4e40e3de90c",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "e07cb2bf-0673-43ec-a4b6-e7bcaec65495",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "f1f37223-479a-49a6-8a4a-540299e47d72",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "f8365f97-e1c3-4f6d-98a3-e8f087936bf4",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "b97b8f6e-ae07-4cd2-8fe7-89b00bcbc607",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "e2b86753-b1bf-46be-935e-6be2e11a9a81",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "3a0cada6-0153-4e24-8a63-efa14389a89c",
+          "title": "List of HVA System Boundaries",
+          "panel_type": "search",
+          "saved_object_id": "2265a652-0744-41ed-ab2d-b7e826a7178f",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "28d0a110-49dd-4c0f-8c91-38b74b56374e",
+          "title": "List of Non-HVA System Boundaries",
+          "panel_type": "search",
+          "saved_object_id": "85e3f418-c840-4598-80ed-bd5b036e97ad",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "10eb25d4-be64-4255-8590-13c36884ce21",
+          "title": "CDM-Nav-LCKUP",
+          "panel_type": "visualization",
+          "saved_object_id": "37c13bb9-3a50-43d7-bb4e-a77a5578ecf9",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "6f19d5d4-8ff4-4ce2-8bf7-1840c87626ec",
+          "title": "",
+          "panel_type": "links",
+          "saved_object_id": "00cc1919-c1af-4c40-8b81-9e548741f232",
+          "is_data_panel": false
+        }
+      ],
+      "linked_dashboards": []
+    },
+    {
+      "dashboard_id": "b50dd990-6d02-11ee-a7ac-eb84a370e59e",
+      "title": "HVA Vulnerabilities",
+      "is_hub": false,
+      "panel_count": 11,
+      "data_panel_count": 7,
+      "panels": [
+        {
+          "panel_id": "1434cbc3-4ae0-4292-81b1-bb71eace3af2",
+          "title": "Main Navigation",
+          "panel_type": "links",
+          "saved_object_id": "f06f2f1f-4842-4cd9-9bfe-08dc36c55d63",
+          "is_data_panel": false
+        },
+        {
+          "panel_id": "c9862f30-e7e5-4ff2-a6b9-1001e7cc8e80",
+          "title": "Specific Data Navigation",
+          "panel_type": "links",
+          "saved_object_id": "286254be-3679-47c1-aff2-9508300da06f",
+          "is_data_panel": false
+        },
+        {
+          "panel_id": "b0f91e95-6b40-4757-a77b-1ed7e13e2e52",
+          "title": "NAV - HVA",
+          "panel_type": "links",
+          "saved_object_id": "8542f5f9-3f34-4551-86af-290be14dddc5",
+          "is_data_panel": false
+        },
+        {
+          "panel_id": "b17f721f-c96b-4f6e-b736-a1dcc16e2890",
+          "title": "HVA High or Critical Open Vulnerabilities with Highest Count",
+          "panel_type": "lens",
+          "saved_object_id": "358517d0-6cfb-11ee-8486-d599473a2391",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "cb1e905b-99f6-4725-b9f6-9e083b1e4473",
+          "title": "HVA Open Vulnerability Counts",
+          "panel_type": "lens",
+          "saved_object_id": "77c33550-6d05-11ee-a7ac-eb84a370e59e",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "f6ddf6b3-b0ef-487d-9e51-48981f6fcda4",
+          "title": "HVA Open Vulnerability Severity Levels",
+          "panel_type": "lens",
+          "saved_object_id": "855a55d0-6f54-11ee-b97d-63bd9e683e06",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "1899c6a0-e857-4f4f-944b-97a0e11d0e30",
+          "title": "HVA Open Vulnerability Severity Level Counts",
+          "panel_type": "lens",
+          "saved_object_id": "90fb7d70-6f58-11ee-b97d-63bd9e683e06",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "a6540719-48e6-4490-a97e-6b4fdbfb5d86",
+          "title": "HVA Remediated Vulnerabilities",
+          "panel_type": "lens",
+          "saved_object_id": "a11bdeb0-7409-11ee-a7ac-eb84a370e59e",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "e86b0d61-0b10-4e30-9571-8e1f595fdd32",
+          "title": "HVA Unique Open Vulnerability Severity Level Counts",
+          "panel_type": "lens",
+          "saved_object_id": "4948a190-6f69-11ee-8486-d599473a2391",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "feda17a6-0de3-47be-b312-59de66243225",
+          "title": "CDM-Nav-LCKUP",
+          "panel_type": "visualization",
+          "saved_object_id": "37c13bb9-3a50-43d7-bb4e-a77a5578ecf9",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "c14f3840-2d57-459c-9428-a9a3d72b6a42",
+          "title": "",
+          "panel_type": "links",
+          "saved_object_id": "00cc1919-c1af-4c40-8b81-9e548741f232",
+          "is_data_panel": false
+        }
+      ],
+      "linked_dashboards": []
+    },
+    {
+      "dashboard_id": "c2fa8940-09d0-11ed-bd84-33153167e15c",
+      "title": "Misconfiguration Overview",
+      "is_hub": false,
+      "panel_count": 8,
+      "data_panel_count": 5,
+      "panels": [
+        {
+          "panel_id": "b1d32d5c-ddbc-4605-bf5b-08f1d91b1fd4",
+          "title": "Main Navigation",
+          "panel_type": "links",
+          "saved_object_id": "f06f2f1f-4842-4cd9-9bfe-08dc36c55d63",
+          "is_data_panel": false
+        },
+        {
+          "panel_id": "058a4a21-44af-4737-9c5f-d810109206bd",
+          "title": "Specific Data Navigation",
+          "panel_type": "links",
+          "saved_object_id": "286254be-3679-47c1-aff2-9508300da06f",
+          "is_data_panel": false
+        },
+        {
+          "panel_id": "c6d0135b-57ac-4a7f-8edd-87b08414cfe1",
+          "title": "DIVIDER - Misconfiguration Overview",
+          "panel_type": "visualization",
+          "saved_object_id": "aebd1bf0-09d0-11ed-bd84-33153167e15c",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "748c4d77-4da5-44d1-8ec7-201d0969b009",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "2dda0290-0db4-11ed-bd84-33153167e15c",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "264a5380-2e29-44cb-a0b7-29d7a57575f8",
+          "title": "Open Findings for Agency Misconfiguration Counts",
+          "panel_type": "lens",
+          "saved_object_id": "676dce70-0db3-11ed-bd84-33153167e15c",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "1f3f458f-405f-4406-9691-93ec88f4b7e9",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "98529db0-0dbb-11ed-9940-d955314b400b",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "c636dcac-d34c-4d18-be05-687c76ddd1c9",
+          "title": "CDM-Nav-LCKUP",
+          "panel_type": "visualization",
+          "saved_object_id": "37c13bb9-3a50-43d7-bb4e-a77a5578ecf9",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "6710ff6a-f3ce-4129-981e-39546b0f519b",
+          "title": "",
+          "panel_type": "links",
+          "saved_object_id": "00cc1919-c1af-4c40-8b81-9e548741f232",
+          "is_data_panel": false
+        }
+      ],
+      "linked_dashboards": [
+        "615a8c72-14bd-4610-96ec-8cfd457dc9e4",
+        "499e1290-1742-11ed-a299-d92566ee6433"
+      ]
+    },
+    {
+      "dashboard_id": "615a8c72-14bd-4610-96ec-8cfd457dc9e4",
+      "title": "Misconfiguration Records",
+      "is_hub": false,
+      "panel_count": 7,
+      "data_panel_count": 4,
+      "panels": [
+        {
+          "panel_id": "f10c8337-448c-45ca-ba9a-df7ee2adf21e",
+          "title": "Main Navigation",
+          "panel_type": "links",
+          "saved_object_id": "f06f2f1f-4842-4cd9-9bfe-08dc36c55d63",
+          "is_data_panel": false
+        },
+        {
+          "panel_id": "f9bab5b2-fcaa-46c7-9cb2-06ebc6c6b2d2",
+          "title": "Specific Data Navigation",
+          "panel_type": "links",
+          "saved_object_id": "286254be-3679-47c1-aff2-9508300da06f",
+          "is_data_panel": false
+        },
+        {
+          "panel_id": "f0b88518-6d25-4257-b437-41d475c00747",
+          "title": "DIVIDER - Misconfiguration Records",
+          "panel_type": "visualization",
+          "saved_object_id": "96ca82b0-27c8-11ed-b637-b3d365e29eed",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "0e23eed7-6e9e-446a-8194-5e82d23cf9fd",
+          "title": "List of Open Findings for Misconfiguration Records",
+          "panel_type": "search",
+          "saved_object_id": "f915da14-7e6f-4839-bb46-01b7639af9f0",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "3c56a9d7-61c2-4d69-b9b8-bdfa16e4bb0e",
+          "title": "STIG Dictionary Entry",
+          "panel_type": "search",
+          "saved_object_id": "8c8c372b-ebfc-47d4-ab1c-2d8e3a0d234c",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "6b0b0b4e-4b7c-45db-8705-7c6349994a5d",
+          "title": "CDM-Nav-LCKUP",
+          "panel_type": "visualization",
+          "saved_object_id": "37c13bb9-3a50-43d7-bb4e-a77a5578ecf9",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "6f67c7d5-d1b7-463c-8ae5-67c492563133",
+          "title": "",
+          "panel_type": "links",
+          "saved_object_id": "00cc1919-c1af-4c40-8b81-9e548741f232",
+          "is_data_panel": false
+        }
+      ],
+      "linked_dashboards": []
+    },
+    {
+      "dashboard_id": "6b48e19c-c987-4094-901a-78ee82269654",
+      "title": "Priority Risks",
+      "is_hub": false,
+      "panel_count": 38,
+      "data_panel_count": 35,
+      "panels": [
+        {
+          "panel_id": "1faeb266-e22b-4cce-92d6-f42b4320649b",
+          "title": "Main Navigation",
+          "panel_type": "links",
+          "saved_object_id": "f06f2f1f-4842-4cd9-9bfe-08dc36c55d63",
+          "is_data_panel": false
+        },
+        {
+          "panel_id": "b167fc33-05d7-4cfa-bb37-976ce6cc79ce",
+          "title": "Specific Data Navigation",
+          "panel_type": "links",
+          "saved_object_id": "286254be-3679-47c1-aff2-9508300da06f",
+          "is_data_panel": false
+        },
+        {
+          "panel_id": "78604d58-3996-4cec-afde-3dbcf2b6cfe1",
+          "title": "Average Open Vulnerabilities per Device",
+          "panel_type": "lens",
+          "saved_object_id": "ba514968-be21-410e-9f3e-a80e0b9fca8c",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "28bdb681-9187-429f-9cf2-78aba37c101f",
+          "title": "Count of Open Vulnerabilities",
+          "panel_type": "lens",
+          "saved_object_id": "cb240d71-1434-4116-be2a-c1294fff2588",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "d02b6d8b-b1a2-4537-b181-b807a91cd006",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "c2ab6e0f-3fb9-472a-a880-18bd64f24300",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "34460e03-6402-4aef-99b7-84eedfad0a20",
+          "title": "Unique Open Vulnerabilities",
+          "panel_type": "lens",
+          "saved_object_id": "28645acb-4119-4331-9279-cd5a8a8204cf",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "f01155a5-efa5-4b5b-8c8f-96365be1aead",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "5a31e176-277d-486d-9338-8a6f5d35ddb0",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "228fc9bd-41ea-49f4-bbf0-506a83822caf",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "e6aae080-affe-40b2-a298-6a6680de8ee2",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "780a4712-bb66-4b3c-be08-a18d3904f465",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "d8a48465-52b8-4130-baed-d5ca5d93a899",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "9ee136cd-d1fc-43a1-87e9-fc0de3d71313",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "8fcb37f8-eee6-4fd2-81ac-328a28bd57e6",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "00fbc55e-44f6-4e81-a6d0-fd876cccb0ca",
+          "title": "",
+          "panel_type": "visualization",
+          "saved_object_id": null,
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "15eddc03-f869-410a-954a-2a49ad117f02",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "bf7da08e-953b-447d-91ad-43e1e56f8396",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "557059e8-de40-456b-b0cf-0a0a6d84a125",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "63ab62ff-619f-4c9a-90ce-192c47e3700b",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "76c8386d-5288-45d3-8658-b9d37abc94dd",
+          "title": "Oldest Open Vulnerabilities",
+          "panel_type": "search",
+          "saved_object_id": "dee20d98-b719-463e-b833-fb2a7dfd8826",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "385e67f9-ebb4-4a63-97bf-29c52aa49fe8",
+          "title": "",
+          "panel_type": "visualization",
+          "saved_object_id": null,
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "7c3d91fa-48a1-44c6-bddb-eb416d2e7244",
+          "title": "Average Open KEVs per Device",
+          "panel_type": "lens",
+          "saved_object_id": "476d09c2-58a1-48d8-97e2-4487c0549080",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "e4341c02-a1b3-49bd-adda-a26865af1e0b",
+          "title": "Unique Open KEVs",
+          "panel_type": "lens",
+          "saved_object_id": "126c73fd-1d4c-4c8e-9a52-e5adbe6a17df",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "00ba0ad0-b3a9-46e0-81ad-71d69f3a2874",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "adfb2a89-0adf-43f3-ad32-29f836efc9ea",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "5f327103-7cf0-460c-8e2f-066e56e42271",
+          "title": "Open KEVs of All Open Vulnerabilities",
+          "panel_type": "lens",
+          "saved_object_id": "6aa97f51-8639-4005-a0f1-32f55e5771a3",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "2fae89fd-6750-4da0-ab13-e2eeb6ba38ac",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "9bed3eca-591c-4204-949b-b61c53187f95",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "a350afe2-385f-42f6-a4b9-8e72a0f43126",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "366364df-9a71-4138-ba6a-c576d27fcf9c",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "7fba9211-0c41-49ab-93b2-6ef70ba541ef",
+          "title": "",
+          "panel_type": "visualization",
+          "saved_object_id": null,
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "61d31406-aff2-4e79-ade9-82b11527a5b9",
+          "title": "Average High or Critical Open Vulnerabilities per Device",
+          "panel_type": "lens",
+          "saved_object_id": "975903ff-4b6d-46af-b55d-66f0e903a4fd",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "d8813068-0b61-413f-b05d-957359174cfa",
+          "title": "Unique High or Critical Open Vulnerabilities",
+          "panel_type": "lens",
+          "saved_object_id": "79f5adac-1aa5-409e-bde8-0ed7b891c01b",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "37aff351-97a1-40fd-b9d1-1169ac337c2c",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "8cc2a2f2-42a8-42c7-8b9d-ade35ce9b7a4",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "ef903d1f-416e-40d4-80d8-56289c452fe1",
+          "title": "Devices with the Most High or Critical Open Vulnerabilities",
+          "panel_type": "lens",
+          "saved_object_id": "93fcaa43-4f5d-48af-a78d-659579b37ab2",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "22e3da3e-f045-42dc-b66c-0975cd96bd1f",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "8db7aed4-ea37-4b3a-9d58-b7f471b12c7f",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "373e6c13-dc88-4139-8010-40742a77aa7c",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "adbba8b6-00c1-49fd-89a5-3dbb09e22448",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "11ba3cc7-7537-44b3-978c-36c277cd2745",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "0b9dba47-48eb-4324-9a2a-8a888d7e47eb",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "9ca4ffec-379c-419f-ac71-e1502ace11d4",
+          "title": "Stakeholder-Specific Vulnerability Categorization (SSVC) - Banner",
+          "panel_type": "visualization",
+          "saved_object_id": "683cf6f9-12b9-4dfe-9595-688c367a9b0e",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "3575bf7c-2933-4ee2-a013-49d0e8b8ee94",
+          "title": "Average CVE Exploitation",
+          "panel_type": "lens",
+          "saved_object_id": "41ee69d2-8ad8-4a08-9d99-6805c93df40a",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "4cbd363c-0017-4303-bc55-9c28fd7363bc",
+          "title": "Average CVE Exploitation",
+          "panel_type": "lens",
+          "saved_object_id": "c2798fc8-86be-45c2-ada9-029c33bc1304",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "baa48fe7-5d1d-47cb-9f5c-9798181810ca",
+          "title": "Average CVE Exploitation",
+          "panel_type": "lens",
+          "saved_object_id": "91164124-69f0-443e-8760-bfd91284b68a",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "eba1ae08-16f8-44e6-a6cd-bb8275806a88",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "50a216af-8c6e-4e10-af94-3fd6a16ce417",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "5c0e3437-ad46-41ef-9d65-da18cf1b844f",
+          "title": "List of Open Findings for Vulnerability Records",
+          "panel_type": "search",
+          "saved_object_id": "8f72a012-ca46-4529-855f-eac76f9d12fb",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "a3216858-e037-4f09-9c59-f440560dba07",
+          "title": "CDM-Nav-LCKUP",
+          "panel_type": "visualization",
+          "saved_object_id": "37c13bb9-3a50-43d7-bb4e-a77a5578ecf9",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "e0ccac0e-210b-4a8c-bc83-80018e81b2e8",
+          "title": "",
+          "panel_type": "links",
+          "saved_object_id": "00cc1919-c1af-4c40-8b81-9e548741f232",
+          "is_data_panel": false
+        },
+        {
+          "panel_id": "2c088c24-6e1a-4d92-bf9c-4c49dcecbd52",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "cb9ab838-1bbb-47b0-8516-bc58d3e114c0",
+          "is_data_panel": true
+        }
+      ],
+      "linked_dashboards": []
+    },
+    {
+      "dashboard_id": "4597b731-8fcb-43f6-aa9b-46159428f804",
+      "title": "Remediated Vulnerabilities",
+      "is_hub": false,
+      "panel_count": 16,
+      "data_panel_count": 13,
+      "panels": [
+        {
+          "panel_id": "66de6e24-6de8-4bf6-b7e1-7a387958639a",
+          "title": "Main Navigation",
+          "panel_type": "links",
+          "saved_object_id": "f06f2f1f-4842-4cd9-9bfe-08dc36c55d63",
+          "is_data_panel": false
+        },
+        {
+          "panel_id": "6112a01c-36d9-45a6-835e-41fec0afd836",
+          "title": "Specific Data Navigation",
+          "panel_type": "links",
+          "saved_object_id": "286254be-3679-47c1-aff2-9508300da06f",
+          "is_data_panel": false
+        },
+        {
+          "panel_id": "fec91898-0fb8-41d5-ba86-a8efdb9c81c6",
+          "title": "Remediated Vulnerabilities",
+          "panel_type": "lens",
+          "saved_object_id": "d9598f61-898c-4567-b7bc-92c694849901",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "4b96a7bc-a740-4057-b891-dd7493e3b8e6",
+          "title": "Remediated KEVs",
+          "panel_type": "lens",
+          "saved_object_id": "e6210e85-11fd-4bb7-b232-783f57b4beb3",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "bcd780fd-678d-4537-8792-d2d3487f5d54",
+          "title": "Remediated High or Critical Vulnerabilities",
+          "panel_type": "lens",
+          "saved_object_id": "0d3a0552-e467-422e-b5be-32983b431006",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "e09f2425-3d8f-4194-8b65-8e0b7201efea",
+          "title": "Remediated Vulnerabilities Disclaimer",
+          "panel_type": "visualization",
+          "saved_object_id": "2187e91c-17fa-4606-a210-657d7e95eb1b",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "329e9539-14c8-44d6-8d63-062edc4b5f91",
+          "title": "Trending Count of High or Critical Remediated Vulnerabilities",
+          "panel_type": "lens",
+          "saved_object_id": "353e8275-d08b-4028-8668-24d81773fc58",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "bfc1afa3-60b5-4577-9b69-c84b575f213a",
+          "title": "MTTR Vulnerabilities",
+          "panel_type": "lens",
+          "saved_object_id": "d4198f69-3185-4d29-97d6-838157081b9a",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "48749723-b703-4813-bfae-92b9466c68dc",
+          "title": "MTTR KEVs",
+          "panel_type": "lens",
+          "saved_object_id": "98999595-47aa-4e82-b24f-82ed60d81e16",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "320fd4ad-82dc-4ce8-ac67-4e7e026e6924",
+          "title": "MTTR High or Critical Vulnerabilities",
+          "panel_type": "lens",
+          "saved_object_id": "3db82021-2adf-47cb-acbc-03ada6210730",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "199b2fde-c4fa-42be-bb8d-1a880361cf4a",
+          "title": "MTTR Vulnerabilities by Severity",
+          "panel_type": "lens",
+          "saved_object_id": "deb2e0e7-5bf8-4c3d-922b-b52dd5f4b408",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "8596d84c-3fc3-4b50-a58a-0d3c9547fa3b",
+          "title": "MTTR KEVs per Agency",
+          "panel_type": "lens",
+          "saved_object_id": "c9746e7f-1dcf-4f51-a2e0-20fa8fa60689",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "7c449bbc-8462-49df-a7ea-c91ecee2cf0d",
+          "title": "MTTR Vulnerabilities per Severity",
+          "panel_type": "lens",
+          "saved_object_id": "728e66a1-d247-4dc0-a028-4a5715858007",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "a52ab5b4-b957-46ef-a479-1ce5d5b21230",
+          "title": "List of Remediated Vulnerabilities",
+          "panel_type": "search",
+          "saved_object_id": "f5429c80-7714-4a47-89f2-8cd2c695c1e2",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "0b02716f-4958-49b6-9a01-fc057421af76",
+          "title": "CDM-Nav-LCKUP",
+          "panel_type": "visualization",
+          "saved_object_id": "37c13bb9-3a50-43d7-bb4e-a77a5578ecf9",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "634cf140-b633-483c-929c-efbade20e482",
+          "title": "",
+          "panel_type": "links",
+          "saved_object_id": "00cc1919-c1af-4c40-8b81-9e548741f232",
+          "is_data_panel": false
+        }
+      ],
+      "linked_dashboards": []
+    },
+    {
+      "dashboard_id": "775e7a40-8396-4105-8f39-3eba7b4ee12c",
+      "title": "Remote Cluster Connectivity Status Details",
+      "is_hub": false,
+      "panel_count": 5,
+      "data_panel_count": 2,
+      "panels": [
+        {
+          "panel_id": "08440b6b-8fd9-42b3-942d-a36b8bf88547",
+          "title": "Main Navigation",
+          "panel_type": "links",
+          "saved_object_id": "f06f2f1f-4842-4cd9-9bfe-08dc36c55d63",
+          "is_data_panel": false
+        },
+        {
+          "panel_id": "d0376d3d-a1ab-41d6-bcb1-58800c6289f0",
+          "title": "Specific Data Navigation",
+          "panel_type": "links",
+          "saved_object_id": "286254be-3679-47c1-aff2-9508300da06f",
+          "is_data_panel": false
+        },
+        {
+          "panel_id": "3006280f-0423-414b-a074-062c2cff1e57",
+          "title": "Remote Cluster Connectivity Status",
+          "panel_type": "search",
+          "saved_object_id": "a5922630-b7ac-11ed-84a9-8fda8c5e892a",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "d64f7892-0d04-4f2c-b2fb-a479e85b2ce1",
+          "title": "CDM-Nav-LCKUP",
+          "panel_type": "visualization",
+          "saved_object_id": "37c13bb9-3a50-43d7-bb4e-a77a5578ecf9",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "f173e38e-9c15-419a-95ab-41aaba58d41a",
+          "title": "",
+          "panel_type": "links",
+          "saved_object_id": "00cc1919-c1af-4c40-8b81-9e548741f232",
+          "is_data_panel": false
+        }
+      ],
+      "linked_dashboards": []
+    },
+    {
+      "dashboard_id": "d5237989-e551-4fe9-aafc-32c7ba7c4810",
+      "title": "SCuBA Overview",
+      "is_hub": false,
+      "panel_count": 29,
+      "data_panel_count": 25,
+      "panels": [
+        {
+          "panel_id": "7043649e-fc7f-4c50-94bb-18aecc7589eb",
+          "title": "Main Navigation",
+          "panel_type": "links",
+          "saved_object_id": "f06f2f1f-4842-4cd9-9bfe-08dc36c55d63",
+          "is_data_panel": false
+        },
+        {
+          "panel_id": "15b10636-7de3-4178-aa50-1860ffd47361",
+          "title": "Specific Data Navigation",
+          "panel_type": "links",
+          "saved_object_id": "286254be-3679-47c1-aff2-9508300da06f",
+          "is_data_panel": false
+        },
+        {
+          "panel_id": "53b0d2e2-cf0b-48b4-8655-e5d7a5317e9a",
+          "title": "SCuBA - Banner - Latest Reports",
+          "panel_type": "visualization",
+          "saved_object_id": "49230814-0e76-4ab8-be01-7b763256c5c4",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "f922fda1-42b7-48ef-b55c-6e98ed0dae61",
+          "title": "SCuBA Links",
+          "panel_type": "links",
+          "saved_object_id": "123bbf96-4bcd-4eae-a66e-7fb8447ff6cd",
+          "is_data_panel": false
+        },
+        {
+          "panel_id": "20677a08-eab3-460d-9d88-63c2d5ac849b",
+          "title": "SCuBA - Not seeing any data?",
+          "panel_type": "visualization",
+          "saved_object_id": "53140557-c7b5-44dc-93be-5618d820a094",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "53d9d507-2a6b-4c9b-949a-390a7ae55ae0",
+          "title": "SCuBA - Navigating the Baselines",
+          "panel_type": "visualization",
+          "saved_object_id": "b6faa3e1-347b-45d0-b194-5b89b364d67b",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "1dd9d06a-1898-4e6e-a311-7a92c6da9ada",
+          "title": "Comply with BOD 25-01",
+          "panel_type": "visualization",
+          "saved_object_id": "b92369fc-75e6-480d-af96-f64ab841c2f8",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "36f729d3-ad68-4501-9163-914d25a92ccb",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "646dc264-83d2-4f13-8043-9bae2ab68070",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "e186d965-41ec-46e2-abc4-7adddd68acfe",
+          "title": "SCuBA Tests Failed Metric",
+          "panel_type": "lens",
+          "saved_object_id": "477e807b-9b08-4f6e-be0a-8963569f6676",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "efe8cff0-9a19-4256-8457-f40710e3ea4c",
+          "title": "SCuBA Tests Omitted Metric",
+          "panel_type": "lens",
+          "saved_object_id": "32182150-c83b-4535-8ccc-363e2438d808",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "4bd5c573-5130-4750-8815-ed3d6309a0d6",
+          "title": "SCuBA Tests Omitted Metric",
+          "panel_type": "lens",
+          "saved_object_id": "7b869520-6032-4213-962e-cb714fed2051",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "3a321edb-6538-4904-82df-5b8b9f94bd25",
+          "title": "SCuBA Warnings Metric",
+          "panel_type": "lens",
+          "saved_object_id": "69c9e20e-c0d1-4fdb-ae20-8f36b8659fb0",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "dede1912-ae8f-4598-9784-8c8b6902ca36",
+          "title": "SCuBA Tests Omitted Metric",
+          "panel_type": "lens",
+          "saved_object_id": "57ed6e98-067a-4345-9550-5596a91b34df",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "f51c991a-43f2-4397-adc8-56bc6abae1ba",
+          "title": "SCuBA Manual Checks Needed Metric",
+          "panel_type": "lens",
+          "saved_object_id": "1f533742-aa1d-4159-9639-d78f1e93c0cc",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "294feb18-fd25-4ee3-8a12-05c16e2b9b8d",
+          "title": "SCuBA Tests Passed Metric",
+          "panel_type": "lens",
+          "saved_object_id": "f16236dd-36b0-429a-b422-55857d6776d9",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "4a0e6005-d0cb-4bc7-9cff-991b03041cc3",
+          "title": "SCuBA Test Errors Metric",
+          "panel_type": "lens",
+          "saved_object_id": "73ef222c-0f70-452c-9032-7916e9b3cf80",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "7207ce8c-44e8-4299-93e0-9d8a00abc15a",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "66a3cbb9-883e-4244-8d72-edf0380b0ff4",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "4af3b69d-fbaa-40ca-9a11-6f7da658b051",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "0ce5635e-dbb9-47d5-bc3e-2e0bf84adea4",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "0764a90d-037b-4bdf-9580-e960b04b18cd",
+          "title": "SCuBA Security Baseline Reports",
+          "panel_type": "search",
+          "saved_object_id": "f1eb13ff-3481-4f6b-bf35-6fac9300a9fc",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "deb6023c-3029-4fd8-b60b-dffa4da8c0b7",
+          "title": "SCuBA Security Baseline Reports - Incorrect Results",
+          "panel_type": "search",
+          "saved_object_id": "f29f7a59-2f8f-4f00-9b0e-e5c20d4ee5a5",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "b6d00bf9-c2f2-4794-ac9d-49a01aeb164d",
+          "title": "SCuBA - Banner - Entra ID Information",
+          "panel_type": "visualization",
+          "saved_object_id": "935f102c-6d7b-408a-a22f-6d0b3b975c2c",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "710fb2c3-8a34-456e-ad39-15956e16e989",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "dcca5195-39a9-4786-a7ce-ee6a7b3a9926",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "a61c7143-a592-42a2-ba83-d156887db31d",
+          "title": "Entra ID - Conditional Access Policies",
+          "panel_type": "search",
+          "saved_object_id": "b1b7c66f-da1f-49ca-96e7-772a070d0fb8",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "8d189466-3fce-4f9a-b058-7b07e916427e",
+          "title": "SCuBA - Banner - Alert Rule Information",
+          "panel_type": "visualization",
+          "saved_object_id": "c360a044-66d8-44c7-96fc-35fe3483afca",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "14dcf25d-3304-4923-9c37-f7ab40e2cef1",
+          "title": "Common Control 13.1v1 - Alert Rules",
+          "panel_type": "search",
+          "saved_object_id": "1ad28d74-4135-4720-8b62-a5abc2b53f95",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "76f11621-c77c-4afe-af85-edd81c765347",
+          "title": "Tenant Inventory Data",
+          "panel_type": "visualization",
+          "saved_object_id": "7e8ec02b-8ef0-4486-ab61-19fd2fabff6c",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "9d5814ea-54c1-46b3-bf1e-892571ab6b00",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "2d1de36d-c909-4576-b1cf-47a20d8dfd57",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "0db570d6-28fc-48e4-884a-0870b705146f",
+          "title": "CDM-Nav-LCKUP",
+          "panel_type": "visualization",
+          "saved_object_id": "37c13bb9-3a50-43d7-bb4e-a77a5578ecf9",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "e963b8a0-fee5-4c90-b800-1ec0d706df78",
+          "title": "",
+          "panel_type": "links",
+          "saved_object_id": "00cc1919-c1af-4c40-8b81-9e548741f232",
+          "is_data_panel": false
+        }
+      ],
+      "linked_dashboards": []
+    },
+    {
+      "dashboard_id": "2e10c794-657d-4132-ab3d-ed312975253d",
+      "title": "SCuBA Overview - All",
+      "is_hub": false,
+      "panel_count": 31,
+      "data_panel_count": 27,
+      "panels": [
+        {
+          "panel_id": "0fb79160-0dae-4a0a-9e0c-bbea9a185328",
+          "title": "Main Navigation",
+          "panel_type": "links",
+          "saved_object_id": "f06f2f1f-4842-4cd9-9bfe-08dc36c55d63",
+          "is_data_panel": false
+        },
+        {
+          "panel_id": "bc0cad5c-3fe3-4b87-85fb-3f2b8d3029ed",
+          "title": "Specific Data Navigation",
+          "panel_type": "links",
+          "saved_object_id": "286254be-3679-47c1-aff2-9508300da06f",
+          "is_data_panel": false
+        },
+        {
+          "panel_id": "a0a466f2-64bc-4359-9787-d139ee17f646",
+          "title": "SCuBA - Banner - All Reports",
+          "panel_type": "visualization",
+          "saved_object_id": "ff5d70b2-8c77-4cb3-95aa-b2ea305d3ba6",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "d51ee129-d589-43ad-b9b4-be97566c24ab",
+          "title": "SCuBA Links",
+          "panel_type": "links",
+          "saved_object_id": "123bbf96-4bcd-4eae-a66e-7fb8447ff6cd",
+          "is_data_panel": false
+        },
+        {
+          "panel_id": "89b5c6fd-2b7c-4247-a3ea-886f4a2be7e8",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "e26e0870-c484-482d-be8e-ef92a8911d59",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "2b1488d7-bc55-4272-90e4-10d7f269d3a8",
+          "title": "Count of SCuBA Baseline Conformance Reports",
+          "panel_type": "lens",
+          "saved_object_id": "a6b8bb0a-b687-4787-b20a-acddc39ee6f1",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "1645fe83-e3bc-4baa-a9c6-9ca88026be6d",
+          "title": "SCuBA - Not seeing any data?",
+          "panel_type": "visualization",
+          "saved_object_id": "53140557-c7b5-44dc-93be-5618d820a094",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "61e7d4c9-3df5-428e-8876-4d5c1894d46e",
+          "title": "SCuBA - Navigating the Baselines",
+          "panel_type": "visualization",
+          "saved_object_id": "b6faa3e1-347b-45d0-b194-5b89b364d67b",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "07049ee7-ffa0-4fb6-a331-502287360fbb",
+          "title": "Comply with BOD 25-01",
+          "panel_type": "visualization",
+          "saved_object_id": "b92369fc-75e6-480d-af96-f64ab841c2f8",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "a7365b59-b8cd-4fa4-8a6a-a286f51bb97f",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "9f81a5e5-ef4d-4ef7-8abd-202c4ef97415",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "14234a84-107c-40ce-a06b-1e6717d41104",
+          "title": "SCuBA Tests Failed Metric - All",
+          "panel_type": "lens",
+          "saved_object_id": "5f4c3b38-6244-4870-88ea-993031f10888",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "7a518c75-6617-427c-8079-7f1541761be7",
+          "title": "SCuBA Incorrect Reults Metric - All",
+          "panel_type": "lens",
+          "saved_object_id": "8b797432-3bd2-408f-ac05-3faabb182c57",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "c2835235-7bfe-493e-b534-9d8c2dbf809c",
+          "title": "SCuBA Total tests Metric - All",
+          "panel_type": "lens",
+          "saved_object_id": "77d5fc87-2e7d-4590-9e12-92eaa712e087",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "d76b4e2d-c4c8-45a6-90fe-b5d24ca9310d",
+          "title": "SCuBA Warnings Metric - All",
+          "panel_type": "lens",
+          "saved_object_id": "cc4e52b1-d5c3-4106-8450-c411706f88ca",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "93da4d1a-6b00-4a40-9a78-debe34bb524f",
+          "title": "SCuBA Tests Omitted Metric - All",
+          "panel_type": "lens",
+          "saved_object_id": "1466ce5d-7f2b-4c80-bc14-7b7f2ebc1194",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "d3abbf8c-20bd-4de0-b237-f5bc6c0834d4",
+          "title": "SCuBA Manual Checks Needed Metric - All",
+          "panel_type": "lens",
+          "saved_object_id": "dc73f668-1e69-4d44-a694-9d43700898cb",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "ae599fbd-1e63-48ee-b51e-fc8b0da4ce95",
+          "title": "SCuBA Tests Passed Metric - All",
+          "panel_type": "lens",
+          "saved_object_id": "81bea086-8b8c-4659-ab19-b3737c2f3b37",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "976030c3-4911-4781-bcfb-11a51298130f",
+          "title": "SCuBA Errors Metric - All",
+          "panel_type": "lens",
+          "saved_object_id": "b00b674d-b33f-427f-aa5b-912c36455c08",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "f91d8052-36f6-4167-b7dc-ded0b6fc1267",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "cbd3a2b7-912a-4ee6-a1be-32779c5cf521",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "fd2957f9-cfd9-4d4c-8e07-5e847a9e7c74",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "3fea1711-fc3f-4c1f-b1d5-3de9dfaff7c1",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "20d218cb-e462-45da-9af5-09478fa4f7ea",
+          "title": "SCuBA Security Baseline Reports - All",
+          "panel_type": "search",
+          "saved_object_id": "5a7730da-4c0a-41bb-abb1-1723c55a3054",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "644e31f2-e38c-4383-86f8-2a0b3d229b3e",
+          "title": "SCuBA Security Baseline Reports - Incorrect Results - All",
+          "panel_type": "search",
+          "saved_object_id": "7504e401-f4c4-4bee-b981-370425588cb9",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "632ae71d-49cd-44fb-b62f-f753dd1a1f43",
+          "title": "SCuBA - Banner - Entra ID Information",
+          "panel_type": "visualization",
+          "saved_object_id": "935f102c-6d7b-408a-a22f-6d0b3b975c2c",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "a1b301d8-fc3f-424e-8126-b70e0b17669a",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "0d365b55-346c-4483-b4c8-9d40a8d7170e",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "24da99b9-de6e-41e3-9467-b05c82a20ca4",
+          "title": "Entra ID - Conditional Access Policies - All",
+          "panel_type": "search",
+          "saved_object_id": "4c3bbe22-2dc1-4c2c-b44c-de3d678da9d1",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "5384ee3d-7c2d-4444-aad6-b1d8c5deb235",
+          "title": "SCuBA - Banner - Alert Rule Information",
+          "panel_type": "visualization",
+          "saved_object_id": "c360a044-66d8-44c7-96fc-35fe3483afca",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "e130577f-2f9a-4cdc-afe4-4b343117cac4",
+          "title": "Tenant Inventory Data",
+          "panel_type": "visualization",
+          "saved_object_id": "7e8ec02b-8ef0-4486-ab61-19fd2fabff6c",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "a1df005c-52e4-4254-a647-28073e0d8175",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "2d1de36d-c909-4576-b1cf-47a20d8dfd57",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "d8bcf4c8-91cb-416d-8027-a58dfddbe6c1",
+          "title": "CDM-Nav-LCKUP",
+          "panel_type": "visualization",
+          "saved_object_id": "37c13bb9-3a50-43d7-bb4e-a77a5578ecf9",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "0a95dddb-1ed4-470b-9e6f-f45e691431ad",
+          "title": "",
+          "panel_type": "links",
+          "saved_object_id": "00cc1919-c1af-4c40-8b81-9e548741f232",
+          "is_data_panel": false
+        },
+        {
+          "panel_id": "2cfc078b-a504-4afe-91ec-a0b212c9edd9",
+          "title": "",
+          "panel_type": "search",
+          "saved_object_id": "e36dd595-932c-4f7b-adc1-532a1e558775",
+          "is_data_panel": true
+        }
+      ],
+      "linked_dashboards": []
+    },
+    {
+      "dashboard_id": "9807e500-0919-11ed-bd84-33153167e15c",
+      "title": "Software Overview",
+      "is_hub": false,
+      "panel_count": 8,
+      "data_panel_count": 5,
+      "panels": [
+        {
+          "panel_id": "b294981e-e5c7-4b21-bfb3-37a41f047fae",
+          "title": "Main Navigation",
+          "panel_type": "links",
+          "saved_object_id": "f06f2f1f-4842-4cd9-9bfe-08dc36c55d63",
+          "is_data_panel": false
+        },
+        {
+          "panel_id": "91b9f159-e97f-4d1a-93cf-0b753c4632d4",
+          "title": "Specific Data Navigation",
+          "panel_type": "links",
+          "saved_object_id": "286254be-3679-47c1-aff2-9508300da06f",
+          "is_data_panel": false
+        },
+        {
+          "panel_id": "068e7885-6fd3-4014-8e18-b817d54a0efe",
+          "title": "DIVIDER - Software Overview",
+          "panel_type": "visualization",
+          "saved_object_id": "b41ce354-e6ed-40b6-a4a7-adf48640dea0",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "24a7d0ea-b6a9-4f99-ac03-b1978d754765",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "ceb93b50-0921-11ed-bd84-33153167e15c",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "6fb40cf6-5250-4e96-a600-8da0d4d5cf72",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "f14bd932-0b11-4332-8b4a-8dbdf2415410",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "b7136a0f-1408-478a-9779-6cda84176c2a",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "719ac519-3c6a-4132-ba24-0a211252d613",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "2ed1245e-3d54-4217-a89e-9993d07b0507",
+          "title": "CDM-Nav-LCKUP",
+          "panel_type": "visualization",
+          "saved_object_id": "37c13bb9-3a50-43d7-bb4e-a77a5578ecf9",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "c268638d-61e8-426a-b659-b00ab874e7eb",
+          "title": "",
+          "panel_type": "links",
+          "saved_object_id": "00cc1919-c1af-4c40-8b81-9e548741f232",
+          "is_data_panel": false
+        }
+      ],
+      "linked_dashboards": []
+    },
+    {
+      "dashboard_id": "b350410f-c5fa-4468-9a35-ab153b0462c8",
+      "title": "SSVC Overview",
+      "is_hub": false,
+      "panel_count": 16,
+      "data_panel_count": 13,
+      "panels": [
+        {
+          "panel_id": "e394abb3-c101-4860-82cd-c368e73cef0d",
+          "title": "Main Navigation",
+          "panel_type": "links",
+          "saved_object_id": "f06f2f1f-4842-4cd9-9bfe-08dc36c55d63",
+          "is_data_panel": false
+        },
+        {
+          "panel_id": "1798c0ef-740d-4789-b1f9-ef21937307f7",
+          "title": "Specific Data Navigation",
+          "panel_type": "links",
+          "saved_object_id": "286254be-3679-47c1-aff2-9508300da06f",
+          "is_data_panel": false
+        },
+        {
+          "panel_id": "d19dc033-daa7-4125-85f4-bd0ba9cd092d",
+          "title": "SSVC Banner - Title",
+          "panel_type": "visualization",
+          "saved_object_id": "b741cd69-00f3-4b33-a446-20b3c57e2899",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "e65cab80-fb5d-422e-831e-ef6b828ded7e",
+          "title": "SSVC - Detail Information",
+          "panel_type": "visualization",
+          "saved_object_id": "fa076b81-a896-4f10-8b1e-fb884636f8fc",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "2f43af85-d5cd-444f-8d3e-97c2c4b23d2e",
+          "title": "SSVC Exploitation: Active",
+          "panel_type": "lens",
+          "saved_object_id": "b0f4baa2-0d89-4aa1-b7e7-404bdeeb8dca",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "c7a69809-e863-4746-8b7f-9ff606d039dc",
+          "title": "SSVC Count of CVEs with Exploitation: Active",
+          "panel_type": "lens",
+          "saved_object_id": "2a87f319-e05b-4fc9-b4fc-e5e7c9b0dff7",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "dc74771c-08f6-425f-9187-c5793fcf8794",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "04510e61-a5fc-4ddb-a48d-9d43821e6d93",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "96bf0cfc-7388-4d86-adc9-b68b9f57a82b",
+          "title": "SSVC Exploitation: PoC",
+          "panel_type": "lens",
+          "saved_object_id": "305f176c-2d86-4e92-ae49-8dd35e6e64f3",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "1e99a41b-e8ca-43ab-bac6-d0f78d3d3f86",
+          "title": "SSVC Count of CVEs with Exploitation: PoC",
+          "panel_type": "lens",
+          "saved_object_id": "c6536bc9-06c8-4265-bdb9-bdb482e72056",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "ebf6f158-35b0-4735-bee0-0030bae883f1",
+          "title": "SSVC Exploitation: PoC with Further Decision Points",
+          "panel_type": "lens",
+          "saved_object_id": "bc80fb81-cee1-4ead-8d07-6a1473db152c",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "8d184487-9a51-41ff-a11d-86108c928935",
+          "title": "SSVC Exploitation: None",
+          "panel_type": "lens",
+          "saved_object_id": "b9e5aa19-b28e-422c-97ae-3f676f5241db",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "7895acc5-ce85-4990-84dd-319c777d650e",
+          "title": "SSVC Count of CVEs with Exploitation: None",
+          "panel_type": "lens",
+          "saved_object_id": "613ea75d-bdc9-4a52-abf0-33afa936ff8c",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "8f546058-7824-4170-a1fa-b53a3b5839dc",
+          "title": "SSVC Exploitation: None with Further Decision Points",
+          "panel_type": "lens",
+          "saved_object_id": "585e5e6f-5ca4-43f3-8ad1-b2cb1c7e9886",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "fef55d9b-51e6-493c-a379-7bcbdf73a4cd",
+          "title": "List of Open Vulnerabilities with SSVC Information",
+          "panel_type": "search",
+          "saved_object_id": "3c4357c5-651a-4b93-a63e-d9307ba4060d",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "a64b35d6-7b94-4a7c-b01f-5f7b48c324c4",
+          "title": "CDM-Nav-LCKUP",
+          "panel_type": "visualization",
+          "saved_object_id": "37c13bb9-3a50-43d7-bb4e-a77a5578ecf9",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "896473aa-55f2-4e68-8b3f-e66dae04ed59",
+          "title": "",
+          "panel_type": "links",
+          "saved_object_id": "00cc1919-c1af-4c40-8b81-9e548741f232",
+          "is_data_panel": false
+        }
+      ],
+      "linked_dashboards": []
+    },
+    {
+      "dashboard_id": "66833a00-0916-11ed-9940-d955314b400b",
+      "title": "Vulnerability Overview",
+      "is_hub": false,
+      "panel_count": 9,
+      "data_panel_count": 6,
+      "panels": [
+        {
+          "panel_id": "232dbf04-f80d-421c-9d0f-541cba8e964b",
+          "title": "Main Navigation",
+          "panel_type": "links",
+          "saved_object_id": "f06f2f1f-4842-4cd9-9bfe-08dc36c55d63",
+          "is_data_panel": false
+        },
+        {
+          "panel_id": "b7b48510-5468-4962-911f-f556dee8ef21",
+          "title": "Specific Data Navigation",
+          "panel_type": "links",
+          "saved_object_id": "286254be-3679-47c1-aff2-9508300da06f",
+          "is_data_panel": false
+        },
+        {
+          "panel_id": "0ee7dd01-57ad-4a76-9d58-2d83f29e10ea",
+          "title": "DIVIDER - Vulnerability Overview",
+          "panel_type": "visualization",
+          "saved_object_id": "0fa68261-eb8b-45b4-a324-b85cf2c6a302",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "ab3c2023-87e8-4c2b-92ea-fe0b27ee172d",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "368e1760-0def-11ed-bd84-33153167e15c",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "29ffe5c3-2a2a-4327-bb24-2da53a499a1d",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "d8a48465-52b8-4130-baed-d5ca5d93a899",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "4d2e2e87-97fb-49f7-bd00-c67c9abf756a",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "7bd97a90-1b4f-11ed-9dbb-0d0e4f314bb8",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "437a8de6-b94d-4946-b637-d60e92292a37",
+          "title": "",
+          "panel_type": "lens",
+          "saved_object_id": "3e546462-c856-450b-b6ab-1cacfb87fb9e",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "290deb1d-9442-496e-8784-e4db027f4237",
+          "title": "CDM-Nav-LCKUP",
+          "panel_type": "visualization",
+          "saved_object_id": "37c13bb9-3a50-43d7-bb4e-a77a5578ecf9",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "2aed786f-3ac9-46fc-b914-f6842c6aea3f",
+          "title": "",
+          "panel_type": "links",
+          "saved_object_id": "00cc1919-c1af-4c40-8b81-9e548741f232",
+          "is_data_panel": false
+        }
+      ],
+      "linked_dashboards": [
+        "c78fa370-1c34-11ed-a299-d92566ee6433",
+        "499e1290-1742-11ed-a299-d92566ee6433"
+      ]
+    },
+    {
+      "dashboard_id": "c78fa370-1c34-11ed-a299-d92566ee6433",
+      "title": "Vulnerability Records",
+      "is_hub": false,
+      "panel_count": 8,
+      "data_panel_count": 5,
+      "panels": [
+        {
+          "panel_id": "3de0ae8c-513f-41f1-87e6-cddadb5833c5",
+          "title": "Main Navigation",
+          "panel_type": "links",
+          "saved_object_id": "f06f2f1f-4842-4cd9-9bfe-08dc36c55d63",
+          "is_data_panel": false
+        },
+        {
+          "panel_id": "3999655f-2814-4331-aaae-e77b156ed368",
+          "title": "Specific Data Navigation",
+          "panel_type": "links",
+          "saved_object_id": "286254be-3679-47c1-aff2-9508300da06f",
+          "is_data_panel": false
+        },
+        {
+          "panel_id": "16eb4110-709b-4e57-9b9e-0f8427fd8a25",
+          "title": "DIVIDER - Vulnerability Records",
+          "panel_type": "visualization",
+          "saved_object_id": "4a0e6300-27c9-11ed-af31-05ce0d0c3d8c",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "73abc73a-3ce1-4a17-b3c8-338a98dc2d8f",
+          "title": "List of Open Findings for Vulnerability Records",
+          "panel_type": "search",
+          "saved_object_id": "8f72a012-ca46-4529-855f-eac76f9d12fb",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "56bf10e9-3aa6-4778-ac10-d72c87ae9cf1",
+          "title": "CVE Data Dictionary Entry",
+          "panel_type": "search",
+          "saved_object_id": "75b75a17-e6aa-4c42-bc7d-60c1b379af35",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "316506b2-14e3-4e0c-87b9-354a907621d1",
+          "title": "FireEye Reports",
+          "panel_type": "search",
+          "saved_object_id": "dd4cc1ae-5d4d-43cb-b313-5aa7abe3e3fb",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "398bce7f-b965-432c-95b9-c0de7bcb625e",
+          "title": "CDM-Nav-LCKUP",
+          "panel_type": "visualization",
+          "saved_object_id": "37c13bb9-3a50-43d7-bb4e-a77a5578ecf9",
+          "is_data_panel": true
+        },
+        {
+          "panel_id": "10f202ad-cb53-40c2-8583-970d97c091f4",
+          "title": "",
+          "panel_type": "links",
+          "saved_object_id": "00cc1919-c1af-4c40-8b81-9e548741f232",
+          "is_data_panel": false
+        }
+      ],
+      "linked_dashboards": []
+    }
+  ]
+}

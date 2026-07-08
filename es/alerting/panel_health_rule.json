@@ -1,0 +1,20 @@
+{
+  "name": "DHM - Panel unhealthy (empty/error/missing/timeout)",
+  "rule_type_id": ".es-query",
+  "consumer": "stackAlerts",
+  "enabled": true,
+  "schedule": { "interval": "15m" },
+  "params": {
+    "searchType": "esQuery",
+    "index": [".dashboard-health-monitor"],
+    "timeField": "@timestamp",
+    "esQuery": "{\"query\":{\"bool\":{\"filter\":[{\"range\":{\"panels_not_ok\":{\"gt\":0}}}]}}}",
+    "size": 100,
+    "threshold": [0],
+    "thresholdComparator": ">",
+    "timeWindowSize": 20,
+    "timeWindowUnit": "m",
+    "aggType": "count"
+  },
+  "actions": []
+}

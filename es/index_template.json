@@ -1,0 +1,55 @@
+{
+  "index_patterns": [".dashboard-health-monitor*"],
+  "data_stream": {},
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 1,
+      "index.lifecycle.name": "dashboard-health-monitor"
+    },
+    "mappings": {
+      "dynamic": false,
+      "properties": {
+        "@timestamp": { "type": "date" },
+        "schema_version": { "type": "integer" },
+        "app": { "type": "keyword" },
+        "cluster": { "type": "keyword" },
+        "kibana_space": { "type": "keyword" },
+        "dashboard_id": { "type": "keyword" },
+        "dashboard_title": { "type": "keyword" },
+        "is_hub": { "type": "boolean" },
+        "dashboard_url": { "type": "keyword", "index": false },
+        "load_time_ms": { "type": "integer" },
+        "load_status": { "type": "keyword" },
+        "load_error": { "type": "text" },
+        "expected_data_panels": { "type": "integer" },
+        "panel_count": { "type": "integer" },
+        "panels_checked": { "type": "integer" },
+        "panels_ok": { "type": "integer" },
+        "panels_not_ok": { "type": "integer" },
+        "panels_empty": { "type": "integer" },
+        "panels_error": { "type": "integer" },
+        "panels_timeout": { "type": "integer" },
+        "panels_missing": { "type": "integer" },
+        "panels": {
+          "type": "nested",
+          "properties": {
+            "panel_id": { "type": "keyword" },
+            "panel_title": { "type": "keyword" },
+            "panel_type": { "type": "keyword" },
+            "render_status": { "type": "keyword" },
+            "render_status_detail": { "type": "text" },
+            "render_ms": { "type": "integer" }
+          }
+        },
+        "collector_run_id": { "type": "keyword" },
+        "collector_version": { "type": "keyword" }
+      }
+    }
+  },
+  "priority": 500,
+  "_meta": {
+    "description": "Dashboard Health & Load-Time Monitor results",
+    "managed_by": "kibana_dashboard_runtime_monitor"
+  }
+}

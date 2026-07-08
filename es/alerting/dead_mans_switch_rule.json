@@ -1,0 +1,20 @@
+{
+  "name": "DHM - Collector dead-man's-switch (no results)",
+  "rule_type_id": ".es-query",
+  "consumer": "stackAlerts",
+  "enabled": true,
+  "schedule": { "interval": "15m" },
+  "params": {
+    "searchType": "esQuery",
+    "index": [".dashboard-health-monitor"],
+    "timeField": "@timestamp",
+    "esQuery": "{\"query\":{\"match_all\":{}}}",
+    "size": 0,
+    "threshold": [1],
+    "thresholdComparator": "<",
+    "timeWindowSize": 40,
+    "timeWindowUnit": "m",
+    "aggType": "count"
+  },
+  "actions": []
+}
