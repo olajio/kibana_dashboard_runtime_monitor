@@ -57,7 +57,7 @@ Optionally, for panels where you *do* know or can easily look up the underlying 
 
 ### 3.1 How "loaded" and per-panel state are detected
 
-The entire approach rests on reliably reading Kibana's own render state off the page, so it's worth being concrete about the mechanism (and de-risking it early — see the Phase 0 spike in Section 5):
+The entire approach rests on reliably reading Kibana's own render state off the page, so it's worth being concrete about the mechanism (and de-risking it early — see the Phase 0.5 spike in Section 5):
 
 - **"Dashboard loaded" signal**: Kibana emits a stable render-complete signal per embeddable. Wait for every panel's `[data-render-complete="true"]` (equivalently `[data-loading="false"]`) attribute rather than a fixed `sleep` or `networkidle`. Load time = elapsed from navigation start to the moment the last panel reports render-complete, capped by a hard timeout.
 - **Per-panel render state**: read each panel's on-screen state via its `data-test-subj` markers — a rendered visualization, Kibana's own "No results found" / empty state, an error embeddable (`embeddableStackTrace` / error icon), or no resolution before the timeout → `ok | empty | error | timeout`.
@@ -128,6 +128,21 @@ This is a separate, opt-in layer for freshness/volume detail. Skip it entirely f
 | **Phase 2 — Optional query enrichment** | For panels where the underlying query/data view is known and easy to resolve, add a direct-ES-query lookup for hit count + freshness | Purely additive; skip for panels where this isn't convenient |
 | **Phase 3 — Alerting** | Kibana Alerting rules (Elasticsearch Query rule type, per your CCS project's stated preference over Watcher): load time > threshold, `data_status: empty/stale`, and a collector dead-man's-switch (no new doc in expected interval) | Reuse the four-layer degradation / dead-man's-switch pattern from Project 13 |
 | **Phase 4 — Trend dashboard & rollout** | Kibana dashboard over `.dashboard-health-monitor` (load time trend, panel health heatmap); expand from allow-list to full dynamic discovery; roll out across dev/qa/prod/ccs | Final step — dashboard-of-dashboards |
+
+### 5.1 Jira mapping
+
+The work is tracked as a **single Epic** with one **Task per phase/workstream** and
+`DHM-*` **sub-tasks** underneath — see `dashboard_health_monitor_jira_tasks.md`.
+
+| Plan phase | Jira Task | Sub-tasks |
+|---|---|---|
+| Phase 0 — Discovery & scaffolding | Task 1 — Discovery & Scaffolding | DHM-1 – DHM-4 |
+| Phase 0.5 — Render-detection spike | Task 2 — Render-Detection Spike | DHM-5 |
+| Auth (Section 6, gates the MVP) | Task 3 — Auth Decision & Identity | DHM-13, DHM-14 |
+| Phase 1 — Index + core collector | Task 4 — Index + Core Collector (MVP) | DHM-6 – DHM-12 |
+| Phase 2 — Optional query enrichment | Task 5 — Optional Query Enrichment | DHM-15, DHM-16 |
+| Phase 3 — Alerting | Task 6 — Alerting | DHM-17 – DHM-20 |
+| Phase 4 — Trend dashboard & rollout | Task 7 — Trend Dashboard & Rollout | DHM-21 – DHM-24 |
 
 ## 6. Auth strategy (the one real open question)
 
