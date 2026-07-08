@@ -108,14 +108,28 @@ a historical trend. Delivered across the Tasks below.
 
 ### DHM-8 — Browser collector: load + per-panel timing + health
 - **Type:** Story · **Size:** L · **Status:** implemented in repo (needs live Kibana to validate)
-- **Description:** `src/dhm/collector.py` loads each dashboard, waits for
-  render-complete, records load time and per-panel `render_ms`, and classifies each
-  panel via `render_detection`. Centralized selectors in `selectors.py`.
+- **Description:** `src/dhm/collect_core.py` holds the backend-agnostic timing +
+  document assembly; `src/dhm/collector.py` (Playwright) drives it. Loads each
+  dashboard, waits for render-complete, records load time and per-panel `render_ms`,
+  and classifies each panel via `render_detection`. Centralized selectors in
+  `selectors.py`.
 - **Acceptance criteria:**
   - Produces one document per dashboard matching the plan §5 schema.
   - Enforces the per-dashboard hard timeout; a hung dashboard is `failed`.
   - Detects `missing` panels by reconciling against the registry.
+  - Core timing/health logic is unit-tested with a fake driver (`tests/test_collect_core.py`).
 - **Dependencies:** DHM-7, DHM-10
+
+### DHM-8b — Selenium fallback backend
+- **Type:** Story · **Size:** M · **Status:** implemented in repo (needs live Kibana to validate)
+- **Description:** `src/dhm/collector_selenium.py` drives the same system Edge/Chrome
+  (via `msedgedriver`/`chromedriver`) and the same `collect_core`, selected by
+  `collector.backend: selenium`. Fallback for boundaries where the `playwright` pip
+  package cannot be installed. `requirements-selenium.txt` holds its deps.
+- **Acceptance criteria:**
+  - `backend: selenium` produces documents identical in shape to the Playwright path.
+  - Auth works for both api_key (via CDP headers) and cookie methods.
+- **Dependencies:** DHM-8
 
 ### DHM-9 — Render-detection classifier + unit tests
 - **Type:** Task · **Size:** M · **Status:** done in repo
