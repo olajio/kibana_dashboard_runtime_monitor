@@ -22,7 +22,8 @@ and the Jira breakdown in
 
 ```
 federal_overview.ndjson            # the saved-objects export we monitor (source of truth)
-requirements.txt
+requirements.txt                   # base deps (Playwright backend)
+requirements-selenium.txt          # extra deps for the Selenium fallback backend
 config/
   settings.example.yaml            # copy to settings.yaml (git-ignored) and fill in
   dashboards.generated.json        # registry, produced from the export
@@ -31,7 +32,9 @@ src/dhm/
   registry.py                      # parse the export into the registry
   selectors.py                     # centralized, version-sensitive Kibana DOM selectors
   render_detection.py              # classify panel health (pure, unit-tested)
-  collector.py                     # Playwright load + per-panel timing + health
+  collect_core.py                  # backend-agnostic timing + document assembly
+  collector.py                     # Playwright backend (thin driver over collect_core)
+  collector_selenium.py            # Selenium fallback backend (same core)
   es_writer.py                     # write documents / apply ES assets
 scripts/
   build_registry.py                # export -> config/dashboards.generated.json
@@ -74,6 +77,21 @@ driver, and the collector launches the already-installed Edge/Chrome selected by
 > browser: set `collector.browser_channel: chromium` and run
 > `python -m playwright install chromium` from the approved mirror. Using the
 > org-managed Edge/Chrome is the recommended path.
+
+### Fallback: Selenium backend
+
+If the `playwright` pip package itself cannot be installed in the boundary, use
+the Selenium backend instead — it drives the same system Edge/Chrome and runs the
+same render-detection logic (only the browser plumbing differs):
+
+```bash
+pip install -r requirements-selenium.txt
+```
+
+Then set `collector.backend: selenium` (Stage 2). Selenium needs the matching
+WebDriver — `msedgedriver` for Edge or `chromedriver` for Chrome — on `PATH`, or
+set `collector.webdriver_path`. Edge ships a managed `msedgedriver`, which is
+usually the easiest driver to get approved.
 
 ---
 
@@ -159,6 +177,10 @@ the browser already installed on the runner:
 Because Edge and Chrome are both Chromium-based, the render-detection logic is
 identical across them — only the launch target changes.
 
+`collector.backend` selects how the browser is driven: `playwright` (default) or
+`selenium` (the fallback described under [Install](#fallback-selenium-backend)).
+Both backends honour `browser_channel` and produce identical documents.
+
 ### Set up the index (once per cluster)
 
 ```bash
@@ -243,9 +265,12 @@ python -m pytest -q
 - `tests/test_render_detection.py` — asserts every render status classifies
   correctly (including error-over-empty precedence and missing-panel
   reconciliation) from raw signal fixtures.
+- `tests/test_collect_core.py` — drives the shared collection core with a fake
+  browser driver: load status, per-panel timing, missing-panel and nav-failure
+  handling, and URL building. This core is what both backends call.
 
-The collector and ES writer require a live Kibana/ES and are validated by the
-Stage 4 dry run and live run above.
+Only the browser plumbing in `collector.py` / `collector_selenium.py` needs a live
+Kibana/ES; it is validated by the Stage 4 dry run and live run above.
 
 ---
 
@@ -322,6 +347,10 @@ only after measuring browser memory on the runner.
   (`browser_channel: chromium`) does `python -m playwright install chromium` apply —
   run it from the approved mirror and confirm it stays inside the package/network
   allowlist.
+- **Selenium: `WebDriverException` / driver not found** — on the Selenium backend,
+  install `msedgedriver` (Edge) or `chromedriver` (Chrome) on `PATH` or set
+  `collector.webdriver_path`. The driver major version must match the installed
+  browser's major version.
 - **TLS to a lab cluster** — set `elasticsearch.verify_tls: false` (or
   `DHM_ES_VERIFY_TLS=false`) for non-production only.
 

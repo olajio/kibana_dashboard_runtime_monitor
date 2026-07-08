@@ -48,10 +48,16 @@ class ESConfig:
 class CollectorConfig:
     registry_path: str = "config/dashboards.generated.json"
     headless: bool = True
+    # Browser automation backend. "playwright" (default) or "selenium" — the
+    # Selenium fallback is for environments where the playwright pip package
+    # cannot be installed. Both drive the same system browser.
+    backend: str = "playwright"
     # Which browser to drive. "msedge" / "chrome" use an already-installed
-    # branded browser via Playwright channels (no download). "chromium" (or
-    # "bundled"/empty) uses Playwright's own downloaded Chromium.
+    # branded browser (Playwright channel, or Edge/Chrome WebDriver under
+    # Selenium). "chromium" (or "bundled"/empty) uses Playwright's own Chromium.
     browser_channel: str = "msedge"
+    # Selenium only: path to msedgedriver/chromedriver. Empty -> PATH / Selenium Manager.
+    webdriver_path: str = ""
     dashboard_timeout_ms: int = 90000
     poll_interval_ms: int = 250
     concurrency: int = 1
@@ -108,7 +114,9 @@ def load_settings(path: str = "config/settings.yaml") -> Settings:
         collector=CollectorConfig(
             registry_path=col.get("registry_path", "config/dashboards.generated.json"),
             headless=bool(col.get("headless", True)),
+            backend=_env("DHM_BACKEND", col.get("backend", "playwright")),
             browser_channel=_env("DHM_BROWSER_CHANNEL", col.get("browser_channel", "msedge")),
+            webdriver_path=_env("DHM_WEBDRIVER_PATH", col.get("webdriver_path", "")),
             dashboard_timeout_ms=int(col.get("dashboard_timeout_ms", 90000)),
             poll_interval_ms=int(col.get("poll_interval_ms", 250)),
             concurrency=int(col.get("concurrency", 1)),

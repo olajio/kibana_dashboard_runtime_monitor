@@ -41,12 +41,21 @@ elasticsearch:
 collector:
   registry_path: config/dashboards.generated.json
   headless: true
+  # Automation backend:
+  #   playwright - default
+  #   selenium   - fallback when the playwright pip package can't be installed
+  #                (needs: pip install -r requirements-selenium.txt)
+  backend: playwright              # [DHM_BACKEND]
   # Which browser to drive. Use an already-installed browser so nothing has to
   # be downloaded:
   #   msedge   - system Microsoft Edge (default; the prod environment's browser)
   #   chrome   - system Google Chrome (e.g. the test environment)
-  #   chromium - Playwright's own downloaded Chromium (needs `playwright install`)
+  #   chromium - Playwright's own downloaded Chromium (playwright backend only;
+  #              needs `playwright install`)
   browser_channel: msedge          # [DHM_BROWSER_CHANNEL]
+  # Selenium backend only: path to msedgedriver/chromedriver.
+  # Empty -> found on PATH or via Selenium Manager.
+  webdriver_path: ""               # [DHM_WEBDRIVER_PATH]
   # Per-dashboard hard cap. A dashboard that has not finished by this point is
   # recorded as load_status=failed and its unrendered panels as timeout.
   dashboard_timeout_ms: 90000

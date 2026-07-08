@@ -16,8 +16,16 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from dhm.config import load_settings  # noqa: E402
-from dhm.collector import run  # noqa: E402
 from dhm.es_writer import bulk_index  # noqa: E402
+
+
+def _select_backend(backend: str):
+    """Import the chosen backend lazily so only its dependency is required."""
+    if backend == "selenium":
+        from dhm.collector_selenium import run
+    else:
+        from dhm.collector import run
+    return run
 
 
 def main() -> int:
@@ -32,7 +40,9 @@ def main() -> int:
         registry = json.load(f)
 
     print(f"Collecting {registry['dashboard_count']} dashboards for app "
-          f"'{settings.app}' (cluster={settings.cluster}, space={settings.kibana_space})")
+          f"'{settings.app}' (cluster={settings.cluster}, space={settings.kibana_space}) "
+          f"[backend={settings.collector.backend}, browser={settings.collector.browser_channel}]")
+    run = _select_backend(settings.collector.backend)
     docs = run(settings, registry)
 
     if args.out:

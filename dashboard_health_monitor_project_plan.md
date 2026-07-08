@@ -197,6 +197,12 @@ browser.
   Chrome are both Chromium-based, so the render-detection logic is identical across
   them. A downloaded Chromium (`browser_channel: chromium`) remains a fallback only
   if the system browser cannot be used.
+- **Automation backend**: `collector.backend` selects `playwright` (default) or
+  `selenium`. The Selenium backend is a fallback for boundaries where the
+  `playwright` pip package cannot be installed; it drives the same system Edge/Chrome
+  (via `msedgedriver`/`chromedriver`) and shares the same timing, health logic, and
+  document schema (`collect_core`), so results are identical. Only the browser
+  plumbing differs between backends.
 - **Per-dashboard hard timeout** (default 90s) caps each load so one hung
   dashboard cannot stall the cycle — it is recorded as `failed` and its panels as
   `timeout`, and we move on.
