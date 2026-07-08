@@ -1,16 +1,28 @@
-# Dashboard Health & Load-Time Monitor — Jira Task Breakdown
+# Dashboard Health & Load-Time Monitor — Jira Breakdown
 
-This breaks `dashboard_health_monitor_project_plan.md` into small, independently
-ticketable units. Each **Epic** maps to a plan phase; each card under it is sized
-to fit a single Jira card (roughly 0.5–3 days). Copy each card into Jira as-is.
+This breaks `dashboard_health_monitor_project_plan.md` into a Jira hierarchy:
 
-**Legend** — `Type`: Story / Task / Spike. `Size`: S (≤1d) / M (1–3d) / L (3–5d, consider splitting).
-Dependencies reference other card IDs in this doc.
+- **1 Epic** — the whole project.
+- **Tasks** — one per plan phase / workstream (formerly the "epics").
+- **Sub-tasks** (`DHM-*`) — the individual, ticketable units under each Task,
+  each sized to fit a single card (roughly 0.5–3 days).
+
+**Legend** — sub-task `Type`: Story / Task / Spike. `Size`: S (≤1d) / M (1–3d) /
+L (3–5d, consider splitting). Dependencies reference other `DHM-*` IDs.
 
 ---
 
-## Epic 0 — Discovery & Scaffolding
-*Plan Phase 0. Goal: project skeleton + a trustworthy list of dashboards to check.*
+# EPIC — Dashboard Health & Load-Time Monitor
+
+Replace manual daily dashboard review with an automated, scheduled check that
+measures browser-rendered load time, confirms every panel is returning data,
+alerts on degradation, and produces a historical trend. Delivered across the
+Tasks below.
+
+---
+
+## TASK 1 — Discovery & Scaffolding
+*Plan Phase 0. Project skeleton + a trustworthy list of dashboards to check.*
 
 ### DHM-1 — Project scaffolding & CI
 - **Type:** Task · **Size:** S
@@ -48,8 +60,8 @@ Dependencies reference other card IDs in this doc.
 
 ---
 
-## Epic 0.5 — Render-Detection Spike (De-risk)
-*Plan Phase 0.5. Do this before Epic 1 — the whole MVP depends on it.*
+## TASK 2 — Render-Detection Spike (De-risk)
+*Plan Phase 0.5. Do this before Task 4 — the whole MVP depends on it.*
 
 ### DHM-5 — Spike: prove render-complete + per-panel state detection
 - **Type:** Spike · **Size:** M
@@ -62,7 +74,28 @@ Dependencies reference other card IDs in this doc.
 
 ---
 
-## Epic 1 — Index + Core Collector (MVP)
+## TASK 3 — Auth Decision & Identity
+*Cross-cutting; resolve early — see plan §6. Blocks the MVP.*
+
+### DHM-13 — Decide & confirm Kibana browser-auth approach
+- **Type:** Spike · **Size:** S
+- **Description:** Confirm with Jesse/Cloud Automation whether API-key/basic-auth, a service-account session token, or RolesAnywhere/existing service identity can front the automation. Output the concrete approach DHM-7 implements.
+- **Acceptance criteria:**
+  - Documented decision on auth method for the browser path.
+  - Confirmed the automation identity can be provisioned with least privilege.
+- **Dependencies:** none — **do first**
+
+### DHM-14 — Provision least-privilege automation identity + secret
+- **Type:** Task · **Size:** S
+- **Description:** Create the automation service account/API key with read on monitored spaces/dashboards + write to `.dashboard-health-monitor`, stored in Secrets Manager (`elastic/kibana/...`), with a rotation cadence.
+- **Acceptance criteria:**
+  - Credential exists with least-privilege scope, retrievable from Secrets Manager.
+  - Rotation cadence documented.
+- **Dependencies:** DHM-13
+
+---
+
+## TASK 4 — Index + Core Collector (MVP)
 *Plan Phase 1. Load time + data-presence from one page load. This is the MVP.*
 
 ### DHM-6 — Index template, mapping & ILM policy
@@ -126,28 +159,7 @@ Dependencies reference other card IDs in this doc.
 
 ---
 
-## Epic 1a — Auth Decision (blocks the MVP)
-*Cross-cutting; resolve early — see plan §6.*
-
-### DHM-13 — Decide & confirm Kibana browser-auth approach
-- **Type:** Spike · **Size:** S
-- **Description:** Confirm with Jesse/Cloud Automation whether API-key/basic-auth, a service-account session token, or RolesAnywhere/existing service identity can front the automation. Output the concrete approach DHM-7 implements.
-- **Acceptance criteria:**
-  - Documented decision on auth method for the browser path.
-  - Confirmed the automation identity can be provisioned with least privilege.
-- **Dependencies:** none — **do first**
-
-### DHM-14 — Provision least-privilege automation identity + secret
-- **Type:** Task · **Size:** S
-- **Description:** Create the automation service account/API key with read on monitored spaces/dashboards + write to `.dashboard-health-monitor`, stored in Secrets Manager (`elastic/kibana/...`), with a rotation cadence.
-- **Acceptance criteria:**
-  - Credential exists with least-privilege scope, retrievable from Secrets Manager.
-  - Rotation cadence documented.
-- **Dependencies:** DHM-13
-
----
-
-## Epic 2 — Optional Query Enrichment
+## TASK 5 — Optional Query Enrichment
 *Plan Phase 2. Purely additive; skip per-panel where inconvenient.*
 
 ### DHM-15 — Panel-to-query resolver (Lens + classic)
@@ -168,7 +180,7 @@ Dependencies reference other card IDs in this doc.
 
 ---
 
-## Epic 3 — Alerting
+## TASK 6 — Alerting
 *Plan Phase 3. Elasticsearch Query rule type; reuse Project 13 dead-man's-switch pattern.*
 
 ### DHM-17 — Seed per-dashboard load-time baselines
@@ -203,7 +215,7 @@ Dependencies reference other card IDs in this doc.
 
 ---
 
-## Epic 4 — Trend Dashboard & Rollout
+## TASK 7 — Trend Dashboard & Rollout
 *Plan Phase 4. The dashboard-of-dashboards + going wide.*
 
 ### DHM-21 — Kibana trend dashboard
@@ -239,9 +251,9 @@ Dependencies reference other card IDs in this doc.
 
 ## Suggested ordering / critical path
 
-1. **DHM-13** (auth decision) — unblocks everything browser-related.
+1. **DHM-13** (auth decision, Task 3) — unblocks everything browser-related.
 2. **DHM-1, DHM-14, DHM-9** — scaffolding, credential, browser.
-3. **DHM-5** (spike) — go/no-go on the core detection approach.
-4. **DHM-6 → DHM-7 → DHM-8 → DHM-10 → DHM-11 → DHM-12** — the MVP.
-5. **DHM-17–20** (alerting), then **DHM-21–24** (dashboard + rollout).
-6. **DHM-2/3/4** feed discovery; **DHM-15/16** enrichment can slot in any time after the MVP.
+3. **DHM-5** (spike, Task 2) — go/no-go on the core detection approach.
+4. **DHM-6 → DHM-7 → DHM-8 → DHM-10 → DHM-11 → DHM-12** (Task 4) — the MVP.
+5. **DHM-17–20** (Task 6, alerting), then **DHM-21–24** (Task 7, dashboard + rollout).
+6. **DHM-2/3/4** (Task 1) feed discovery; **DHM-15/16** (Task 5) enrichment can slot in any time after the MVP.
