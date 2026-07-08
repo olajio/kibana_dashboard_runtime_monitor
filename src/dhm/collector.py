@@ -44,7 +44,7 @@ def _panel_key(state: Dict[str, Any]) -> str:
 def _new_context(browser, settings: Settings):
     """Apply auth to a fresh browser context."""
     auth = settings.kibana.auth
-    context = browser.new_context(ignore_https_errors=not settings.elasticsearch.verify_tls)
+    context = browser.new_context(ignore_https_errors=not settings.kibana.verify_tls)
     if auth.method == "api_key" and auth.api_key:
         context.set_extra_http_headers(
             {"Authorization": f"ApiKey {auth.api_key}", "kbn-xsrf": "dhm"}
@@ -163,7 +163,13 @@ def run(settings: Settings, registry: Dict[str, Any]) -> List[Dict[str, Any]]:
     dashboards = registry.get("dashboards", [])
 
     with sync_playwright() as pw:
-        browser = pw.chromium.launch(headless=settings.collector.headless)
+        launch_kwargs = {"headless": settings.collector.headless}
+        channel = (settings.collector.browser_channel or "").strip().lower()
+        if channel and channel not in ("chromium", "bundled"):
+            # Drive an already-installed browser (e.g. msedge, chrome) via a
+            # Playwright channel — no downloaded Chromium required.
+            launch_kwargs["channel"] = channel
+        browser = pw.chromium.launch(**launch_kwargs)
         context = _new_context(browser, settings)
         page = context.new_page()
         page.set_default_timeout(settings.collector.dashboard_timeout_ms)

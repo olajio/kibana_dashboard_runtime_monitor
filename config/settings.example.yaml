@@ -28,6 +28,7 @@ kibana:
   # Time range applied to every dashboard load (Kibana global state).
   time_from: now-24h
   time_to: now
+  verify_tls: true                           # [DHM_KIBANA_VERIFY_TLS] false only for lab
 
 # --- Elasticsearch (where results are written) ------------------------------
 elasticsearch:
@@ -40,6 +41,12 @@ elasticsearch:
 collector:
   registry_path: config/dashboards.generated.json
   headless: true
+  # Which browser to drive. Use an already-installed browser so nothing has to
+  # be downloaded:
+  #   msedge   - system Microsoft Edge (default; the prod environment's browser)
+  #   chrome   - system Google Chrome (e.g. the test environment)
+  #   chromium - Playwright's own downloaded Chromium (needs `playwright install`)
+  browser_channel: msedge          # [DHM_BROWSER_CHANNEL]
   # Per-dashboard hard cap. A dashboard that has not finished by this point is
   # recorded as load_status=failed and its unrendered panels as timeout.
   dashboard_timeout_ms: 90000
