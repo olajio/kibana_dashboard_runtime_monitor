@@ -1,0 +1,53 @@
+# Dashboard Health & Load-Time Monitor — settings
+#
+# Copy this file to config/settings.yaml and fill in the real values.
+# settings.yaml is git-ignored so no secrets land in the repo.
+#
+# Every value can also be supplied via an environment variable (shown in
+# brackets); the environment variable wins when both are set. This lets us
+# keep secrets out of the file entirely in CI/cron.
+
+# --- What we are monitoring -------------------------------------------------
+# One cluster, one Kibana space. These are recorded on every document so the
+# trend dashboard and alerts can filter, even though today there is one value.
+app: federal_overview          # logical name for this dashboard family
+cluster: fed2                   # [DHM_CLUSTER] the single cluster we monitor
+kibana_space: default           # [DHM_SPACE] Kibana space the dashboards live in
+
+# --- Kibana (the browser target) --------------------------------------------
+kibana:
+  base_url: https://kibana.example.gov      # [DHM_KIBANA_URL] no trailing slash
+  # Authentication for the headless browser. Choose ONE method.
+  #   api_key : injected as an "Authorization: ApiKey <key>" header
+  #   cookie  : a pre-obtained Kibana session cookie (name + value)
+  auth:
+    method: api_key                          # api_key | cookie
+    api_key: ""                              # [DHM_KIBANA_API_KEY] base64 id:key
+    cookie_name: sid
+    cookie_value: ""                         # [DHM_KIBANA_COOKIE]
+  # Time range applied to every dashboard load (Kibana global state).
+  time_from: now-24h
+  time_to: now
+
+# --- Elasticsearch (where results are written) ------------------------------
+elasticsearch:
+  base_url: https://es.example.gov:9200      # [DHM_ES_URL]
+  api_key: ""                                # [DHM_ES_API_KEY] base64 id:key
+  index: .dashboard-health-monitor
+  verify_tls: true                           # [DHM_ES_VERIFY_TLS] false only for lab
+
+# --- Collector behaviour ----------------------------------------------------
+collector:
+  registry_path: config/dashboards.generated.json
+  headless: true
+  # Per-dashboard hard cap. A dashboard that has not finished by this point is
+  # recorded as load_status=failed and its unrendered panels as timeout.
+  dashboard_timeout_ms: 90000
+  # How often we poll the page for per-panel render progress.
+  poll_interval_ms: 250
+  # How many dashboards to load concurrently. Start at 1; raise only after
+  # measuring browser memory on the runner.
+  concurrency: 1
+  # Load-time classification (dashboard level). Baselines refine this later.
+  degraded_over_ms: 15000
+  failed_over_ms: 45000

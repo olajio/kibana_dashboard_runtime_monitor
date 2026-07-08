@@ -1,0 +1,21 @@
+{
+  "_comment": "Create with: POST {kibana}/api/alerting/rule  (header kbn-xsrf: true). Fill in `actions` with a connector id before enabling. Fires when any dashboard reports degraded/failed load in the last 20 minutes.",
+  "name": "DHM - Dashboard load degraded or failed",
+  "rule_type_id": ".es-query",
+  "consumer": "alerts",
+  "enabled": true,
+  "schedule": { "interval": "15m" },
+  "params": {
+    "searchType": "esQuery",
+    "index": [".dashboard-health-monitor"],
+    "timeField": "@timestamp",
+    "esQuery": "{\"query\":{\"bool\":{\"filter\":[{\"terms\":{\"load_status\":[\"degraded\",\"failed\"]}}]}}}",
+    "size": 100,
+    "threshold": [0],
+    "thresholdComparator": ">",
+    "timeWindowSize": 20,
+    "timeWindowUnit": "m",
+    "aggType": "count"
+  },
+  "actions": []
+}

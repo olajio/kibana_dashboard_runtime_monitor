@@ -3,257 +3,251 @@
 This breaks `dashboard_health_monitor_project_plan.md` into a Jira hierarchy:
 
 - **1 Epic** — the whole project.
-- **Tasks** — one per plan phase / workstream (formerly the "epics").
+- **Tasks** — one per plan phase / workstream.
 - **Sub-tasks** (`DHM-*`) — the individual, ticketable units under each Task,
   each sized to fit a single card (roughly 0.5–3 days).
 
+Scope reminder: we monitor **one** application bundle — the Federal Overview
+family of 22 dashboards and their 215 data panels — in **one** cluster and space.
+There is no multi-cluster rollout.
+
 **Legend** — sub-task `Type`: Story / Task / Spike. `Size`: S (≤1d) / M (1–3d) /
-L (3–5d, consider splitting). Dependencies reference other `DHM-*` IDs.
+L (3–5d). `Status` notes where a sub-task is already implemented in this repo.
 
 ---
 
-# EPIC — Dashboard Health & Load-Time Monitor
+# EPIC — Federal Overview Dashboard Health & Load-Time Monitor
 
-Replace manual daily dashboard review with an automated, scheduled check that
-measures browser-rendered load time, confirms every panel is returning data,
-alerts on degradation, and produces a historical trend. Delivered across the
-Tasks below.
+Replace the manual daily review of the Federal Overview dashboard family with an
+automated, scheduled check that measures per-dashboard and per-panel load time,
+verifies every expected panel rendered data, alerts on degradation, and produces
+a historical trend. Delivered across the Tasks below.
 
 ---
 
-## TASK 1 — Discovery & Scaffolding
-*Plan Phase 0. Project skeleton + a trustworthy list of dashboards to check.*
+## TASK 1 — Registry from the export
+*Plan Phase 0. Turn the `.ndjson` into the exact list of what we monitor.*
 
-### DHM-1 — Project scaffolding & CI
-- **Type:** Task · **Size:** S
-- **Description:** Stand up the repo layout, Python packaging/deps, linting/formatting, and a CI check. Add Playwright as a dependency (browser install handled in DHM-9).
+### DHM-1 — Project scaffolding & tests
+- **Type:** Task · **Size:** S · **Status:** done in repo
+- **Description:** Python package layout (`src/dhm`), `requirements.txt`, config
+  loader with environment overrides, `.gitignore` for secrets, and a pytest setup.
 - **Acceptance criteria:**
-  - Repo has a runnable Python project (deps pinned), lint + format configured.
-  - CI runs lint + tests on push.
-  - README with setup/run instructions.
-- **Dependencies:** none
+  - `pip install -r requirements.txt` succeeds; `pytest` runs.
+  - `config/settings.yaml` is git-ignored; every secret has an env override.
 
-### DHM-2 — Dashboard allow-list config
+### DHM-2 — Parse the export into a registry
+- **Type:** Story · **Size:** M · **Status:** done in repo
+- **Description:** `scripts/build_registry.py` / `src/dhm/registry.py` parse
+  `federal_overview.ndjson` into `config/dashboards.generated.json`: 22 dashboards,
+  the hub, and each dashboard's expected panels (id, title, type, data-vs-nav).
+- **Acceptance criteria:**
+  - Output lists all 22 dashboards, marks the hub, and 215 data panels.
+  - Navigation (Links) panels are recorded but flagged non-data.
+  - Underlying saved-object ids resolve for by-reference panels.
+
+### DHM-3 — Registry unit tests
+- **Type:** Task · **Size:** S · **Status:** done in repo
+- **Description:** `tests/test_registry.py` asserts dashboard/panel counts, hub
+  detection, and classification against the real export.
+- **Acceptance criteria:**
+  - Tests pass and fail loudly if the export changes shape.
+
+### DHM-4 — Refresh flow when the export changes
 - **Type:** Story · **Size:** S
-- **Description:** Define the explicit allow-list of currently-manually-checked dashboards (per cluster) as config the collector reads. This is the starting registry before dynamic discovery.
+- **Description:** Document and script the "we re-exported the dashboards" flow:
+  drop in a new `.ndjson`, re-run `build_registry.py`, review the diff of the
+  generated registry, commit.
 - **Acceptance criteria:**
-  - Config format holds cluster, dashboard_id, title, space, and URL (or enough to build it).
-  - Loadable and validated at startup with a clear error on malformed entries.
-- **Dependencies:** DHM-1
-
-### DHM-3 — Saved Objects API client (dashboard discovery)
-- **Type:** Story · **Size:** M
-- **Description:** `dashboard_registry.py` — call `GET /api/saved_objects/_find?type=dashboard` and return dashboard definitions.
-- **Acceptance criteria:**
-  - Returns dashboards with id, title, space.
-  - Handles pagination and API errors gracefully.
-  - Auth via the same secret mechanism as the rest of the tooling.
-- **Dependencies:** DHM-1, DHM-14
-
-### DHM-4 — Resolve panel references per dashboard
-- **Type:** Story · **Size:** M
-- **Description:** Extend the registry to resolve each dashboard's panel references to their visualization/lens/search objects, producing panel id/title/type.
-- **Acceptance criteria:**
-  - For a given dashboard, returns its panels with id, title, and type.
-  - Handles both Lens and classic visualization reference shapes.
-- **Dependencies:** DHM-3
+  - A one-command refresh, and a reviewed diff shows added/removed panels.
 
 ---
 
-## TASK 2 — Render-Detection Spike (De-risk)
-*Plan Phase 0.5. Do this before Task 4 — the whole MVP depends on it.*
+## TASK 2 — Render-detection spike (de-risk)
+*Plan Phase 0.5. Do this before trusting Task 4 at scale.*
 
-### DHM-5 — Spike: prove render-complete + per-panel state detection
+### DHM-5 — Spike: prove render + per-panel timing on our Kibana
 - **Type:** Spike · **Size:** M
-- **Description:** Throwaway Playwright script that loads ONE real dashboard and proves we can reliably read the render-complete signal and classify each panel as ok/empty/error/timeout off the DOM (see plan §3.1), against the actual target Kibana version.
+- **Description:** Run the collector against one real dashboard and confirm we can
+  read render-complete, per-panel `ok/empty/error/timeout`, and per-panel render
+  time off the DOM (see plan §4.1) on our actual Kibana version.
 - **Acceptance criteria:**
-  - Demonstrates a stable "all panels rendered" signal (not a fixed sleep).
-  - Demonstrates correct classification for at least one ok panel and one empty/error panel.
-  - Written up: which selectors/attributes work, Kibana version tested, and any gaps. Go/no-go recommendation for the §3.1 approach.
-- **Dependencies:** DHM-9 (browser install), DHM-13 (auth answer), DHM-2
+  - Demonstrates a stable "all panels rendered" signal (no fixed sleep).
+  - Correct classification for at least one ok panel and one empty/error panel.
+  - Written up: which selectors work, Kibana version, gaps; go/no-go on §4.1.
+- **Dependencies:** DHM-8, DHM-11
 
 ---
 
-## TASK 3 — Auth Decision & Identity
-*Cross-cutting; resolve early — see plan §6. Blocks the MVP.*
+## TASK 3 — Auth decision & identity
+*Plan Section 7. Gates the MVP — do first.*
 
-### DHM-13 — Decide & confirm Kibana browser-auth approach
+### DHM-6 — Decide the Kibana browser-auth approach
 - **Type:** Spike · **Size:** S
-- **Description:** Confirm with Jesse/Cloud Automation whether API-key/basic-auth, a service-account session token, or RolesAnywhere/existing service identity can front the automation. Output the concrete approach DHM-7 implements.
+- **Description:** Confirm with Cloud Automation whether an API key/basic auth, or
+  a service-account session cookie, fronts the automated browser. Output the method
+  the collector uses.
 - **Acceptance criteria:**
-  - Documented decision on auth method for the browser path.
-  - Confirmed the automation identity can be provisioned with least privilege.
+  - Documented decision (api_key vs cookie) and that the identity can be provisioned
+    least-privilege.
 - **Dependencies:** none — **do first**
 
-### DHM-14 — Provision least-privilege automation identity + secret
+### DHM-7 — Provision the least-privilege automation identity + secret
 - **Type:** Task · **Size:** S
-- **Description:** Create the automation service account/API key with read on monitored spaces/dashboards + write to `.dashboard-health-monitor`, stored in Secrets Manager (`elastic/kibana/...`), with a rotation cadence.
+- **Description:** Create the automation credential (read on the monitored space +
+  write to `.dashboard-health-monitor`), store it in Secrets Manager, and wire it
+  through the collector's environment variables. Define a rotation cadence.
 - **Acceptance criteria:**
-  - Credential exists with least-privilege scope, retrievable from Secrets Manager.
-  - Rotation cadence documented.
-- **Dependencies:** DHM-13
+  - Collector authenticates using only environment-supplied secrets.
+- **Dependencies:** DHM-6
 
 ---
 
-## TASK 4 — Index + Core Collector (MVP)
-*Plan Phase 1. Load time + data-presence from one page load. This is the MVP.*
+## TASK 4 — Index + collector (MVP)
+*Plan Phase 1. Load time + per-panel runtime + health, written to ES.*
 
-### DHM-6 — Index template, mapping & ILM policy
-- **Type:** Task · **Size:** M
-- **Description:** Create the `.dashboard-health-monitor` index template + mapping (per plan §4, including `schema_version`, `env`, `kibana_space`, `panels` nested, rollup fields) and an ILM/retention policy sized to the trend window (e.g. 90–180d).
+### DHM-8 — Browser collector: load + per-panel timing + health
+- **Type:** Story · **Size:** L · **Status:** implemented in repo (needs live Kibana to validate)
+- **Description:** `src/dhm/collector.py` loads each dashboard, waits for
+  render-complete, records load time and per-panel `render_ms`, and classifies each
+  panel via `render_detection`. Centralized selectors in `selectors.py`.
 - **Acceptance criteria:**
-  - Index template applies cleanly; `panels` mapped as nested.
-  - ILM policy attached; retention documented.
-  - A sample doc round-trips and is queryable.
-- **Dependencies:** DHM-1
+  - Produces one document per dashboard matching the plan §5 schema.
+  - Enforces the per-dashboard hard timeout; a hung dashboard is `failed`.
+  - Detects `missing` panels by reconciling against the registry.
+- **Dependencies:** DHM-7, DHM-10
 
-### DHM-7 — Playwright auth session injection
-- **Type:** Story · **Size:** M
-- **Description:** Implement the chosen browser-auth mechanism (API-key header injection, or service-account cookie via `context.add_cookies()`) so Playwright reaches an authenticated dashboard. Follows the outcome of DHM-13.
+### DHM-9 — Render-detection classifier + unit tests
+- **Type:** Task · **Size:** M · **Status:** done in repo
+- **Description:** `render_detection.py` (`classify_panel`, `reconcile`,
+  `summarize`) plus `tests/test_render_detection.py` over raw-signal fixtures.
 - **Acceptance criteria:**
-  - Playwright loads a protected dashboard URL authenticated, no interactive login.
-  - Credentials pulled from Secrets Manager, never hard-coded.
-  - Clear failure/`load_error` when auth fails.
-- **Dependencies:** DHM-13, DHM-9
+  - Every status classifies correctly, including error-over-empty precedence and
+    missing-panel reconciliation.
 
-### DHM-8 — Load-time capture
-- **Type:** Story · **Size:** M
-- **Description:** Navigate to a dashboard and measure load time as elapsed from navigation start to last-panel render-complete, capped by a per-dashboard hard timeout (§7).
-- **Acceptance criteria:**
-  - Emits `load_time_ms` and `load_status` (ok/degraded/failed).
-  - Enforces per-dashboard timeout; a hung dashboard yields `failed`, not a stalled run.
-- **Dependencies:** DHM-5, DHM-7
-
-### DHM-9 — Playwright headless Chromium install (FedRAMP-safe)
+### DHM-10 — Headless Chromium install (FedRAMP-safe)
 - **Type:** Task · **Size:** S
-- **Description:** Get headless Chromium installed within the approved package/network allowlist and reproducible in the deploy environment.
+- **Description:** Install Playwright's headless Chromium within the approved
+  package/network allowlist, reproducibly, on the runner.
 - **Acceptance criteria:**
-  - Documented, repeatable install that works inside the boundary (no unapproved fetches).
-  - Verified running headless in the target environment.
+  - Documented, repeatable install inside the boundary; verified headless.
 - **Dependencies:** DHM-1
 
-### DHM-10 — Per-panel render-state classifier
-- **Type:** Story · **Size:** M
-- **Description:** Productionize the spike logic: read each panel's on-screen state → `ok | empty | error | timeout` plus `render_status_detail`. Centralize selectors in one module (§3.1).
+### DHM-11 — Index template, ILM, and ES writer
+- **Type:** Task · **Size:** M · **Status:** done in repo
+- **Description:** `es/index_template.json` (data stream, nested `panels`),
+  `es/ilm_policy.json`, `scripts/setup_elasticsearch.py`, and `es_writer.bulk_index`.
 - **Acceptance criteria:**
-  - Classifies each panel and captures Kibana's on-screen message where shown.
-  - All selectors live in one module for easy version bumps.
-- **Dependencies:** DHM-5, DHM-8
+  - Template + ILM apply cleanly; a cycle's documents index via `_bulk`.
+  - Document fields match the mapping exactly.
 
-### DHM-11 — Assemble & write health docs to ES
+### DHM-12 — End-to-end dry run against real Kibana
 - **Type:** Story · **Size:** M
-- **Description:** `dashboard_health_check.py` orchestration: loop the registry, produce one doc per dashboard (full §4 schema incl. `collector_run_id`, `collector_version`, rollups), and write to `.dashboard-health-monitor`.
+- **Description:** Run a full cycle with `--dry-run --out run.json` against the real
+  cluster; review load times and panel health for all 22 dashboards; then do a live
+  write and confirm the documents land.
 - **Acceptance criteria:**
-  - One complete, valid doc written per dashboard per run.
-  - Shared `collector_run_id` across a cycle; `panels_ok`/`panels_not_ok` populated.
-  - Structured logging; a single dashboard failure doesn't abort the run.
-- **Dependencies:** DHM-6, DHM-8, DHM-10
-
-### DHM-12 — Render-detection tests + known-good/known-bad fixtures
-- **Type:** Task · **Size:** M
-- **Description:** Unit tests over captured DOM snapshots for each render state, plus a designated healthy and broken dashboard for deploy smoke tests (plan §8).
-- **Acceptance criteria:**
-  - Tests assert correct classification for ok/empty/error/timeout snapshots.
-  - Smoke test runs the collector against the two fixtures and checks expected results.
-- **Dependencies:** DHM-10
+  - All 22 dashboards produce sensible load times and per-panel results.
+  - Documents are queryable in `.dashboard-health-monitor`.
+- **Dependencies:** DHM-8, DHM-11, DHM-7
 
 ---
 
-## TASK 5 — Optional Query Enrichment
-*Plan Phase 2. Purely additive; skip per-panel where inconvenient.*
+## TASK 5 — Optional query enrichment
+*Plan Phase 2. Additive; skip where inconvenient.*
 
-### DHM-15 — Panel-to-query resolver (Lens + classic)
-- **Type:** Story · **Size:** L (split if needed)
-- **Description:** For opt-in panels, resolve the underlying query/data view — handling both Lens and classic aggregation-based visualizations.
+### DHM-13 — Panel-to-query resolver (Lens + classic)
+- **Type:** Story · **Size:** L
+- **Description:** For opt-in panels, resolve the underlying query/data view from the
+  registry's saved-object ids — handling both Lens and classic visualizations.
 - **Acceptance criteria:**
-  - Resolves data view + query for supported panel types.
-  - Cleanly skips/marks unsupported panels without failing the run.
-- **Dependencies:** DHM-4
+  - Resolves data view + query for supported panel types; skips others cleanly.
+- **Dependencies:** DHM-2
 
-### DHM-16 — Direct-ES enrichment (hit count + freshness)
+### DHM-14 — Direct-ES enrichment (hit count + freshness)
 - **Type:** Story · **Size:** M
-- **Description:** For resolved panels, run a direct ES query to add `hit_count` and `latest_doc_ts` to the panel record.
+- **Description:** For resolved panels, add `hit_count` and `latest_doc_ts` to the
+  panel record via a direct ES query.
 - **Acceptance criteria:**
-  - Enrichment fields populated for opt-in panels; absent (not null-erroring) for others.
-  - Enrichment failure never breaks the core doc.
-- **Dependencies:** DHM-15, DHM-11
+  - Enrichment present for opt-in panels, absent (not erroring) for others; failure
+    never breaks the core document.
+- **Dependencies:** DHM-13, DHM-8
 
 ---
 
 ## TASK 6 — Alerting
-*Plan Phase 3. Elasticsearch Query rule type; reuse Project 13 dead-man's-switch pattern.*
+*Plan Phase 3. Elasticsearch Query rule type.*
 
-### DHM-17 — Seed per-dashboard load-time baselines
+### DHM-15 — Seed per-dashboard load-time baselines
 - **Type:** Task · **Size:** S
-- **Description:** From the first week of collected data, compute per-dashboard baseline load times to alert on deviation rather than a flat threshold (§7).
+- **Description:** From the first week of data, compute per-dashboard baseline load
+  times and tune `degraded_over_ms` / `failed_over_ms`.
 - **Acceptance criteria:**
-  - Baseline value derivable per dashboard and referenceable by the load-time rule.
-- **Dependencies:** DHM-11
+  - Baselines documented and reflected in the thresholds.
+- **Dependencies:** DHM-12
 
-### DHM-18 — Load-time degradation alert
-- **Type:** Story · **Size:** S
-- **Description:** Kibana Alerting rule that fires when load time exceeds the dashboard's baseline/threshold.
+### DHM-16 — Load-degraded/failed alert
+- **Type:** Story · **Size:** S · **Status:** rule JSON in repo
+- **Description:** Create `es/alerting/load_time_rule.json` in Kibana with a real
+  connector; fires on `load_status` degraded/failed.
 - **Acceptance criteria:**
-  - Fires within one collector cycle of a genuine regression; recovers when normal.
-  - Dry-run validated against historical/injected data before notifications enabled.
-- **Dependencies:** DHM-17
+  - Fires within one cycle of a genuine regression; dry-run validated first.
+- **Dependencies:** DHM-12
 
-### DHM-19 — Empty/error panel alert
-- **Type:** Story · **Size:** S
-- **Description:** Rule that fires when a panel is `empty`/`error` (keyed off the top-level `panels_not_ok` rollup).
+### DHM-17 — Panel-unhealthy alert
+- **Type:** Story · **Size:** S · **Status:** rule JSON in repo
+- **Description:** Create `es/alerting/panel_health_rule.json`; fires on
+  `panels_not_ok > 0` (empty/error/timeout/missing).
 - **Acceptance criteria:**
-  - Fires on a genuinely empty/broken panel; identifies dashboard + panel.
-  - Dry-run validated before enabling.
-- **Dependencies:** DHM-11
+  - Fires on a genuinely unhealthy panel; dry-run validated first.
+- **Dependencies:** DHM-12
 
-### DHM-20 — Collector dead-man's-switch alert
-- **Type:** Story · **Size:** S
-- **Description:** Rule that fires if no new `.dashboard-health-monitor` doc for a cluster within 2× the expected interval.
+### DHM-18 — Collector dead-man's-switch alert
+- **Type:** Story · **Size:** S · **Status:** rule JSON in repo
+- **Description:** Create `es/alerting/dead_mans_switch_rule.json`; fires if no
+  document is written within 2x the cadence.
 - **Acceptance criteria:**
-  - Fires when the collector stops writing for a cluster; recovers when it resumes.
-- **Dependencies:** DHM-11
+  - Fires when the collector stops; recovers when it resumes.
+- **Dependencies:** DHM-12
 
 ---
 
-## TASK 7 — Trend Dashboard & Rollout
-*Plan Phase 4. The dashboard-of-dashboards + going wide.*
+## TASK 7 — Trend dashboard & scheduling
+*Plan Phase 4. The dashboard that replaces the manual review.*
 
-### DHM-21 — Kibana trend dashboard
+### DHM-19 — Data view + trend dashboard
 - **Type:** Story · **Size:** M
-- **Description:** Build the Kibana dashboard over `.dashboard-health-monitor`: load-time-over-time trend and panel-health heatmap.
+- **Description:** Create a Kibana data view over `.dashboard-health-monitor` and a
+  dashboard: load-time trend (per dashboard, per panel) and a panel-health heatmap.
 - **Acceptance criteria:**
-  - Load-time trend and panel-health history visible and filterable by env/cluster/space.
-- **Dependencies:** DHM-11
+  - Load-time trend and panel-health history are visible and filterable.
+- **Dependencies:** DHM-12
 
-### DHM-22 — Dynamic discovery (retire the allow-list)
-- **Type:** Story · **Size:** M
-- **Description:** Switch the registry from the static allow-list to dynamic Saved Objects discovery once trusted.
-- **Acceptance criteria:**
-  - Collector runs against dynamically discovered dashboards.
-  - Opt-out mechanism for dashboards that shouldn't be monitored.
-- **Dependencies:** DHM-3, DHM-11
-
-### DHM-23 — Scheduling & deployment (cron/AWX, staggered, bounded concurrency)
+### DHM-20 — Schedule the collector (cron/AWX)
 - **Type:** Task · **Size:** M
-- **Description:** Deploy the collector on a 15–30 min cadence per cluster (dev/qa/prod/ccs), staggered, with bounded parallelism (§7).
+- **Description:** Deploy the collector on a 15–30 min cadence with bounded
+  concurrency and the per-dashboard timeout (plan §8).
 - **Acceptance criteria:**
-  - Runs on schedule per cluster; staggered start; concurrency bounded and documented.
-- **Dependencies:** DHM-11
+  - Runs on schedule; one hung dashboard never stalls the cycle.
+- **Dependencies:** DHM-12
 
-### DHM-24 — Multi-cluster / multi-space rollout
-- **Type:** Story · **Size:** M
-- **Description:** Roll out across dev/qa/prod/ccs and any additional spaces, populating `env`/`cluster`/`kibana_space` correctly.
+### DHM-21 — Cut over from manual review
+- **Type:** Story · **Size:** S
+- **Description:** Retire the manual daily check once the trend dashboard and alerts
+  have run cleanly for an agreed soak period.
 - **Acceptance criteria:**
-  - All target clusters reporting into the index and visible on the trend dashboard.
-- **Dependencies:** DHM-21, DHM-23
+  - The team relies on the dashboard/alerts; the manual step is removed.
+- **Dependencies:** DHM-19, DHM-16, DHM-17, DHM-18
 
 ---
 
 ## Suggested ordering / critical path
 
-1. **DHM-13** (auth decision, Task 3) — unblocks everything browser-related.
-2. **DHM-1, DHM-14, DHM-9** — scaffolding, credential, browser.
-3. **DHM-5** (spike, Task 2) — go/no-go on the core detection approach.
-4. **DHM-6 → DHM-7 → DHM-8 → DHM-10 → DHM-11 → DHM-12** (Task 4) — the MVP.
-5. **DHM-17–20** (Task 6, alerting), then **DHM-21–24** (Task 7, dashboard + rollout).
-6. **DHM-2/3/4** (Task 1) feed discovery; **DHM-15/16** (Task 5) enrichment can slot in any time after the MVP.
+1. **DHM-6** (auth decision) — unblocks the browser work.
+2. **DHM-1, DHM-2, DHM-3** (registry) and **DHM-9, DHM-11** (classifier, index) —
+   already done in this repo.
+3. **DHM-7, DHM-10** — credential and browser on the runner.
+4. **DHM-5** (spike) — go/no-go on render detection against our Kibana.
+5. **DHM-8 → DHM-12** — the MVP end to end.
+6. **DHM-15–18** (alerting), then **DHM-19–21** (trend dashboard, schedule, cutover).
+7. **DHM-13/14** (enrichment) can slot in any time after DHM-12.
