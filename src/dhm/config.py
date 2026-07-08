@@ -33,6 +33,7 @@ class KibanaConfig:
     auth: KibanaAuth = field(default_factory=KibanaAuth)
     time_from: str = "now-24h"
     time_to: str = "now"
+    verify_tls: bool = True
 
 
 @dataclass
@@ -47,6 +48,10 @@ class ESConfig:
 class CollectorConfig:
     registry_path: str = "config/dashboards.generated.json"
     headless: bool = True
+    # Which browser to drive. "msedge" / "chrome" use an already-installed
+    # branded browser via Playwright channels (no download). "chromium" (or
+    # "bundled"/empty) uses Playwright's own downloaded Chromium.
+    browser_channel: str = "msedge"
     dashboard_timeout_ms: int = 90000
     poll_interval_ms: int = 250
     concurrency: int = 1
@@ -90,6 +95,8 @@ def load_settings(path: str = "config/settings.yaml") -> Settings:
             ),
             time_from=k.get("time_from", "now-24h"),
             time_to=k.get("time_to", "now"),
+            verify_tls=str(_env("DHM_KIBANA_VERIFY_TLS", k.get("verify_tls", True))).lower()
+            not in ("false", "0", "no"),
         ),
         elasticsearch=ESConfig(
             base_url=_env("DHM_ES_URL", es.get("base_url", "")).rstrip("/"),
@@ -101,6 +108,7 @@ def load_settings(path: str = "config/settings.yaml") -> Settings:
         collector=CollectorConfig(
             registry_path=col.get("registry_path", "config/dashboards.generated.json"),
             headless=bool(col.get("headless", True)),
+            browser_channel=_env("DHM_BROWSER_CHANNEL", col.get("browser_channel", "msedge")),
             dashboard_timeout_ms=int(col.get("dashboard_timeout_ms", 90000)),
             poll_interval_ms=int(col.get("poll_interval_ms", 250)),
             concurrency=int(col.get("concurrency", 1)),

@@ -54,7 +54,9 @@ add alerting and the trend dashboard.
 - Python 3.9+
 - Network access from the runner to Kibana and Elasticsearch
 - An automation credential for Kibana (see [Stage 2](#stage-2--configure--set-up-elasticsearch))
-- Headless Chromium (installed via Playwright, below)
+- **Microsoft Edge or Google Chrome already installed.** The collector drives the
+  existing system browser via Playwright channels — it does **not** download a
+  browser. Edge is the default (`msedge`); Chrome (`chrome`) is typical in test.
 
 ---
 
@@ -62,11 +64,16 @@ add alerting and the trend dashboard.
 
 ```bash
 pip install -r requirements.txt
-python -m playwright install chromium      # see FedRAMP note under Troubleshooting
 ```
 
-> On a boundary-restricted runner, install Chromium from the approved mirror
-> rather than the public download. See [Troubleshooting](#troubleshooting).
+That is all: no browser download. The `playwright` pip package ships its own
+driver, and the collector launches the already-installed Edge/Chrome selected by
+`collector.browser_channel` (see Stage 2).
+
+> Only if a policy requires Playwright's bundled Chromium instead of the system
+> browser: set `collector.browser_channel: chromium` and run
+> `python -m playwright install chromium` from the approved mirror. Using the
+> org-managed Edge/Chrome is the recommended path.
 
 ---
 
@@ -138,6 +145,19 @@ The headless browser needs an authenticated Kibana session. Pick one method in
 
 The credential needs only **read** on the monitored space and **write** to
 `.dashboard-health-monitor`.
+
+### Choose the browser
+
+Set `collector.browser_channel` in `settings.yaml` (or `DHM_BROWSER_CHANNEL`) to
+the browser already installed on the runner:
+
+- `msedge` — system Microsoft Edge (default; the production environment's browser)
+- `chrome` — system Google Chrome (e.g. the test environment)
+- `chromium` — Playwright's own downloaded Chromium (only if the system browser
+  cannot be used; requires `python -m playwright install chromium`)
+
+Because Edge and Chrome are both Chromium-based, the render-detection logic is
+identical across them — only the launch target changes.
 
 ### Set up the index (once per cluster)
 
@@ -295,10 +315,13 @@ only after measuring browser memory on the runner.
 - **Navigation/auth failures (`load_error` set)** — check the auth method and that
   the credential can read the space. For `cookie` auth, confirm the session cookie
   is still valid.
-- **FedRAMP / boundary install of Chromium** — `python -m playwright install
-  chromium` downloads from the public CDN. On a restricted runner, install from the
-  approved mirror or a pre-baked image and set `PLAYWRIGHT_BROWSERS_PATH` to it.
-  Confirm the install stays inside the approved package/network allowlist.
+- **Browser not found on launch** — the selected `browser_channel` is not installed.
+  Confirm Edge (`msedge`) or Chrome (`chrome`) is present, or point at the binary
+  directly. The default drives the org-managed system browser, so no download is
+  needed. Only if a policy forces Playwright's bundled Chromium
+  (`browser_channel: chromium`) does `python -m playwright install chromium` apply —
+  run it from the approved mirror and confirm it stays inside the package/network
+  allowlist.
 - **TLS to a lab cluster** — set `elasticsearch.verify_tls: false` (or
   `DHM_ES_VERIFY_TLS=false`) for non-production only.
 

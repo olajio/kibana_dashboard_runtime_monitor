@@ -191,6 +191,12 @@ browser.
 
 - Cron or an AWX job runs one collection cycle on a fixed cadence. Recommended
   cadence: every 15–30 min (far finer-grained than the once-daily manual check).
+- **Browser**: the collector drives the runner's already-installed browser via a
+  Playwright channel (`collector.browser_channel`) — `msedge` in production,
+  `chrome` in the test environment — so nothing has to be downloaded. Edge and
+  Chrome are both Chromium-based, so the render-detection logic is identical across
+  them. A downloaded Chromium (`browser_channel: chromium`) remains a fallback only
+  if the system browser cannot be used.
 - **Per-dashboard hard timeout** (default 90s) caps each load so one hung
   dashboard cannot stall the cycle — it is recorded as `failed` and its panels as
   `timeout`, and we move on.
@@ -231,8 +237,11 @@ Every stage has a concrete check; see the README for the exact commands.
 - **False "empty" during legitimately quiet periods** — low-traffic panels may be
   genuinely empty at times; per-panel expected-volume baselines can refine this if
   it produces noise.
-- **FedRAMP boundary** — confirm the headless Chromium install stays within the
-  approved package/network allowlist.
+- **Browser availability on the runner** — the collector drives the system Edge
+  (`msedge`) or Chrome (`chrome`) rather than downloading a browser, which suits a
+  restricted boundary. We confirm the target browser is present on the runner and
+  that the `playwright` pip package install is permitted. The bundled-Chromium
+  fallback is the only path that needs a package/network allowlist check.
 
 ## 11. Success criteria
 
