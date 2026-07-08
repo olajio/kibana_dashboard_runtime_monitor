@@ -125,12 +125,16 @@ a historical trend. Delivered across the Tasks below.
   - Every status classifies correctly, including error-over-empty precedence and
     missing-panel reconciliation.
 
-### DHM-10 — Headless Chromium install (FedRAMP-safe)
-- **Type:** Task · **Size:** S
-- **Description:** Install Playwright's headless Chromium within the approved
-  package/network allowlist, reproducibly, on the runner.
+### DHM-10 — Browser on the runner (system Edge/Chrome)
+- **Type:** Task · **Size:** S · **Status:** collector supports `browser_channel`
+- **Description:** Confirm the system browser the collector will drive is present
+  and set `collector.browser_channel` (`msedge` in prod, `chrome` in test). No
+  browser download — the collector launches the installed Edge/Chrome via a
+  Playwright channel. Only if the system browser is disallowed do we fall back to
+  `browser_channel: chromium` + `playwright install` from the approved mirror.
 - **Acceptance criteria:**
-  - Documented, repeatable install inside the boundary; verified headless.
+  - Collector launches headless against the runner's Edge/Chrome; no download.
+  - `playwright` pip install is confirmed permitted in the boundary.
 - **Dependencies:** DHM-1
 
 ### DHM-11 — Index template, ILM, and ES writer
