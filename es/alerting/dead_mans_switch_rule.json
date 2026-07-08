@@ -1,8 +1,7 @@
 {
-  "_comment": "Collector liveness. Fires when FEWER than 1 document has been written in the last 40 minutes (2x a 20-minute cadence) — i.e. the collector has stopped running. Adjust timeWindowSize to 2x the real cron interval.",
   "name": "DHM - Collector dead-man's-switch (no results)",
   "rule_type_id": ".es-query",
-  "consumer": "alerts",
+  "consumer": "stackAlerts",
   "enabled": true,
   "schedule": { "interval": "15m" },
   "params": {

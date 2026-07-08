@@ -26,7 +26,7 @@ a historical trend. Delivered across the Tasks below.
 ---
 
 ## TASK 1 — Registry from the export
-*Plan Phase 0. Turn the `.ndjson` into the exact list of what we monitor.*
+*Plan Phase 1. Turn the `.ndjson` into the exact list of what we monitor.*
 
 ### DHM-1 — Project scaffolding & tests
 - **Type:** Task · **Size:** S · **Status:** done in repo
@@ -64,7 +64,7 @@ a historical trend. Delivered across the Tasks below.
 ---
 
 ## TASK 2 — Render-detection spike (de-risk)
-*Plan Phase 0.5. Do this before trusting Task 4 at scale.*
+*Plan Phase 2. Do this before trusting Task 4 at scale.*
 
 ### DHM-5 — Spike: prove render + per-panel timing on our Kibana
 - **Type:** Spike · **Size:** M
@@ -104,7 +104,7 @@ a historical trend. Delivered across the Tasks below.
 ---
 
 ## TASK 4 — Index + collector (MVP)
-*Plan Phase 1. Load time + per-panel runtime + health, written to ES.*
+*Plan Phase 3. Load time + per-panel runtime + health, written to ES.*
 
 ### DHM-8 — Browser collector: load + per-panel timing + health
 - **Type:** Story · **Size:** L · **Status:** implemented in repo (needs live Kibana to validate)
@@ -154,7 +154,7 @@ a historical trend. Delivered across the Tasks below.
 ---
 
 ## TASK 5 — Optional query enrichment
-*Plan Phase 2. Additive; skip where inconvenient.*
+*Plan Phase 4. Additive; skip where inconvenient.*
 
 ### DHM-13 — Panel-to-query resolver (Lens + classic)
 - **Type:** Story · **Size:** L
@@ -176,7 +176,7 @@ a historical trend. Delivered across the Tasks below.
 ---
 
 ## TASK 6 — Alerting
-*Plan Phase 3. Elasticsearch Query rule type.*
+*Plan Phase 5. Elasticsearch Query rule type.*
 
 ### DHM-15 — Seed per-dashboard load-time baselines
 - **Type:** Task · **Size:** S
@@ -213,7 +213,7 @@ a historical trend. Delivered across the Tasks below.
 ---
 
 ## TASK 7 — Trend dashboard & scheduling
-*Plan Phase 4. The dashboard that replaces the manual review.*
+*Plan Phase 6. The dashboard that replaces the manual review.*
 
 ### DHM-19 — Data view + trend dashboard
 - **Type:** Story · **Size:** M

@@ -93,7 +93,7 @@ core check.
 ### 4.1 How "loaded" and per-panel state are detected
 
 The whole approach rests on reliably reading Kibana's own render state, so we are
-concrete about the mechanism (and de-risk it early — see the Phase 0.5 spike):
+concrete about the mechanism (and de-risk it early — see the Phase 2 spike):
 
 - **"Loaded" signal**: Kibana stamps `data-render-complete="true"` on each panel
   when its embeddable finishes. We wait for every panel to reach that state rather
@@ -161,12 +161,12 @@ Notes:
 
 | Phase | Deliverable | Notes |
 |---|---|---|
-| **Phase 0 — Registry** | `scripts/build_registry.py` parses the export into `config/dashboards.generated.json` (22 dashboards, expected panels) | Deterministic; unit tested against the real export. Done in this repo. |
-| **Phase 0.5 — Render-detection spike (de-risk)** | A throwaway Playwright run against one real dashboard proving we can read render-complete + per-panel `ok/empty/error/timeout` off the DOM against our Kibana version | Do this before trusting Phase 1 at scale. Validates the §4.1 selectors. |
-| **Phase 1 — Index + collector (MVP)** | ES data stream (template + ILM), then the collector loads every registry dashboard, records load time + per-panel render time + health, writes to `.dashboard-health-monitor` | The whole MVP. Auth to Kibana is the main build risk — see Section 7. |
-| **Phase 2 — Optional query enrichment** | For easy-to-resolve panels, add hit count + freshness from a direct ES query | Purely additive; skip where inconvenient. |
-| **Phase 3 — Alerting** | Kibana Alerting rules: load degraded/failed, panel unhealthy, collector dead-man's-switch (`es/alerting/*.json`) | Elasticsearch Query rule type. Validate against historical data before enabling notifications. |
-| **Phase 4 — Trend dashboard** | A Kibana dashboard over `.dashboard-health-monitor`: load-time trend and panel-health heatmap; then hand the daily review over to it | Final step — the dashboard that replaces the manual check. |
+| **Phase 1 — Registry** | `scripts/build_registry.py` parses the export into `config/dashboards.generated.json` (22 dashboards, expected panels) | Deterministic; unit tested against the real export. Done in this repo. |
+| **Phase 2 — Render-detection spike (de-risk)** | A throwaway Playwright run against one real dashboard proving we can read render-complete + per-panel `ok/empty/error/timeout` off the DOM against our Kibana version | Do this before trusting Phase 3 at scale. Validates the §4.1 selectors. |
+| **Phase 3 — Index + collector (MVP)** | ES data stream (template + ILM), then the collector loads every registry dashboard, records load time + per-panel render time + health, writes to `.dashboard-health-monitor` | The whole MVP. Auth to Kibana is the main build risk — see Section 7. |
+| **Phase 4 — Optional query enrichment** | For easy-to-resolve panels, add hit count + freshness from a direct ES query | Purely additive; skip where inconvenient. |
+| **Phase 5 — Alerting** | Kibana Alerting rules: load degraded/failed, panel unhealthy, collector dead-man's-switch (`es/alerting/*.json`) | Elasticsearch Query rule type. Validate against historical data before enabling notifications. |
+| **Phase 6 — Trend dashboard** | A Kibana dashboard over `.dashboard-health-monitor`: load-time trend and panel-health heatmap; then hand the daily review over to it | Final step — the dashboard that replaces the manual check. |
 
 ## 7. Auth strategy (the main open question)
 
@@ -227,7 +227,7 @@ Every stage has a concrete check; see the README for the exact commands.
   early.
 - **Render-state detection fragility** — the core check reads Kibana's on-screen
   state; selectors depend on the Kibana version and can shift on upgrade. Mitigated
-  by the Phase 0.5 spike, centralized selectors (§4.1), and render-detection tests.
+  by the Phase 2 spike, centralized selectors (§4.1), and render-detection tests.
 - **False "empty" during legitimately quiet periods** — low-traffic panels may be
   genuinely empty at times; per-panel expected-volume baselines can refine this if
   it produces noise.

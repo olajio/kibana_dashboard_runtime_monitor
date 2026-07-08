@@ -1,8 +1,7 @@
 {
-  "_comment": "Fires when any dashboard reports a panel that is empty, errored, missing, or timed out in the last 20 minutes. Keys off the top-level panels_not_ok rollup so it never has to scan the nested panels array.",
   "name": "DHM - Panel unhealthy (empty/error/missing/timeout)",
   "rule_type_id": ".es-query",
-  "consumer": "alerts",
+  "consumer": "stackAlerts",
   "enabled": true,
   "schedule": { "interval": "15m" },
   "params": {

@@ -44,13 +44,16 @@ es/
 tests/                             # unit tests (registry + render detection)
 ```
 
+The stages below run in order. Stages 1–4 stand up the collector; Stages 5–6
+add alerting and the trend dashboard.
+
 ---
 
 ## Prerequisites
 
 - Python 3.9+
 - Network access from the runner to Kibana and Elasticsearch
-- An automation credential for Kibana (see [Authentication](#authentication))
+- An automation credential for Kibana (see [Stage 2](#stage-2--configure--set-up-elasticsearch))
 - Headless Chromium (installed via Playwright, below)
 
 ---
@@ -67,7 +70,7 @@ python -m playwright install chromium      # see FedRAMP note under Troubleshoot
 
 ---
 
-## Stage 0 — Build the registry from the export
+## Stage 1 — Build the registry from the export
 
 The registry is the exact list of what we monitor, derived from the export.
 
@@ -103,25 +106,7 @@ removed panels show up there — then commit.
 
 ---
 
-## Stage 0.5 — Render-detection spike (do this once, early)
-
-Before we trust the collector across all 22 dashboards, we confirm the DOM signals
-in `src/dhm/selectors.py` match our Kibana version. Point the collector at a single
-dashboard and inspect the result:
-
-```bash
-# after Stage 1 config below is filled in
-python scripts/run_collector.py --dry-run --out spike.json
-```
-
-Open `spike.json` and confirm, for at least one dashboard, that panels report
-`render_ms` values and a mix of real `render_status` values. If panels come back
-empty or all `timeout`, the selectors need updating for our version — adjust
-`selectors.py` only (everything version-specific lives there) and re-run.
-
----
-
-## Stage 1 — Configure, set up Elasticsearch, and run
+## Stage 2 — Configure & set up Elasticsearch
 
 ### Configure
 
@@ -169,7 +154,27 @@ curl -s "$DHM_ES_URL/_index_template/dashboard-health-monitor" -H "Authorization
 curl -s "$DHM_ES_URL/_ilm/policy/dashboard-health-monitor"     -H "Authorization: ApiKey $DHM_ES_API_KEY" | head
 ```
 
-### Run a collection cycle
+---
+
+## Stage 3 — Render-detection spike (do this once, early)
+
+Before we trust the collector across all 22 dashboards, we confirm the DOM signals
+in `src/dhm/selectors.py` match our Kibana version. With the Kibana auth from
+Stage 2 in place, point the collector at the dashboards in a dry run (nothing is
+written to ES) and inspect the result:
+
+```bash
+python scripts/run_collector.py --dry-run --out spike.json
+```
+
+Open `spike.json` and confirm, for at least one dashboard, that panels report
+`render_ms` values and a mix of real `render_status` values. If panels come back
+empty or all `timeout`, the selectors need updating for our version — adjust
+`selectors.py` only (everything version-specific lives there) and re-run.
+
+---
+
+## Stage 4 — Run a collection cycle
 
 Dry run first — collect everything, write nothing to ES:
 
@@ -220,14 +225,15 @@ python -m pytest -q
   reconciliation) from raw signal fixtures.
 
 The collector and ES writer require a live Kibana/ES and are validated by the
-Stage 1 dry run and live run above.
+Stage 4 dry run and live run above.
 
 ---
 
-## Stage 3 — Alerting
+## Stage 5 — Alerting
 
-Three Elasticsearch Query rules live in `es/alerting/`. Add a notification
-connector id to each rule's `actions` array, then create them in Kibana:
+Three Elasticsearch Query rules live in `es/alerting/` as ready-to-POST payloads.
+Add a notification connector id to each rule's `actions` array, then create them
+in Kibana:
 
 ```bash
 KIBANA="$DHM_KIBANA_URL"
@@ -251,7 +257,7 @@ the notification connector once the rule fires and recovers correctly.
 
 ---
 
-## Stage 4 — Trend dashboard
+## Stage 6 — Trend dashboard
 
 1. In Kibana, create a **data view** over `.dashboard-health-monitor`
    (time field `@timestamp`).
@@ -285,7 +291,7 @@ only after measuring browser memory on the runner.
 
 - **All panels come back `timeout` or `missing`** — the DOM selectors do not match
   this Kibana version. Everything version-specific is in `src/dhm/selectors.py`;
-  update it there and re-run the Stage 0.5 spike. Nothing else should need changing.
+  update it there and re-run the Stage 3 spike. Nothing else should need changing.
 - **Navigation/auth failures (`load_error` set)** — check the auth method and that
   the credential can read the space. For `cookie` auth, confirm the session cookie
   is still valid.
