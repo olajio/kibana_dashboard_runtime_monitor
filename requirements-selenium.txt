@@ -1,0 +1,6 @@
+# Only needed for the Selenium fallback backend (collector.backend: selenium),
+# for environments where the `playwright` pip package cannot be installed.
+# Install alongside the base requirements' non-playwright deps.
+selenium==4.21.0
+requests==2.32.3
+PyYAML==6.0.1
