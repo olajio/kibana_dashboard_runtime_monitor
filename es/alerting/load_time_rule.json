@@ -1,0 +1,20 @@
+{
+  "name": "DHM - Dashboard load degraded or failed",
+  "rule_type_id": ".es-query",
+  "consumer": "stackAlerts",
+  "enabled": true,
+  "schedule": { "interval": "15m" },
+  "params": {
+    "searchType": "esQuery",
+    "index": [".dashboard-health-monitor"],
+    "timeField": "@timestamp",
+    "esQuery": "{\"query\":{\"bool\":{\"filter\":[{\"terms\":{\"load_status\":[\"degraded\",\"failed\"]}}]}}}",
+    "size": 100,
+    "threshold": [0],
+    "thresholdComparator": ">",
+    "timeWindowSize": 20,
+    "timeWindowUnit": "m",
+    "aggType": "count"
+  },
+  "actions": []
+}

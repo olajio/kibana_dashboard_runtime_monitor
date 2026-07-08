@@ -2,184 +2,248 @@
 
 ## 1. Objective
 
-Replace manual daily review of dashboard load times and panel data validity with an automated, scheduled check that:
-- Measures real-world dashboard load time (browser-rendered, not just API latency)
-- Confirms every panel on each monitored dashboard is actually returning data
-- Alerts when a dashboard degrades or a panel goes empty/stale
-- Produces a historical trend view instead of a point-in-time manual note
+Replace the manual daily review of the **Federal Overview** dashboard family
+with an automated, scheduled check that:
+
+- Measures real-world load time (browser-rendered, not just API latency) for the
+  Federal Overview hub dashboard and every dashboard it links to.
+- Measures per-panel render time, so we know which specific visualization is slow.
+- Confirms every expected panel actually rendered data — and flags panels that are
+  empty, errored, timed out, or missing entirely.
+- Alerts when a dashboard degrades or a panel goes unhealthy.
+- Produces a historical trend instead of a point-in-time manual note.
 
 ## 2. Scope
 
+The monitored target is the single `federal_overview.ndjson` saved-objects
+export, which we already have in this repo. It describes an application bundle:
+
+- **22 dashboards** — the "Federal Overview" hub plus the 21 dashboards it
+  reaches through Links panels and panel drilldowns.
+- **215 data panels** across those dashboards (131 Lens, 61 visualizations,
+  23 saved searches), plus 70 Links (navigation) panels.
+
+Everything runs against **one cluster and one Kibana space**. We are not
+monitoring multiple dashboards across different clusters, so there is no
+multi-cluster rollout in this plan — cluster and space are recorded on each
+document as single configurable labels.
+
 **In scope**
-- A defined set of daily-reviewed dashboards (start with current manual list; expand via Saved Objects discovery later)
-- Load-time measurement per dashboard
-- Per-panel data-presence validation
-- Alerting via Kibana Alerting rules
-- Historical trending via a dedicated ES index + Kibana dashboard
+- Load-time measurement per dashboard (all 22).
+- Render-time measurement per data panel.
+- Per-panel health: `ok | empty | error | timeout | missing`.
+- Alerting via Kibana Alerting rules.
+- Historical trending via a dedicated ES data stream + Kibana dashboard.
 
 **Out of scope (for v1)**
-- Full visual regression testing (pixel-diffing panels)
-- Auto-remediation of broken dashboards/queries
-- Non-daily-reviewed dashboards (can be added in Phase 4)
+- Full visual regression testing (pixel-diffing panels).
+- Auto-remediation of broken dashboards/queries.
+- Monitoring dashboards outside this export.
 
-## 3. Architecture
+## 3. Why the export changes the design
+
+Because the export enumerates exactly what we monitor, we do not have to
+discover dashboards live or guess what "should" be on a page:
+
+- **The registry is derived from the `.ndjson`**, deterministically. No
+  Saved-Objects crawl is required for v1 (`scripts/build_registry.py` →
+  `config/dashboards.generated.json`).
+- **We know the expected panel inventory per dashboard**, so the collector can
+  detect a panel that failed to appear at all (`missing`), not only one that
+  rendered empty. Manual review could never do this reliably.
+- **Per-panel runtime is a first-class output**, because we watch each
+  embeddable resolve individually.
+
+## 4. Architecture
 
 ```
-┌────────────────────┐     ┌──────────────────────┐     ┌───────────────────────┐
-│ dashboard_registry │────▶│ dashboard_health_     │────▶│ .dashboard-health-     │
-│ (Saved Objects API │     │ check.py (collector)  │     │ monitor index          │
-│  or config list)   │     │  - Playwright: load    │     └───────────────────────┘
-└────────────────────┘     │    time capture        │              │
-                            │  - Direct ES query:    │              ▼
-                            │    per-panel data check │     ┌───────────────────────┐
-                            └──────────────────────┘     │ Kibana Alerting rules  │
-                                                           │ (load time threshold,  │
-                                                           │  empty panel, dead     │
-                                                           │  man's switch)         │
-                                                           └───────────────────────┘
-                                                                      │
-                                                                      ▼
-                                                           ┌───────────────────────┐
-                                                           │ Kibana trend dashboard │
-                                                           │ (load time over time,  │
-                                                           │  panel health history) │
-                                                           └───────────────────────┘
+federal_overview.ndjson
+        │  build_registry.py (parse export)
+        ▼
+config/dashboards.generated.json ──▶ dashboard_health_check (collector)
+   (22 dashboards, expected panels)     - Playwright loads each dashboard
+                                        - waits for per-panel render-complete
+                                        - records load time + per-panel render_ms
+                                        - classifies each panel's health
+                                        │
+                                        ▼
+                            .dashboard-health-monitor  (ES data stream)
+                                        │
+                        ┌───────────────┼────────────────┐
+                        ▼                                ▼
+              Kibana Alerting rules            Kibana trend dashboard
+       (load degraded/failed, panel           (load time over time,
+        unhealthy, dead-man's-switch)          panel-health heatmap)
 ```
 
-One check path, run by the same collector, works for any dashboard without needing to know what's behind it:
+One check path works for every dashboard without needing to know what is behind
+each panel:
 
 | Check | Method | Why |
 |---|---|---|
-| Load time | Playwright headless browser navigates to dashboard URL, waits for panel-loaded state, records elapsed ms | Only a rendered-browser measurement matches what you currently record manually |
-| Data presence | Read the *rendered panel state* Kibana itself shows — did it display a chart, or Kibana's own "no results" / error message? | Requires nothing about the panel's underlying query or index — it's just reading what's already on screen, so it works uniformly across every dashboard |
+| Load time | Headless browser navigates to each dashboard, waits for every panel's render-complete signal, records elapsed ms | Only a rendered-browser measurement matches what we record manually today |
+| Per-panel render time | Poll each embeddable's render-complete state and record when each one first resolves | Gives us the runtime of each individual visualization |
+| Panel health | Read the rendered state Kibana itself shows, and compare the panels we see against the panels the registry says should be there | Needs nothing about a panel's underlying query — it reads what is on screen and reconciles it against the export |
 
-Optionally, for panels where you *do* know or can easily look up the underlying query/data view, you can add a direct-ES-query check as enrichment (freshness, exact hit count). That's additive and per-panel opt-in — never a requirement for the core check to work.
+Optional enrichment (later, only where convenient): for panels whose underlying
+query/data view is easy to resolve, add a direct-ES query for exact hit count
+and freshness. This is additive and per-panel opt-in — never required for the
+core check.
 
-### 3.1 How "loaded" and per-panel state are detected
+### 4.1 How "loaded" and per-panel state are detected
 
-The entire approach rests on reliably reading Kibana's own render state off the page, so it's worth being concrete about the mechanism (and de-risking it early — see the Phase 0.5 spike in Section 5):
+The whole approach rests on reliably reading Kibana's own render state, so we are
+concrete about the mechanism (and de-risk it early — see the Phase 2 spike):
 
-- **"Dashboard loaded" signal**: Kibana emits a stable render-complete signal per embeddable. Wait for every panel's `[data-render-complete="true"]` (equivalently `[data-loading="false"]`) attribute rather than a fixed `sleep` or `networkidle`. Load time = elapsed from navigation start to the moment the last panel reports render-complete, capped by a hard timeout.
-- **Per-panel render state**: read each panel's on-screen state via its `data-test-subj` markers — a rendered visualization, Kibana's own "No results found" / empty state, an error embeddable (`embeddableStackTrace` / error icon), or no resolution before the timeout → `ok | empty | error | timeout`.
-- **Version sensitivity**: these selectors are Kibana-version-dependent. Pin the target Kibana version(s) and centralize all selectors in one module so a version bump is a one-file change.
+- **"Loaded" signal**: Kibana stamps `data-render-complete="true"` on each panel
+  when its embeddable finishes. We wait for every panel to reach that state rather
+  than using a fixed `sleep` or `networkidle`. Per-panel render time = elapsed
+  from navigation start to the moment that panel first resolves; dashboard load
+  time = the last panel to resolve, capped by a hard timeout.
+- **Per-panel state**: we read each panel via its `data-test-subj` markers — a
+  rendered chart, Kibana's own "No results found" empty state, an error
+  embeddable, or no resolution before the timeout → `ok | empty | error | timeout`.
+  A registry panel we never see on the page → `missing`.
+- **Version sensitivity**: these selectors depend on the Kibana version. We pin the
+  target version and keep every selector in one module (`src/dhm/selectors.py`), so
+  a version bump is a one-file change.
 
-## 4. Data model
+## 5. Data model
 
-Index: `.dashboard-health-monitor`
-
-Design principle: every field below is populated purely from what the browser observes when the dashboard loads — dashboard ID, panel ID/title, and on-screen render state. Nothing requires knowing or resolving a panel's underlying query, index, or data view. This is what makes it generic across any dashboard you point it at.
+Data stream: `.dashboard-health-monitor` (one document per dashboard per cycle).
 
 ```json
 {
   "@timestamp": "<run timestamp>",
   "schema_version": 1,
-  "env": "<dev | qa | prod | ccs>",
-  "cluster": "<hhs | nasa | dos | nara>",
+  "app": "federal_overview",
+  "cluster": "<single cluster label>",
   "kibana_space": "<space id, default 'default'>",
   "dashboard_id": "<saved object id>",
-  "dashboard_title": "<dashboard name, as shown in Kibana>",
-  "dashboard_url": "<full URL the collector navigated to>",
-  "load_time_ms": <int>,
+  "dashboard_title": "<dashboard name>",
+  "is_hub": true,
+  "dashboard_url": "<url the collector navigated to>",
+  "load_time_ms": 0,
   "load_status": "ok | degraded | failed",
-  "load_error": "<dashboard-level failure reason, e.g. auth/nav timeout, if load_status=failed>",
-  "panel_count": <int>,
-  "panels_ok": <int>,
-  "panels_not_ok": <int>,
+  "load_error": "<dashboard-level failure reason, if any>",
+  "expected_data_panels": 0,
+  "panel_count": 0,
+  "panels_checked": 0,
+  "panels_ok": 0,
+  "panels_not_ok": 0,
+  "panels_empty": 0,
+  "panels_error": 0,
+  "panels_timeout": 0,
+  "panels_missing": 0,
   "panels": [
     {
-      "panel_id": "<panel/embeddable id — this comes from the dashboard's own layout, not a query>",
-      "panel_title": "<panel title as displayed>",
-      "panel_type": "<lens | visualization | map | saved_search | etc. — descriptive only>",
-      "render_status": "ok | empty | error | timeout",
-      "render_status_detail": "<Kibana's own on-screen message, e.g. 'No results found', if shown>"
+      "panel_id": "<panelIndex — matches the DOM embeddable id>",
+      "panel_title": "<panel title>",
+      "panel_type": "lens | visualization | search",
+      "render_status": "ok | empty | error | timeout | missing",
+      "render_status_detail": "<Kibana's on-screen message, if any>",
+      "render_ms": 0
     }
   ],
-  "collector_run_id": "<uuid — shared by every doc in one collector cycle>",
-  "collector_version": "<git sha or semver of the collector build>",
-  "check_duration_ms": <int>
+  "collector_run_id": "<uuid — shared by every doc in one cycle>",
+  "collector_version": "<collector build>"
 }
 ```
 
 Notes:
-- `schema_version` lets the trend dashboard and alerting queries survive future field changes without silently breaking.
-- `env` / `kibana_space` make cross-cluster and multi-space rollout (Phase 4) filterable from day one, even if only one value is used at first.
-- `load_error` and the `panels_ok` / `panels_not_ok` rollups let alerting rules key off a single top-level field instead of scanning the nested `panels` array on every evaluation.
+- The top-level `panels_*` rollups let alerting key off a single field instead of
+  scanning the nested `panels` array on every evaluation.
+- `cluster` / `kibana_space` are single values today; keeping them as fields means
+  the trend dashboard and alerts already filter correctly if scope ever widens.
+- `panels` is mapped as a `nested` type so per-panel queries are exact.
 
-`render_status` is set from what's actually visible after the page finishes loading: did the panel render a chart/table, did Kibana show its own "No results found" state, an error icon, or did it never resolve (timeout)? That's it — no query lookup involved, so it works the same way for a dashboard you built yourself or one you've never opened before.
-
-**Optional enrichment (add later, only for panels where it's easy):**
-
-```json
-{
-  "hit_count": <int>,
-  "latest_doc_ts": "<timestamp of the most recent backing document>"
-}
-```
-
-This is a separate, opt-in layer for freshness/volume detail. Skip it entirely for panels where the underlying query isn't known or convenient to resolve — the core schema above doesn't depend on it.
-
-## 5. Phases & milestones
+## 6. Phases & milestones
 
 | Phase | Deliverable | Notes |
 |---|---|---|
-| **Phase 0 — Discovery & scaffolding** | `dashboard_registry.py`: pulls dashboard + panel definitions via Saved Objects API (`GET /api/saved_objects/_find?type=dashboard`, resolve panel references to visualization/lens/search objects) | Start with an explicit allow-list of the currently-manually-checked dashboards; registry becomes dynamic once trusted |
-| **Phase 0.5 — Render-detection spike (de-risk)** | A throwaway Playwright script that loads *one* real dashboard and proves we can reliably read render-complete + per-panel `ok/empty/error/timeout` off the DOM (Section 3.1) | **Do this before committing to Phase 1.** The whole MVP assumes on-screen state is readable and stable; validate that assumption against the actual target Kibana version first |
-| **Phase 1 — Index + core collector** | Create the `.dashboard-health-monitor` index template, mapping, and ILM/retention policy. Then `dashboard_health_check.py`: Playwright authenticates to Kibana, loads each dashboard URL, waits for panel render-complete, records load time, and reads each panel's rendered state (ok/empty/error/timeout) straight off the page. Logs to `.dashboard-health-monitor` | This is the whole MVP — load time + data-presence, both from the same page load, no query knowledge needed. Auth is the main build item here — see Section 6 |
-| **Phase 2 — Optional query enrichment** | For panels where the underlying query/data view is known and easy to resolve, add a direct-ES-query lookup for hit count + freshness | Purely additive; skip for panels where this isn't convenient |
-| **Phase 3 — Alerting** | Kibana Alerting rules (Elasticsearch Query rule type, per your CCS project's stated preference over Watcher): load time > threshold, `data_status: empty/stale`, and a collector dead-man's-switch (no new doc in expected interval) | Reuse the four-layer degradation / dead-man's-switch pattern from Project 13 |
-| **Phase 4 — Trend dashboard & rollout** | Kibana dashboard over `.dashboard-health-monitor` (load time trend, panel health heatmap); expand from allow-list to full dynamic discovery; roll out across dev/qa/prod/ccs | Final step — dashboard-of-dashboards |
+| **Phase 1 — Registry** | `scripts/build_registry.py` parses the export into `config/dashboards.generated.json` (22 dashboards, expected panels) | Deterministic; unit tested against the real export. Done in this repo. |
+| **Phase 2 — Render-detection spike (de-risk)** | A throwaway Playwright run against one real dashboard proving we can read render-complete + per-panel `ok/empty/error/timeout` off the DOM against our Kibana version | Do this before trusting Phase 3 at scale. Validates the §4.1 selectors. |
+| **Phase 3 — Index + collector (MVP)** | ES data stream (template + ILM), then the collector loads every registry dashboard, records load time + per-panel render time + health, writes to `.dashboard-health-monitor` | The whole MVP. Auth to Kibana is the main build risk — see Section 7. |
+| **Phase 4 — Optional query enrichment** | For easy-to-resolve panels, add hit count + freshness from a direct ES query | Purely additive; skip where inconvenient. |
+| **Phase 5 — Alerting** | Kibana Alerting rules: load degraded/failed, panel unhealthy, collector dead-man's-switch (`es/alerting/*.json`) | Elasticsearch Query rule type. Validate against historical data before enabling notifications. |
+| **Phase 6 — Trend dashboard** | A Kibana dashboard over `.dashboard-health-monitor`: load-time trend and panel-health heatmap; then hand the daily review over to it | Final step — the dashboard that replaces the manual check. |
 
-### 5.1 Jira mapping
+## 7. Auth strategy (the main open question)
 
-The work is tracked as a **single Epic** with one **Task per phase/workstream** and
-`DHM-*` **sub-tasks** underneath — see `dashboard_health_monitor_jira_tasks.md`.
+The collector needs an authenticated Kibana session to load dashboards in a
+browser.
 
-| Plan phase | Jira Task | Sub-tasks |
-|---|---|---|
-| Phase 0 — Discovery & scaffolding | Task 1 — Discovery & Scaffolding | DHM-1 – DHM-4 |
-| Phase 0.5 — Render-detection spike | Task 2 — Render-Detection Spike | DHM-5 |
-| Auth (Section 6, gates the MVP) | Task 3 — Auth Decision & Identity | DHM-13, DHM-14 |
-| Phase 1 — Index + core collector | Task 4 — Index + Core Collector (MVP) | DHM-6 – DHM-12 |
-| Phase 2 — Optional query enrichment | Task 5 — Optional Query Enrichment | DHM-15, DHM-16 |
-| Phase 3 — Alerting | Task 6 — Alerting | DHM-17 – DHM-20 |
-| Phase 4 — Trend dashboard & rollout | Task 7 — Trend Dashboard & Rollout | DHM-21 – DHM-24 |
+- If Kibana allows API-key or basic auth for automation, we inject the key as an
+  `Authorization: ApiKey <key>` header before navigation (the collector already
+  supports this).
+- If Kibana is PKI/SAML-only, we use a dedicated automation service account with a
+  long-lived session cookie that the collector injects directly (the collector
+  supports a cookie method too), rather than scripting an interactive login.
+- We confirm with Cloud Automation whether an existing service identity can front
+  this before building anything more elaborate.
+- **Credential hygiene**: the automation identity needs only read on the monitored
+  space plus write to `.dashboard-health-monitor`. Secrets come from the
+  environment / Secrets Manager, never the repo. `config/settings.yaml` is
+  git-ignored; every secret has an environment-variable override. We define a
+  rotation cadence up front.
 
-## 6. Auth strategy (the one real open question)
+## 8. Scheduling & deployment
 
-- **Browser path (Phase 1, the MVP)**: Playwright needs an authenticated Kibana session — this is the auth that actually gates the MVP.
-  - If Kibana auth allows API-key-based basic auth or a service account bypass for internal automation, this is straightforward — inject the API key as a request header before navigation.
-  - If it's PKI/SAML-only, the cleanest option is a dedicated automation service account with a long-lived Kibana session token/cookie that the script injects directly (via `context.add_cookies()` in Playwright) rather than scripting the interactive login flow.
-  - Recommend confirming with Jesse/Cloud Automation whether RolesAnywhere or an existing service identity can front this before building the login flow.
-- **Direct-query path (Phase 2 enrichment)**: use an API key via Secrets Manager, same pattern as your other tooling (`elastic/kibana/...` secret naming convention). No browser involved, so no SSO complexity.
-- **Credential hygiene (both paths)**: least-privilege — the automation identity needs only read access to the monitored spaces/dashboards plus write to `.dashboard-health-monitor`. Store secrets in Secrets Manager (never in the registry or repo) and define a rotation cadence up front.
+- Cron or an AWX job runs one collection cycle on a fixed cadence. Recommended
+  cadence: every 15–30 min (far finer-grained than the once-daily manual check).
+- **Per-dashboard hard timeout** (default 90s) caps each load so one hung
+  dashboard cannot stall the cycle — it is recorded as `failed` and its panels as
+  `timeout`, and we move on.
+- **Concurrency** starts at 1. We raise it only after measuring browser memory on
+  the runner; a small bounded pool keeps the cycle short without hammering Kibana.
+- **Load-time thresholds** are configurable (`degraded_over_ms`, `failed_over_ms`).
+  Because a heavy dashboard and a light one have different "normal," we seed
+  per-dashboard baselines from the first week of data and refine the thresholds
+  from there.
+- **Retention**: an ILM policy on the data stream (default: roll over daily,
+  delete after 180 days) keeps history bounded.
+- **Liveness**: the dead-man's-switch rule fires if no document is written within
+  2x the expected interval.
 
-## 7. Scheduling & deployment
+## 9. Testing & validation
 
-- Cron (or AWX job, consistent with your `find_duplicate_dataviews_awx.py` pattern) — run per cluster (dev/qa/prod/ccs), staggered to avoid load spikes.
-- Recommended cadence: every 15–30 min for load time/data checks (finer-grained than the current once-daily manual check, since automation makes this cheap).
-- **Per-dashboard hard timeout**: cap each dashboard load (e.g. 60–90s) so one hung dashboard can't stall or overrun the whole cycle — record it as `load_status: failed` / panel `timeout` and move on.
-- **Concurrency**: decide how many dashboards load in parallel per run. A small bounded pool keeps the cycle short without hammering the cluster; measure browser memory before raising it.
-- **Load-time thresholds should be per-dashboard baselines**, not one flat number — a heavy dashboard and a light one have very different "normal." Seed baselines from the first week of collected data, then alert on deviation from baseline.
-- Collector liveness: dead-man's-switch alert if no new `.dashboard-health-monitor` doc for a cluster within 2x the expected interval.
-- **Retention**: apply an ILM policy to `.dashboard-health-monitor` sized to the trend window you actually need (e.g. 90–180 days) so the history index doesn't grow unbounded.
+Every stage has a concrete check; see the README for the exact commands.
 
-## 8. Testing & validation
+- **Registry** — unit tests assert all 22 dashboards, the hub, panel counts, and
+  data/nav classification against the real export (`tests/test_registry.py`).
+- **Render detection** — unit tests over raw signal fixtures assert every status
+  (`ok/empty/error/timeout/missing`) classifies correctly; this is the highest-risk
+  logic (`tests/test_render_detection.py`).
+- **Collector smoke** — a single-dashboard dry run prints load time and per-panel
+  results without writing to ES.
+- **End-to-end dry run** — a full cycle with `--dry-run --out run.json` to inspect
+  the documents before any are indexed.
+- **Alert dry-run** — validate each rule against historical data (or an injected
+  bad document) before enabling notifications.
 
-- **Render-detection unit coverage**: snapshot the DOM/`data-test-subj` markers for each render state (ok/empty/error/timeout) from real dashboards and assert the parser classifies each correctly — this is the highest-risk logic, so it gets tests first.
-- **Known-good / known-bad fixtures**: keep at least one dashboard known to have a healthy panel and one known to be empty/broken, so every deploy can be smoke-tested against a predictable result.
-- **Idempotent re-runs**: two back-to-back runs of the collector should each write a clean, complete doc set with distinct `collector_run_id`s and no partial/duplicate writes.
-- **Alert dry-run**: validate each Kibana Alerting rule against historical data (or an injected bad doc) before enabling notifications, to confirm it fires and recovers as expected.
+## 10. Risks / open questions
 
-## 9. Risks / open questions
+- **Auth to Kibana for the browser path** — gates the MVP (Section 7). Resolve
+  early.
+- **Render-state detection fragility** — the core check reads Kibana's on-screen
+  state; selectors depend on the Kibana version and can shift on upgrade. Mitigated
+  by the Phase 2 spike, centralized selectors (§4.1), and render-detection tests.
+- **False "empty" during legitimately quiet periods** — low-traffic panels may be
+  genuinely empty at times; per-panel expected-volume baselines can refine this if
+  it produces noise.
+- **FedRAMP boundary** — confirm the headless Chromium install stays within the
+  approved package/network allowlist.
 
-- **Auth to Kibana for the browser path** — gates the Phase 1 MVP, not just enrichment (see Section 6). Resolve early.
-- **Render-state detection fragility** — the core check depends on reading Kibana's own on-screen state; selectors are version-dependent and can shift on a Kibana upgrade. Mitigated by the Phase 0.5 spike, centralized selectors (Section 3.1), and render-detection tests (Section 8).
-- **Panel-to-query resolution complexity** — Lens-based visualizations store query definitions differently than classic aggregation-based visualizations; the registry/resolver needs to handle both.
-- **False positives on "empty" during legitimately quiet periods** — may need a per-panel expected-volume baseline rather than a flat "hit_count > 0" rule for low-traffic panels.
-- **FedRAMP boundary** — confirm Playwright's headless Chromium install doesn't require anything outside your approved package/network allowlist.
+## 11. Success criteria
 
-## 10. Success criteria
+- No manual daily review of the Federal Overview family is required.
+- An alert fires within one collection cycle of a genuine load-time regression, an
+  empty/errored panel, or a missing panel.
+- A per-dashboard and per-panel load-time trend is visible in Kibana — something
+  the manual process never produced.
 
-- Zero manual daily dashboard checks required for the allow-listed dashboards.
-- Alert fires within one collector cycle of a genuine load-time regression or empty panel.
-- Historical load-time trend visible in Kibana (something the manual process never produced).
+## 12. Jira mapping
+
+The work is tracked as a single Epic; see
+`dashboard_health_monitor_jira_tasks.md`. The Tasks map to the phases above, and
+each `DHM-*` sub-task sits under its Task.
