@@ -14,9 +14,10 @@ app: federal_overview          # logical label for this dashboard family (also u
                                 # auto-detect the "Federal Overview" hub); not the space
 cluster: fed2                   # [DHM_CLUSTER] the single cluster we monitor
 # The Kibana space ID (the URL slug in /s/<id>/...), NOT the display name.
-# The space is displayed as "Federal"; its ID is almost always the lowercased
-# "federal". Confirm by opening the dashboard and reading the /s/<id> segment.
-kibana_space: federal           # [DHM_SPACE] space ID the dashboards live in
+# Set per environment: 'fed2' in test; override for production with DHM_SPACE
+# (or a production settings.yaml). Confirm by reading the /s/<id> segment in the
+# dashboard URL.
+kibana_space: fed2              # [DHM_SPACE] space ID the dashboards live in
 
 # AWS region for Secrets Manager (production API-key retrieval). Falls back to
 # the standard AWS_REGION env var.
@@ -60,7 +61,18 @@ elasticsearch:
 
 # --- Collector behaviour ----------------------------------------------------
 collector:
-  registry_path: config/dashboards.generated.json
+  # Where the list of dashboards to monitor comes from:
+  #   export - read the generated file below (built from a .ndjson). A static
+  #            snapshot; good for test / offline runs.
+  #   api    - query Kibana's Saved Objects API live on every run. Always reflects
+  #            production (new/removed/renamed dashboards & panels picked up
+  #            automatically); needs no export file on the server. Use this in prod.
+  registry_source: export          # [DHM_REGISTRY_SOURCE] export | api
+  registry_path: config/dashboards.generated.json   # used when registry_source=export
+  # api mode only: limit monitoring to these dashboard titles. Empty = every
+  # dashboard in the space. To monitor just the Federal Overview family, either
+  # leave empty (if the space holds only that family) or list the titles here.
+  include_titles: []
   headless: true
   # Automation backend:
   #   playwright - default

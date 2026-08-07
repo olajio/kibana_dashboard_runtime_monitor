@@ -40,14 +40,22 @@ document as single configurable labels.
 - Auto-remediation of broken dashboards/queries.
 - Monitoring dashboards outside this export.
 
-## 3. Why the export changes the design
+## 3. Registry — how we know what to monitor
 
-Because the export enumerates exactly what we monitor, we do not have to
-discover dashboards live or guess what "should" be on a page:
+The registry is the list of dashboards to monitor plus the panels expected on each.
+It has two interchangeable sources (`collector.registry_source`), and both produce
+the same structure:
 
-- **The registry is derived from the `.ndjson`**, deterministically. No
-  Saved-Objects crawl is required for v1 (`scripts/build_registry.py` →
-  `config/dashboards.generated.json`).
+- **`api` (production)** — query Kibana's Saved Objects API live each run
+  (`src/dhm/discovery.py`). No file on the server, and any dashboard/panel added,
+  removed, or renamed is reflected automatically the next cycle. This is the
+  production default because it never goes stale.
+- **`export` (test/offline)** — a deterministic parse of a `.ndjson` export into
+  `config/dashboards.generated.json` (`scripts/build_registry.py`). Useful for a
+  first run without the API; re-run when the export changes.
+
+Either way:
+
 - **We know the expected panel inventory per dashboard**, so the collector can
   detect a panel that failed to appear at all (`missing`), not only one that
   rendered empty. Manual review could never do this reliably.
@@ -161,7 +169,7 @@ Notes:
 
 | Phase | Deliverable | Notes |
 |---|---|---|
-| **Phase 1 — Registry** | `scripts/build_registry.py` parses the export into `config/dashboards.generated.json` (22 dashboards, expected panels) | Deterministic; unit tested against the real export. Done in this repo. |
+| **Phase 1 — Registry** | Two sources: `scripts/build_registry.py` parses a `.ndjson` export (`export` mode), and `src/dhm/discovery.py` builds it live from Kibana's Saved Objects API (`api` mode, production) | Both produce the same structure and are unit tested. Done in this repo. |
 | **Phase 2 — Render-detection spike (de-risk)** | A throwaway Playwright run against one real dashboard proving we can read render-complete + per-panel `ok/empty/error/timeout` off the DOM against our Kibana version | Do this before trusting Phase 3 at scale. Validates the §4.1 selectors. |
 | **Phase 3 — Index + collector (MVP)** | ES data stream (template + ILM), then the collector loads every registry dashboard, records load time + per-panel render time + health, writes to `.dashboard-health-monitor` | The whole MVP. Auth to Kibana is the main build risk — see Section 7. |
 | **Phase 4 — Optional query enrichment** | For easy-to-resolve panels, add hit count + freshness from a direct ES query | Purely additive; skip where inconvenient. |
@@ -237,7 +245,9 @@ browser.
 Every stage has a concrete check; see the README for the exact commands.
 
 - **Registry** — unit tests assert all 22 dashboards, the hub, panel counts, and
-  data/nav classification against the real export (`tests/test_registry.py`).
+  data/nav classification against the real export (`tests/test_registry.py`); live
+  API discovery, paging, and title filtering are tested with a fake Kibana
+  (`tests/test_discovery.py`).
 - **Render detection** — unit tests over raw signal fixtures assert every status
   (`ok/empty/error/timeout/missing`) classifies correctly; this is the highest-risk
   logic (`tests/test_render_detection.py`).

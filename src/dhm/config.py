@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import List, Optional
 
 import yaml
 
@@ -59,6 +59,15 @@ class ESConfig:
 @dataclass
 class CollectorConfig:
     registry_path: str = "config/dashboards.generated.json"
+    # Where the list of dashboards to monitor comes from:
+    #   export - read config/dashboards.generated.json (built from a .ndjson);
+    #            good for test / offline, but a static snapshot.
+    #   api    - query Kibana's Saved Objects API live each run; always reflects
+    #            production, needs no export file on the server.
+    registry_source: str = "export"
+    # api mode only: monitor just these dashboard titles (empty = every dashboard
+    # in the space).
+    include_titles: List[str] = field(default_factory=list)
     headless: bool = True
     # Browser automation backend. "playwright" (default) or "selenium" — the
     # Selenium fallback is for environments where the playwright pip package
@@ -139,6 +148,8 @@ def load_settings(path: str = "config/settings.yaml") -> Settings:
         ),
         collector=CollectorConfig(
             registry_path=col.get("registry_path", "config/dashboards.generated.json"),
+            registry_source=_env("DHM_REGISTRY_SOURCE", col.get("registry_source", "export")),
+            include_titles=col.get("include_titles", []) or [],
             headless=bool(col.get("headless", True)),
             backend=_env("DHM_BACKEND", col.get("backend", "playwright")),
             browser_channel=_env("DHM_BROWSER_CHANNEL", col.get("browser_channel", "msedge")),
