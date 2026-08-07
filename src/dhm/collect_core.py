@@ -55,6 +55,40 @@ def load_status(
     return "ok"
 
 
+def _assemble_doc(
+    settings: Settings,
+    dashboard: Dict[str, Any],
+    run_id: str,
+    url: str,
+    load_time_ms: int,
+    load_error: Optional[str],
+    panel_records: List[Dict[str, Any]],
+    roll: Dict[str, int],
+) -> Dict[str, Any]:
+    """Build the single ES document. One place owns the schema."""
+    expected_panels = dashboard.get("panels", [])
+    return {
+        "@timestamp": _now_iso(),
+        "schema_version": 1,
+        "app": settings.app,
+        "cluster": settings.cluster,
+        "kibana_space": settings.kibana_space,
+        "dashboard_id": dashboard["dashboard_id"],
+        "dashboard_title": dashboard["title"],
+        "is_hub": dashboard.get("is_hub", False),
+        "dashboard_url": url,
+        "load_time_ms": load_time_ms,
+        "load_status": load_status(settings, load_time_ms, roll, load_error),
+        "load_error": load_error,
+        "expected_data_panels": dashboard.get("data_panel_count", len(expected_panels)),
+        "panel_count": dashboard.get("panel_count"),
+        **roll,
+        "panels": panel_records,
+        "collector_run_id": run_id,
+        "collector_version": __version__,
+    }
+
+
 def collect_dashboard(
     driver: Driver,
     settings: Settings,
@@ -65,18 +99,24 @@ def collect_dashboard(
     url = dashboard_url(settings, dashboard["dashboard_id"])
     timeout_ms = settings.collector.dashboard_timeout_ms
     poll_ms = settings.collector.poll_interval_ms
+    attempts = max(1, settings.collector.load_retries + 1)
 
     resolve_times: Dict[str, int] = {}
     last_states: List[Dict[str, Any]] = []
     load_error: Optional[str] = None
-
     t0 = time.monotonic()
-    try:
-        driver.goto(url, timeout_ms)
-        # Wait until at least one panel exists (dashboard shell rendered).
-        driver.wait_for_panel(timeout_ms)
-    except Exception as exc:  # navigation/auth failure
-        load_error = f"navigation failed: {type(exc).__name__}: {exc}"
+
+    # Navigate, retrying the whole load a bounded number of times.
+    for attempt in range(1, attempts + 1):
+        t0 = time.monotonic()
+        load_error = None
+        try:
+            driver.goto(url, timeout_ms)
+            # Wait until at least one panel exists (dashboard shell rendered).
+            driver.wait_for_panel(timeout_ms)
+            break
+        except Exception as exc:  # navigation/auth failure
+            load_error = f"navigation failed (attempt {attempt}/{attempts}): {type(exc).__name__}: {exc}"
 
     if load_error is None:
         deadline = t0 + timeout_ms / 1000.0
@@ -104,28 +144,43 @@ def collect_dashboard(
     panel_times = [r["render_ms"] for r in panel_records if r["render_ms"] is not None]
     load_time_ms = max(panel_times) if panel_times else int((time.monotonic() - t0) * 1000)
 
-    status = load_status(settings, load_time_ms, roll, load_error)
+    return _assemble_doc(
+        settings, dashboard, run_id, url, load_time_ms, load_error, panel_records, roll
+    )
 
-    return {
-        "@timestamp": _now_iso(),
-        "schema_version": 1,
-        "app": settings.app,
-        "cluster": settings.cluster,
-        "kibana_space": settings.kibana_space,
-        "dashboard_id": dashboard["dashboard_id"],
-        "dashboard_title": dashboard["title"],
-        "is_hub": dashboard.get("is_hub", False),
-        "dashboard_url": url,
-        "load_time_ms": load_time_ms,
-        "load_status": status,
-        "load_error": load_error,
-        "expected_data_panels": dashboard.get("data_panel_count", len(expected_panels)),
-        "panel_count": dashboard.get("panel_count"),
-        **roll,
-        "panels": panel_records,
-        "collector_run_id": run_id,
-        "collector_version": __version__,
-    }
+
+def safe_collect_dashboard(
+    driver: Driver, settings: Settings, dashboard: Dict[str, Any], run_id: str
+) -> Dict[str, Any]:
+    """Collect a dashboard, never raising: an unexpected error becomes a `failed`
+    document so one bad dashboard cannot abort the whole run."""
+    try:
+        return collect_dashboard(driver, settings, dashboard, run_id)
+    except Exception as exc:
+        url = dashboard_url(settings, dashboard.get("dashboard_id", ""))
+        panel_records = reconcile(dashboard.get("panels", []), [], {})
+        roll = summarize(panel_records)
+        return _assemble_doc(
+            settings, dashboard, run_id, url, 0,
+            f"collector error: {type(exc).__name__}: {exc}", panel_records, roll,
+        )
+
+
+def collect_all(
+    driver: Driver, settings: Settings, dashboards: List[Dict[str, Any]], run_id: str
+) -> List[Dict[str, Any]]:
+    """Collect every dashboard in order, pacing between loads and isolating
+    per-dashboard failures. Shared by both browser backends."""
+    docs: List[Dict[str, Any]] = []
+    delay = settings.collector.inter_request_delay_ms / 1000.0
+    total = len(dashboards)
+    for i, d in enumerate(dashboards):
+        doc = safe_collect_dashboard(driver, settings, d, run_id)
+        docs.append(doc)
+        print_row(doc)
+        if delay and i < total - 1:
+            time.sleep(delay)
+    return docs
 
 
 def print_row(doc: Dict[str, Any]) -> None:

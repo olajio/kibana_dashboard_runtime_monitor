@@ -14,6 +14,10 @@ app: federal_overview          # logical name for this dashboard family
 cluster: fed2                   # [DHM_CLUSTER] the single cluster we monitor
 kibana_space: default           # [DHM_SPACE] Kibana space the dashboards live in
 
+# AWS region for Secrets Manager (production API-key retrieval). Falls back to
+# the standard AWS_REGION env var.
+aws_region: ""                  # [DHM_AWS_REGION] e.g. us-gov-west-1
+
 # --- Kibana (the browser target) --------------------------------------------
 kibana:
   base_url: https://kibana.example.gov      # [DHM_KIBANA_URL] no trailing slash
@@ -25,6 +29,10 @@ kibana:
     api_key: ""                              # [DHM_KIBANA_API_KEY] base64 id:key
     cookie_name: sid
     cookie_value: ""                         # [DHM_KIBANA_COOKIE]
+    # Optional: read the Kibana API key from AWS Secrets Manager in production.
+    # If left empty, the Kibana key falls back to the Elasticsearch key below.
+    aws_secret_id: ""                        # [DHM_KIBANA_AWS_SECRET_ID]
+    aws_secret_json_key: api_key             # field name if the secret is JSON
   # Time range applied to every dashboard load (Kibana global state).
   time_from: now-24h
   time_to: now
@@ -33,9 +41,18 @@ kibana:
 # --- Elasticsearch (where results are written) ------------------------------
 elasticsearch:
   base_url: https://es.example.gov:9200      # [DHM_ES_URL]
+  # API key resolution order: --es-api-key  >  DHM_ES_API_KEY  >  AWS Secrets Manager.
+  # Leave api_key empty and set aws_secret_id for production.
   api_key: ""                                # [DHM_ES_API_KEY] base64 id:key
+  aws_secret_id: ""                          # [DHM_ES_AWS_SECRET_ID] e.g. elastic/kibana/dhm-es
+  aws_secret_json_key: api_key               # field name if the secret is JSON
   index: .dashboard-health-monitor
   verify_tls: true                           # [DHM_ES_VERIFY_TLS] false only for lab
+  # Operational limits for ES REST calls.
+  request_timeout_s: 30                      # per-request timeout
+  max_retries: 4                             # retries on 429/5xx/connection errors
+  retry_backoff_s: 2.0                       # base for exponential backoff
+  bulk_chunk_size: 500                       # docs per _bulk request
 
 # --- Collector behaviour ----------------------------------------------------
 collector:
@@ -67,3 +84,7 @@ collector:
   # Load-time classification (dashboard level). Baselines refine this later.
   degraded_over_ms: 15000
   failed_over_ms: 45000
+  # Politeness: pause between dashboard loads so we do not hammer Kibana.
+  inter_request_delay_ms: 500
+  # Retry a dashboard this many extra times if the initial navigation fails.
+  load_retries: 1

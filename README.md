@@ -11,7 +11,8 @@ trending and alerting — replacing the manual daily review.
 - **What we measure:** per-dashboard load time, per-panel render time, and each
   panel's health (`ok | empty | error | timeout | missing`).
 
-For the rationale and roadmap see
+For a step-by-step implementation runbook (test vs production), see
+**[`HOWTO.md`](HOWTO.md)**. For the rationale and roadmap see
 [`dashboard_health_monitor_project_plan.md`](dashboard_health_monitor_project_plan.md)
 and the Jira breakdown in
 [`dashboard_health_monitor_jira_tasks.md`](dashboard_health_monitor_jira_tasks.md).
@@ -22,20 +23,22 @@ and the Jira breakdown in
 
 ```
 federal_overview.ndjson            # the saved-objects export we monitor (source of truth)
-requirements.txt                   # base deps (Playwright backend)
+HOWTO.md                           # step-by-step implementation runbook (test + prod)
+requirements.txt                   # base deps (Playwright backend + boto3 for AWS)
 requirements-selenium.txt          # extra deps for the Selenium fallback backend
 config/
   settings.example.yaml            # copy to settings.yaml (git-ignored) and fill in
   dashboards.generated.json        # registry, produced from the export
 src/dhm/
   config.py                        # settings + env overrides
+  secrets.py                       # API-key resolution: CLI arg > env > AWS Secrets Manager
   registry.py                      # parse the export into the registry
   selectors.py                     # centralized, version-sensitive Kibana DOM selectors
   render_detection.py              # classify panel health (pure, unit-tested)
-  collect_core.py                  # backend-agnostic timing + document assembly
+  collect_core.py                  # backend-agnostic timing + document assembly + pacing/retry
   collector.py                     # Playwright backend (thin driver over collect_core)
   collector_selenium.py            # Selenium fallback backend (same core)
-  es_writer.py                     # write documents / apply ES assets
+  es_writer.py                     # ES writes with retry/backoff + bulk chunking
 scripts/
   build_registry.py                # export -> config/dashboards.generated.json
   setup_elasticsearch.py           # create ILM policy + index template
@@ -164,6 +167,23 @@ The headless browser needs an authenticated Kibana session. Pick one method in
 The credential needs only **read** on the monitored space and **write** to
 `.dashboard-health-monitor`.
 
+### API keys — command line in test, AWS Secrets Manager in production
+
+The Elasticsearch API key is resolved by precedence:
+
+```
+--es-api-key   >   $DHM_ES_API_KEY   >   AWS Secrets Manager (elasticsearch.aws_secret_id)
+```
+
+- **Test:** pass `--es-api-key "<id:key>"` on each command (below).
+- **Production:** omit it and set `elasticsearch.aws_secret_id` (+ `aws_region`);
+  the key is read from AWS Secrets Manager (needs `secretsmanager:GetSecretValue`).
+
+The Kibana browser-auth key follows the same precedence
+(`--kibana-api-key` / `DHM_KIBANA_API_KEY` / `kibana.auth.aws_secret_id`) and falls
+back to the ES key when not separately set. See **[`HOWTO.md`](HOWTO.md)** for the
+full test-vs-production walkthrough.
+
 ### Choose the browser
 
 Set `collector.browser_channel` in `settings.yaml` (or `DHM_BROWSER_CHANNEL`) to
@@ -184,7 +204,10 @@ Both backends honour `browser_channel` and produce identical documents.
 ### Set up the index (once per cluster)
 
 ```bash
-python scripts/setup_elasticsearch.py --settings config/settings.yaml
+# test: key on the command line
+python scripts/setup_elasticsearch.py --es-api-key "<id:key>"
+# production: key from AWS Secrets Manager
+python scripts/setup_elasticsearch.py
 ```
 
 This creates the ILM policy and the data-stream index template.
@@ -206,7 +229,7 @@ Stage 2 in place, point the collector at the dashboards in a dry run (nothing is
 written to ES) and inspect the result:
 
 ```bash
-python scripts/run_collector.py --dry-run --out spike.json
+python scripts/run_collector.py --es-api-key "<id:key>" --dry-run --out spike.json
 ```
 
 Open `spike.json` and confirm, for at least one dashboard, that panels report
@@ -218,16 +241,17 @@ empty or all `timeout`, the selectors need updating for our version — adjust
 
 ## Stage 4 — Run a collection cycle
 
-Dry run first — collect everything, write nothing to ES:
+Dry run first — collect everything, write nothing to ES (test uses `--es-api-key`;
+production omits it and reads the key from AWS):
 
 ```bash
-python scripts/run_collector.py --dry-run --out run.json
+python scripts/run_collector.py --es-api-key "<id:key>" --dry-run --out run.json
 ```
 
 Per-dashboard progress prints as it goes:
 
 ```
-Collecting 22 dashboards for app 'federal_overview' (cluster=fed2, space=default)
+Collecting 22 dashboards for app 'federal_overview' (cluster=fed2, space=default) [backend=playwright, browser=chrome]
   Federal Overview                         ok         2841ms ok=6 not_ok=0
   Agency Details                           degraded  16522ms ok=10 not_ok=1
   ...
@@ -240,14 +264,15 @@ panel, and correct rollups (`panels_ok`, `panels_not_ok`, `panels_missing`, …)
 Then run for real (writes to Elasticsearch):
 
 ```bash
-python scripts/run_collector.py
+python scripts/run_collector.py --es-api-key "<id:key>"   # test
+python scripts/run_collector.py                            # production (key from AWS)
 ```
 
 **Validate:**
 
 ```bash
 curl -s "$DHM_ES_URL/.dashboard-health-monitor/_search?size=1" \
-  -H "Authorization: ApiKey $DHM_ES_API_KEY" | python -m json.tool
+  -H "Authorization: ApiKey <id:key>" | python -m json.tool
 ```
 
 ---
@@ -267,7 +292,11 @@ python -m pytest -q
   reconciliation) from raw signal fixtures.
 - `tests/test_collect_core.py` — drives the shared collection core with a fake
   browser driver: load status, per-panel timing, missing-panel and nav-failure
-  handling, and URL building. This core is what both backends call.
+  handling, load-retry, error isolation, pacing, and URL building.
+- `tests/test_secrets.py` — API-key resolution precedence (CLI > env > AWS) and
+  Secrets Manager payload parsing (plain string / JSON), no AWS required.
+- `tests/test_es_writer.py` — retry/backoff on 429/5xx/connection errors and bulk
+  chunking, with fake HTTP sessions.
 
 Only the browser plumbing in `collector.py` / `collector_selenium.py` needs a live
 Kibana/ES; it is validated by the Stage 4 dry run and live run above.

@@ -21,7 +21,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from .collect_core import collect_dashboard, print_row
+from .collect_core import collect_all
 from .config import Settings
 from .selectors import PANEL, PANEL_STATE_JS
 
@@ -114,10 +114,7 @@ def run(settings: Settings, registry: Dict[str, Any]) -> List[Dict[str, Any]]:
     try:
         _apply_auth(driver, settings)
         sd = SeleniumDriver(driver)
-        for d in dashboards:
-            doc = collect_dashboard(sd, settings, d, run_id)
-            docs.append(doc)
-            print_row(doc)
+        docs = collect_all(sd, settings, dashboards, run_id)
     finally:
         driver.quit()
 
