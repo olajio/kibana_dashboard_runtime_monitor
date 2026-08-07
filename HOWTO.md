@@ -39,6 +39,14 @@ pip install -r requirements.txt
 
 ## 1. Build the registry (what we monitor)
 
+> **This does not create or change anything in the cluster.** The "Federal
+> Overview" dashboard and its linked dashboards already exist and are left
+> untouched. This step only reads the local `federal_overview.ndjson` export and
+> writes a local manifest (`config/dashboards.generated.json`) — the list of
+> dashboard IDs and the panels expected on each — so the collector knows which
+> dashboards to open and what panels *should* render (which is how it detects a
+> missing panel). It is a read-only, offline parse of a file on disk.
+
 The registry is generated from the saved-objects export already in the repo.
 
 ```bash
@@ -49,6 +57,10 @@ python scripts/build_registry.py federal_overview.ndjson \
 
 **Verify:** output shows `dashboards: 22` and `data panels total: 215`, and the hub
 is `Federal Overview`.
+
+> Re-run this only when the dashboards change (a fresh export). If we would rather
+> the manifest always reflect the live cluster, we can switch to building it from
+> Kibana's Saved Objects API instead of a static export — ask and it can be added.
 
 ---
 
@@ -62,7 +74,10 @@ Edit `config/settings.yaml`:
 
 - `kibana.base_url` — the Kibana URL.
 - `elasticsearch.base_url` — the Elasticsearch URL.
-- `kibana_space` — the space the dashboards live in (`default` if unsure).
+- `kibana_space` — the space **ID** the dashboards live in. The space is displayed
+  as "Federal"; its ID (the `/s/<id>` URL slug) is almost certainly `federal`.
+  Confirm by opening the Federal Overview dashboard and reading the segment right
+  after `/s/` in the URL.
 - Leave `elasticsearch.api_key` **empty** — we supply it per-run (test) or via AWS
   (prod).
 

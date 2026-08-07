@@ -10,9 +10,13 @@
 # --- What we are monitoring -------------------------------------------------
 # One cluster, one Kibana space. These are recorded on every document so the
 # trend dashboard and alerts can filter, even though today there is one value.
-app: federal_overview          # logical name for this dashboard family
+app: federal_overview          # logical label for this dashboard family (also used to
+                                # auto-detect the "Federal Overview" hub); not the space
 cluster: fed2                   # [DHM_CLUSTER] the single cluster we monitor
-kibana_space: default           # [DHM_SPACE] Kibana space the dashboards live in
+# The Kibana space ID (the URL slug in /s/<id>/...), NOT the display name.
+# The space is displayed as "Federal"; its ID is almost always the lowercased
+# "federal". Confirm by opening the dashboard and reading the /s/<id> segment.
+kibana_space: federal           # [DHM_SPACE] space ID the dashboards live in
 
 # AWS region for Secrets Manager (production API-key retrieval). Falls back to
 # the standard AWS_REGION env var.

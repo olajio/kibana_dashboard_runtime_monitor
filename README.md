@@ -251,7 +251,7 @@ python scripts/run_collector.py --es-api-key "<id:key>" --dry-run --out run.json
 Per-dashboard progress prints as it goes:
 
 ```
-Collecting 22 dashboards for app 'federal_overview' (cluster=fed2, space=default) [backend=playwright, browser=chrome]
+Collecting 22 dashboards for app 'federal_overview' (cluster=fed2, space=federal) [backend=playwright, browser=chrome]
   Federal Overview                         ok         2841ms ok=6 not_ok=0
   Agency Details                           degraded  16522ms ok=10 not_ok=1
   ...
