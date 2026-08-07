@@ -12,6 +12,8 @@ both:
 |---|---|---|
 | Browser | Google **Chrome** (`browser_channel: chrome`) | Microsoft **Edge** (`browser_channel: msedge`, default) |
 | ES API key | passed on the command line (`--es-api-key`) | read from **AWS Secrets Manager** |
+| Dashboard list | static export (`registry_source: export`) | live Kibana API (`registry_source: api`) — no file on the server |
+| Space (`DHM_SPACE`) | `fed2` | set per environment |
 
 ---
 
@@ -37,9 +39,22 @@ pip install -r requirements.txt
 
 ---
 
-## 1. Build the registry (what we monitor)
+## 1. Registry (what we monitor) — two modes
 
-The registry is generated from the saved-objects export already in the repo.
+The "registry" is just the list of dashboards to monitor and the panels expected on
+each (so the collector can flag a **missing** panel). **Nothing is created or
+changed in the cluster** — the "Federal Overview" dashboard and its linked
+dashboards already exist and are left untouched. There are two ways to get the
+list:
+
+- **`api` mode (production):** query Kibana's Saved Objects API live on every run.
+  No file on the server, and any dashboard/panel added, removed, or renamed is
+  picked up automatically the next cycle. **This is the recommended production
+  path** — see [3B](#3b-run-in-production-edge--aws-secrets-manager). Nothing to do
+  in this step.
+- **`export` mode (test / offline):** build a static manifest from a `.ndjson`
+  export. Handy for a first run without hitting the API. Do this step only for
+  `export` mode:
 
 ```bash
 python scripts/build_registry.py federal_overview.ndjson \
@@ -47,8 +62,9 @@ python scripts/build_registry.py federal_overview.ndjson \
     --out config/dashboards.generated.json
 ```
 
-**Verify:** output shows `dashboards: 22` and `data panels total: 215`, and the hub
-is `Federal Overview`.
+**Verify (export mode):** output shows `dashboards: 22` and `data panels total:
+215`, and the hub is `Federal Overview`. Re-run it whenever the export changes —
+this is exactly the staleness that `api` mode avoids.
 
 ---
 
@@ -62,7 +78,10 @@ Edit `config/settings.yaml`:
 
 - `kibana.base_url` — the Kibana URL.
 - `elasticsearch.base_url` — the Elasticsearch URL.
-- `kibana_space` — the space the dashboards live in (`default` if unsure).
+- `kibana_space` — the space **ID** the dashboards live in. The space is displayed
+  as "Federal"; its ID (the `/s/<id>` URL slug) is almost certainly `federal`.
+  Confirm by opening the Federal Overview dashboard and reading the segment right
+  after `/s/` in the URL.
 - Leave `elasticsearch.api_key` **empty** — we supply it per-run (test) or via AWS
   (prod).
 
@@ -121,10 +140,25 @@ curl -s "$DHM_ES_URL/.dashboard-health-monitor/_search?size=1" \
 
 ---
 
-## 3B. Run in PRODUCTION (Edge + AWS Secrets Manager)
+## 3B. Run in PRODUCTION (Edge + AWS Secrets Manager + live discovery)
 
-Edge is the default, so no browser setting is needed. Instead of passing the key,
-point the tool at the AWS secret.
+Edge is the default, so no browser setting is needed. Two production differences
+from test: the key comes from AWS, and the dashboard list comes from Kibana's live
+API — so **no `.ndjson` file is kept on the server** and dashboard/panel changes are
+picked up automatically.
+
+### 3B.0 Use live registry discovery
+
+Set the registry source to `api` (in `settings.yaml` or via env):
+
+```bash
+export DHM_REGISTRY_SOURCE=api
+# optional: monitor only specific dashboards (empty = every dashboard in the space)
+# set collector.include_titles in settings.yaml, e.g. ["Federal Overview", ...]
+```
+
+No `build_registry.py` step and no export file are needed in production. Each run
+re-reads the current dashboards and their panels from Kibana.
 
 ### 3B.1 Store the key in AWS Secrets Manager
 

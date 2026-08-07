@@ -151,33 +151,36 @@ def _detect_hub(dashboards: List[Dashboard], app: str) -> Optional[str]:
     return max(dashboards, key=lambda d: len(d.linked_dashboards)).dashboard_id
 
 
-def build_registry(ndjson_path: str, app: str = "federal_overview") -> Registry:
-    objs = _load_objects(ndjson_path)
-    dash_objs = [o for o in objs if o.get("type") == "dashboard"]
+def _dashboard_from_object(d: Dict[str, Any]) -> Dashboard:
+    """Build one Dashboard from a saved-object dict (from an export line OR a
+    Saved Objects API `_find` result — both share this shape)."""
+    attrs = d.get("attributes", {}) or {}
+    refs = d.get("references", []) or []
+    panels_json = attrs.get("panelsJSON") or "[]"
+    try:
+        raw_panels = json.loads(panels_json)
+    except json.JSONDecodeError:
+        raw_panels = []
 
-    dashboards: List[Dashboard] = []
-    for d in dash_objs:
-        attrs = d.get("attributes", {})
-        refs = d.get("references", []) or []
-        panels_json = attrs.get("panelsJSON") or "[]"
-        try:
-            raw_panels = json.loads(panels_json)
-        except json.JSONDecodeError:
-            raw_panels = []
+    panels = [_parse_panel(p, refs) for p in raw_panels]
+    data_panels = [p for p in panels if p.is_data_panel]
+    return Dashboard(
+        dashboard_id=d["id"],
+        title=attrs.get("title", ""),
+        is_hub=False,
+        panel_count=len(panels),
+        data_panel_count=len(data_panels),
+        panels=panels,
+        linked_dashboards=_linked_dashboard_ids(refs),
+    )
 
-        panels = [_parse_panel(p, refs) for p in raw_panels]
-        data_panels = [p for p in panels if p.is_data_panel]
-        dashboards.append(
-            Dashboard(
-                dashboard_id=d["id"],
-                title=attrs.get("title", ""),
-                is_hub=False,
-                panel_count=len(panels),
-                data_panel_count=len(data_panels),
-                panels=panels,
-                linked_dashboards=_linked_dashboard_ids(refs),
-            )
-        )
+
+def registry_from_objects(
+    objects: List[Dict[str, Any]], app: str, generated_from: str
+) -> Registry:
+    """Build a Registry from a list of saved-object dicts (source-agnostic)."""
+    dash_objs = [o for o in objects if o.get("type") == "dashboard"]
+    dashboards = [_dashboard_from_object(d) for d in dash_objs]
 
     hub_id = _detect_hub(dashboards, app)
     for d in dashboards:
@@ -188,12 +191,18 @@ def build_registry(ndjson_path: str, app: str = "federal_overview") -> Registry:
 
     return Registry(
         app=app,
-        generated_from=ndjson_path,
+        generated_from=generated_from,
         generated_at=datetime.now(timezone.utc).isoformat(),
         hub_dashboard_id=hub_id,
         dashboard_count=len(dashboards),
         dashboards=dashboards,
     )
+
+
+def build_registry(ndjson_path: str, app: str = "federal_overview") -> Registry:
+    """Build a registry from a saved-objects export file (.ndjson)."""
+    objs = _load_objects(ndjson_path)
+    return registry_from_objects(objs, app, generated_from=ndjson_path)
 
 
 def registry_to_dict(reg: Registry) -> Dict[str, Any]:

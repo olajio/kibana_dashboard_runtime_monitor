@@ -40,6 +40,19 @@ def _select_backend(backend: str):
     return run
 
 
+def _load_registry(settings) -> dict:
+    """Get the dashboards to monitor, from the live API or the export file."""
+    if settings.collector.registry_source == "api":
+        from dhm.discovery import build_registry_from_api
+        from dhm.registry import registry_to_dict
+
+        reg = build_registry_from_api(settings, include_titles=settings.collector.include_titles)
+        return registry_to_dict(reg)
+    with open(settings.collector.registry_path) as f:
+        import json as _json
+        return _json.load(f)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--settings", default="config/settings.yaml")
@@ -71,12 +84,12 @@ def main() -> int:
               "or configure elasticsearch.aws_secret_id).", file=sys.stderr)
         return 2
 
-    with open(settings.collector.registry_path) as f:
-        registry = json.load(f)
+    registry = _load_registry(settings)
 
     print(f"Collecting {registry['dashboard_count']} dashboards for app "
           f"'{settings.app}' (cluster={settings.cluster}, space={settings.kibana_space}) "
-          f"[backend={settings.collector.backend}, browser={settings.collector.browser_channel}]")
+          f"[backend={settings.collector.backend}, browser={settings.collector.browser_channel}, "
+          f"registry={settings.collector.registry_source}]")
     run = _select_backend(settings.collector.backend)
     docs = run(settings, registry)
 

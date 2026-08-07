@@ -32,7 +32,8 @@ config/
 src/dhm/
   config.py                        # settings + env overrides
   secrets.py                       # API-key resolution: CLI arg > env > AWS Secrets Manager
-  registry.py                      # parse the export into the registry
+  registry.py                      # build the registry from a .ndjson export (source-agnostic core)
+  discovery.py                     # build the registry live from Kibana's Saved Objects API
   selectors.py                     # centralized, version-sensitive Kibana DOM selectors
   render_detection.py              # classify panel health (pure, unit-tested)
   collect_core.py                  # backend-agnostic timing + document assembly + pacing/retry
@@ -98,9 +99,17 @@ usually the easiest driver to get approved.
 
 ---
 
-## Stage 1 — Build the registry from the export
+## Stage 1 — Build the registry (what we monitor)
 
-The registry is the exact list of what we monitor, derived from the export.
+The registry is the list of dashboards to monitor and the panels expected on each.
+It has two sources (set `collector.registry_source`):
+
+- **`api`** — query Kibana's Saved Objects API live each run. No file, always
+  current. **Recommended for production**; skip the command below and set
+  `registry_source: api` (Stage 2). Dashboard/panel changes are picked up
+  automatically.
+- **`export`** — a static manifest built from a `.ndjson` export (this command);
+  good for test/offline. Re-run when the export changes.
 
 ```bash
 python scripts/build_registry.py federal_overview.ndjson \
@@ -251,7 +260,7 @@ python scripts/run_collector.py --es-api-key "<id:key>" --dry-run --out run.json
 Per-dashboard progress prints as it goes:
 
 ```
-Collecting 22 dashboards for app 'federal_overview' (cluster=fed2, space=default) [backend=playwright, browser=chrome]
+Collecting 22 dashboards for app 'federal_overview' (cluster=fed2, space=federal) [backend=playwright, browser=chrome]
   Federal Overview                         ok         2841ms ok=6 not_ok=0
   Agency Details                           degraded  16522ms ok=10 not_ok=1
   ...
