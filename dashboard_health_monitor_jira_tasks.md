@@ -93,12 +93,17 @@ a historical trend. Delivered across the Tasks below.
 - **Dependencies:** none — **do first**
 
 ### DHM-7 — Provision the least-privilege automation identity + secret
-- **Type:** Task · **Size:** S
+- **Type:** Task · **Size:** S · **Status:** resolution implemented (`src/dhm/secrets.py`)
 - **Description:** Create the automation credential (read on the monitored space +
-  write to `.dashboard-health-monitor`), store it in Secrets Manager, and wire it
-  through the collector's environment variables. Define a rotation cadence.
+  write to `.dashboard-health-monitor`), store it in AWS Secrets Manager, and set
+  `elasticsearch.aws_secret_id` (+ `aws_region`). Grant the runner
+  `secretsmanager:GetSecretValue`. Define a rotation cadence. The code already
+  resolves keys by precedence: `--es-api-key` > `DHM_ES_API_KEY` > AWS Secrets
+  Manager (test passes the key on the CLI; prod reads AWS).
 - **Acceptance criteria:**
-  - Collector authenticates using only environment-supplied secrets.
+  - Test run authenticates with `--es-api-key`; prod run authenticates from AWS with
+    no key on the command line.
+  - Rotation cadence documented.
 - **Dependencies:** DHM-6
 
 ---
@@ -155,9 +160,13 @@ a historical trend. Delivered across the Tasks below.
 - **Type:** Task · **Size:** M · **Status:** done in repo
 - **Description:** `es/index_template.json` (data stream, nested `panels`),
   `es/ilm_policy.json`, `scripts/setup_elasticsearch.py`, and `es_writer.bulk_index`.
+  The writer reuses an HTTP session, retries 429/5xx/connection errors with
+  exponential backoff (honouring `Retry-After`), chunks `_bulk` to
+  `bulk_chunk_size`, and applies a per-request timeout.
 - **Acceptance criteria:**
   - Template + ILM apply cleanly; a cycle's documents index via `_bulk`.
   - Document fields match the mapping exactly.
+  - Retry/backoff and chunking are unit-tested (`tests/test_es_writer.py`).
 
 ### DHM-12 — End-to-end dry run against real Kibana
 - **Type:** Story · **Size:** M

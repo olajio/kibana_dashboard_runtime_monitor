@@ -186,6 +186,12 @@ browser.
   environment / Secrets Manager, never the repo. `config/settings.yaml` is
   git-ignored; every secret has an environment-variable override. We define a
   rotation cadence up front.
+- **Key resolution**: API keys resolve by precedence — an explicit command-line
+  argument (`--es-api-key` / `--kibana-api-key`), then an environment variable, then
+  **AWS Secrets Manager**. In test we pass the key on the command line; in
+  production we omit it and it is read from AWS Secrets Manager. The Kibana
+  browser-auth key falls back to the Elasticsearch key when not separately set. The
+  same code path runs in both environments.
 
 ## 8. Scheduling & deployment
 
@@ -205,9 +211,18 @@ browser.
   plumbing differs between backends.
 - **Per-dashboard hard timeout** (default 90s) caps each load so one hung
   dashboard cannot stall the cycle — it is recorded as `failed` and its panels as
-  `timeout`, and we move on.
-- **Concurrency** starts at 1. We raise it only after measuring browser memory on
-  the runner; a small bounded pool keeps the cycle short without hammering Kibana.
+  `timeout`, and we move on. A failed load is retried once (`load_retries`), and an
+  unexpected per-dashboard error is isolated into a `failed` document rather than
+  aborting the run.
+- **Politeness / request limits**: dashboards load sequentially (`concurrency: 1`)
+  with a pause between loads (`inter_request_delay_ms`) so Kibana is not hammered.
+- **ES write resilience**: writes go through a reused HTTP session, retry on
+  429/5xx/connection errors with exponential backoff (honouring `Retry-After`), and
+  are chunked (`bulk_chunk_size`) with a per-request timeout so a slow cluster cannot
+  stall the run.
+- **Concurrency** stays at 1 by default. We raise it only after measuring browser
+  memory on the runner; a small bounded pool keeps the cycle short without hammering
+  Kibana.
 - **Load-time thresholds** are configurable (`degraded_over_ms`, `failed_over_ms`).
   Because a heavy dashboard and a light one have different "normal," we seed
   per-dashboard baselines from the first week of data and refine the thresholds
@@ -226,6 +241,11 @@ Every stage has a concrete check; see the README for the exact commands.
 - **Render detection** — unit tests over raw signal fixtures assert every status
   (`ok/empty/error/timeout/missing`) classifies correctly; this is the highest-risk
   logic (`tests/test_render_detection.py`).
+- **Collection core** — a fake driver exercises timing, load-retry, error isolation,
+  and pacing (`tests/test_collect_core.py`).
+- **Secrets & ES writes** — key-resolution precedence and Secrets Manager parsing
+  (`tests/test_secrets.py`), and ES retry/backoff + bulk chunking
+  (`tests/test_es_writer.py`), all without network or AWS.
 - **Collector smoke** — a single-dashboard dry run prints load time and per-panel
   results without writing to ES.
 - **End-to-end dry run** — a full cycle with `--dry-run --out run.json` to inspect
