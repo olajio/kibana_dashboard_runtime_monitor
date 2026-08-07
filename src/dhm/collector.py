@@ -11,7 +11,7 @@ from typing import Any, Dict, List
 
 from playwright.sync_api import sync_playwright
 
-from .collect_core import collect_dashboard, print_row
+from .collect_core import collect_all
 from .config import Settings
 from .selectors import PANEL, PANEL_STATE_JS
 
@@ -79,10 +79,7 @@ def run(settings: Settings, registry: Dict[str, Any]) -> List[Dict[str, Any]]:
         page.set_default_timeout(settings.collector.dashboard_timeout_ms)
         driver = PlaywrightDriver(page)
         try:
-            for d in dashboards:
-                doc = collect_dashboard(driver, settings, d, run_id)
-                docs.append(doc)
-                print_row(doc)
+            docs = collect_all(driver, settings, dashboards, run_id)
         finally:
             context.close()
             browser.close()

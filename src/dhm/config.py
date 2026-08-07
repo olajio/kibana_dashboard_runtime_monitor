@@ -25,6 +25,9 @@ class KibanaAuth:
     api_key: str = ""
     cookie_name: str = "sid"
     cookie_value: str = ""
+    # Optional AWS Secrets Manager source for the Kibana API key.
+    aws_secret_id: str = ""
+    aws_secret_json_key: str = "api_key"
 
 
 @dataclass
@@ -42,6 +45,15 @@ class ESConfig:
     api_key: str = ""
     index: str = ".dashboard-health-monitor"
     verify_tls: bool = True
+    # Optional AWS Secrets Manager source for the Elasticsearch API key
+    # (production default; test passes the key on the command line instead).
+    aws_secret_id: str = ""
+    aws_secret_json_key: str = "api_key"
+    # Operational limits for ES REST calls.
+    request_timeout_s: int = 30
+    max_retries: int = 4
+    retry_backoff_s: float = 2.0
+    bulk_chunk_size: int = 500
 
 
 @dataclass
@@ -63,6 +75,10 @@ class CollectorConfig:
     concurrency: int = 1
     degraded_over_ms: int = 15000
     failed_over_ms: int = 45000
+    # Politeness: pause between dashboard loads so we do not hammer Kibana.
+    inter_request_delay_ms: int = 500
+    # Retry a dashboard once if the initial navigation fails.
+    load_retries: int = 1
 
 
 @dataclass
@@ -70,6 +86,7 @@ class Settings:
     app: str = "federal_overview"
     cluster: str = "fed2"
     kibana_space: str = "default"
+    aws_region: str = ""
     kibana: KibanaConfig = field(default_factory=KibanaConfig)
     elasticsearch: ESConfig = field(default_factory=ESConfig)
     collector: CollectorConfig = field(default_factory=CollectorConfig)
@@ -91,6 +108,7 @@ def load_settings(path: str = "config/settings.yaml") -> Settings:
         app=raw.get("app", "federal_overview"),
         cluster=_env("DHM_CLUSTER", raw.get("cluster", "fed2")),
         kibana_space=_env("DHM_SPACE", raw.get("kibana_space", "default")),
+        aws_region=_env("DHM_AWS_REGION", _env("AWS_REGION", raw.get("aws_region", ""))),
         kibana=KibanaConfig(
             base_url=_env("DHM_KIBANA_URL", k.get("base_url", "")).rstrip("/"),
             auth=KibanaAuth(
@@ -98,6 +116,8 @@ def load_settings(path: str = "config/settings.yaml") -> Settings:
                 api_key=_env("DHM_KIBANA_API_KEY", ka.get("api_key", "")),
                 cookie_name=ka.get("cookie_name", "sid"),
                 cookie_value=_env("DHM_KIBANA_COOKIE", ka.get("cookie_value", "")),
+                aws_secret_id=_env("DHM_KIBANA_AWS_SECRET_ID", ka.get("aws_secret_id", "")),
+                aws_secret_json_key=ka.get("aws_secret_json_key", "api_key"),
             ),
             time_from=k.get("time_from", "now-24h"),
             time_to=k.get("time_to", "now"),
@@ -110,6 +130,12 @@ def load_settings(path: str = "config/settings.yaml") -> Settings:
             index=es.get("index", ".dashboard-health-monitor"),
             verify_tls=str(_env("DHM_ES_VERIFY_TLS", es.get("verify_tls", True))).lower()
             not in ("false", "0", "no"),
+            aws_secret_id=_env("DHM_ES_AWS_SECRET_ID", es.get("aws_secret_id", "")),
+            aws_secret_json_key=es.get("aws_secret_json_key", "api_key"),
+            request_timeout_s=int(es.get("request_timeout_s", 30)),
+            max_retries=int(es.get("max_retries", 4)),
+            retry_backoff_s=float(es.get("retry_backoff_s", 2.0)),
+            bulk_chunk_size=int(es.get("bulk_chunk_size", 500)),
         ),
         collector=CollectorConfig(
             registry_path=col.get("registry_path", "config/dashboards.generated.json"),
@@ -122,6 +148,8 @@ def load_settings(path: str = "config/settings.yaml") -> Settings:
             concurrency=int(col.get("concurrency", 1)),
             degraded_over_ms=int(col.get("degraded_over_ms", 15000)),
             failed_over_ms=int(col.get("failed_over_ms", 45000)),
+            inter_request_delay_ms=int(col.get("inter_request_delay_ms", 500)),
+            load_retries=int(col.get("load_retries", 1)),
         ),
     )
     return s
