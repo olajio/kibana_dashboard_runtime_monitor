@@ -53,13 +53,18 @@ a historical trend. Delivered across the Tasks below.
 - **Acceptance criteria:**
   - Tests pass and fail loudly if the export changes shape.
 
-### DHM-4 — Refresh flow when the export changes
-- **Type:** Story · **Size:** S
-- **Description:** Document and script the "we re-exported the dashboards" flow:
-  drop in a new `.ndjson`, re-run `build_registry.py`, review the diff of the
-  generated registry, commit.
+### DHM-4 — Live registry discovery (production) + export refresh (test)
+- **Type:** Story · **Size:** M · **Status:** implemented in repo (`src/dhm/discovery.py`)
+- **Description:** Production uses `registry_source: api` — `discovery.py` builds the
+  registry from Kibana's Saved Objects API each run, so no `.ndjson` lives on the
+  server and dashboard/panel changes are picked up automatically. Test/offline uses
+  `registry_source: export` — drop in a new `.ndjson`, re-run `build_registry.py`,
+  review the diff, commit.
 - **Acceptance criteria:**
-  - A one-command refresh, and a reviewed diff shows added/removed panels.
+  - `api` mode returns the current dashboards/panels from the space (optionally
+    filtered by `include_titles`) with no export file present.
+  - `export` mode still works for offline/test.
+  - Discovery paging + filtering unit-tested (`tests/test_discovery.py`).
 
 ---
 
