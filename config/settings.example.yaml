@@ -69,10 +69,12 @@ collector:
   #            automatically); needs no export file on the server. Use this in prod.
   registry_source: export          # [DHM_REGISTRY_SOURCE] export | api
   registry_path: config/dashboards.generated.json   # used when registry_source=export
-  # api mode only: limit monitoring to these dashboard titles. Empty = every
-  # dashboard in the space. To monitor just the Federal Overview family, either
-  # leave empty (if the space holds only that family) or list the titles here.
-  include_titles: []
+  # Which dashboards to monitor, by title (applies to both registry sources).
+  #   default (["Federal Overview"]) -> monitor just the Federal Overview dashboard
+  #   ["A", "B"]                      -> monitor those specific titles
+  #   []                             -> monitor EVERY dashboard in the space
+  # Override with DHM_INCLUDE_TITLES (comma-separated; empty string = all).
+  include_titles: ["Federal Overview"]   # [DHM_INCLUDE_TITLES]
   headless: true
   # Automation backend:
   #   playwright - default

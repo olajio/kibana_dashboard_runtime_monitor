@@ -111,6 +111,11 @@ It has two sources (set `collector.registry_source`):
 - **`export`** — a static manifest built from a `.ndjson` export (this command);
   good for test/offline. Re-run when the export changes.
 
+Either source is then narrowed by `collector.include_titles` (default
+`["Federal Overview"]` → monitor just that dashboard; set specific titles to
+monitor those; set `[]` to monitor every dashboard in the space). Override with
+`DHM_INCLUDE_TITLES` (comma-separated).
+
 ```bash
 python scripts/build_registry.py federal_overview.ndjson \
     --app federal_overview \
@@ -232,7 +237,7 @@ curl -s "$DHM_ES_URL/_ilm/policy/dashboard-health-monitor"     -H "Authorization
 
 ## Stage 3 — Render-detection spike (do this once, early)
 
-Before we trust the collector across all 22 dashboards, we confirm the DOM signals
+Before we trust the collector across the monitored dashboards, we confirm the DOM signals
 in `src/dhm/selectors.py` match our Kibana version. With the Kibana auth from
 Stage 2 in place, point the collector at the dashboards in a dry run (nothing is
 written to ES) and inspect the result:
@@ -260,13 +265,14 @@ python scripts/run_collector.py --es-api-key "<id:key>" --dry-run --out run.json
 Per-dashboard progress prints as it goes:
 
 ```
-Collecting 22 dashboards for app 'federal_overview' (cluster=fed2, space=federal) [backend=playwright, browser=chrome]
+Collecting 1 dashboards for app 'federal_overview' (cluster=fed2, space=fed2) [backend=playwright, browser=chrome, registry=export]
+  monitoring titles: Federal Overview
   Federal Overview                         ok         2841ms ok=6 not_ok=0
-  Agency Details                           degraded  16522ms ok=10 not_ok=1
-  ...
 ```
 
-**Validate (manual):** open `run.json` and confirm each of the 22 dashboards has a
+(Set `include_titles: []` to monitor every dashboard in the space instead.)
+
+**Validate (manual):** open `run.json` and confirm each monitored dashboard has a
 sensible `load_time_ms`, a `panels` array with `render_ms` and `render_status` per
 panel, and correct rollups (`panels_ok`, `panels_not_ok`, `panels_missing`, …).
 

@@ -41,16 +41,20 @@ def _select_backend(backend: str):
 
 
 def _load_registry(settings) -> dict:
-    """Get the dashboards to monitor, from the live API or the export file."""
+    """Get the dashboards to monitor, from the live API or the export file, then
+    apply the include_titles filter uniformly (default: just Federal Overview)."""
+    from dhm.registry import filter_registry_dict
+
     if settings.collector.registry_source == "api":
         from dhm.discovery import build_registry_from_api
         from dhm.registry import registry_to_dict
 
-        reg = build_registry_from_api(settings, include_titles=settings.collector.include_titles)
-        return registry_to_dict(reg)
-    with open(settings.collector.registry_path) as f:
-        import json as _json
-        return _json.load(f)
+        reg = registry_to_dict(build_registry_from_api(settings))
+    else:
+        with open(settings.collector.registry_path) as f:
+            reg = json.load(f)
+
+    return filter_registry_dict(reg, settings.collector.include_titles)
 
 
 def main() -> int:
@@ -86,10 +90,15 @@ def main() -> int:
 
     registry = _load_registry(settings)
 
+    monitored = settings.collector.include_titles or ["<all in space>"]
     print(f"Collecting {registry['dashboard_count']} dashboards for app "
           f"'{settings.app}' (cluster={settings.cluster}, space={settings.kibana_space}) "
           f"[backend={settings.collector.backend}, browser={settings.collector.browser_channel}, "
           f"registry={settings.collector.registry_source}]")
+    print(f"  monitoring titles: {', '.join(monitored)}")
+    if registry["dashboard_count"] == 0:
+        print("WARNING: no dashboards matched include_titles; nothing to collect.",
+              file=sys.stderr)
     run = _select_backend(settings.collector.backend)
     docs = run(settings, registry)
 

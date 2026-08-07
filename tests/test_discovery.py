@@ -103,16 +103,16 @@ def test_build_registry_from_api_all(monkeypatch):
     assert hub.data_panel_count == 1
 
 
-def test_build_registry_from_api_include_titles(monkeypatch):
+def test_build_registry_from_api_returns_all_in_space(monkeypatch):
+    # Discovery itself returns everything; title filtering is applied by the caller.
     s = _settings()
     monkeypatch.setattr(discovery, "fetch_dashboard_objects", lambda settings: [
         _dash_obj("hub", "Federal Overview", [("lens", "x")]),
         _dash_obj("d2", "Agency Details", [("lens", "y")]),
         _dash_obj("d3", "Unrelated Dashboard", [("lens", "z")]),
     ])
-    reg = discovery.build_registry_from_api(s, include_titles=["Federal Overview", "Agency Details"])
-    titles = {d.title for d in reg.dashboards}
-    assert titles == {"Federal Overview", "Agency Details"}
+    reg = discovery.build_registry_from_api(s)
+    assert reg.dashboard_count == 3
 
 
 def test_registry_from_objects_matches_shape():

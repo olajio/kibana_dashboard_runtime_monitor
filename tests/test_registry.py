@@ -8,9 +8,43 @@ import pytest
 
 from dhm.registry import (
     build_registry,
+    filter_registry_dict,
+    registry_to_dict,
     DATA_PANEL_TYPES,
     NAV_PANEL_TYPES,
 )
+
+
+def _reg_dict():
+    return {
+        "dashboard_count": 3,
+        "dashboards": [
+            {"title": "Federal Overview", "dashboard_id": "hub"},
+            {"title": "Agency Details", "dashboard_id": "d2"},
+            {"title": "Unrelated Dashboard", "dashboard_id": "d3"},
+        ],
+    }
+
+
+def test_filter_default_single_title():
+    out = filter_registry_dict(_reg_dict(), ["Federal Overview"])
+    assert out["dashboard_count"] == 1
+    assert out["dashboards"][0]["dashboard_id"] == "hub"
+
+
+def test_filter_multiple_titles_case_insensitive():
+    out = filter_registry_dict(_reg_dict(), ["federal overview", "AGENCY DETAILS"])
+    assert {d["dashboard_id"] for d in out["dashboards"]} == {"hub", "d2"}
+
+
+def test_filter_empty_means_all():
+    out = filter_registry_dict(_reg_dict(), [])
+    assert out["dashboard_count"] == 3
+
+
+def test_filter_no_match_is_empty():
+    out = filter_registry_dict(_reg_dict(), ["Nope"])
+    assert out["dashboard_count"] == 0
 
 NDJSON = os.path.join(os.path.dirname(__file__), "..", "federal_overview.ndjson")
 

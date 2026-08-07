@@ -12,7 +12,7 @@ line, so we reuse `registry.registry_from_objects` and get an identical registry
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import requests
 
@@ -84,24 +84,12 @@ def fetch_dashboard_objects(settings: Settings) -> List[Dict[str, Any]]:
     return out
 
 
-def build_registry_from_api(
-    settings: Settings, include_titles: Optional[List[str]] = None
-) -> Registry:
-    """Build a registry from the live Saved Objects API.
-
-    If `include_titles` is non-empty, only dashboards whose title is in the list
-    are monitored (case-insensitive); otherwise every dashboard in the space is
-    monitored.
-    """
+def build_registry_from_api(settings: Settings) -> Registry:
+    """Build a registry of every dashboard in the space from the live Saved
+    Objects API. Title filtering (`include_titles`) is applied uniformly by the
+    caller via `registry.filter_registry_dict`, so both registry sources behave
+    identically."""
     objs = fetch_dashboard_objects(settings)
-
-    if include_titles:
-        wanted = {t.strip().lower() for t in include_titles}
-        objs = [
-            o for o in objs
-            if (o.get("attributes", {}) or {}).get("title", "").strip().lower() in wanted
-        ]
-
     return registry_from_objects(
         objs, settings.app, generated_from=f"kibana-api:{settings.kibana_space}"
     )

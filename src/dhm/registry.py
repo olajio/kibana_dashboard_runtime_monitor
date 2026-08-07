@@ -209,6 +209,26 @@ def registry_to_dict(reg: Registry) -> Dict[str, Any]:
     return asdict(reg)
 
 
+def filter_registry_dict(reg: Dict[str, Any], include_titles: List[str]) -> Dict[str, Any]:
+    """Keep only dashboards whose title is in `include_titles` (case-insensitive).
+
+    An empty/falsy `include_titles` means "keep everything". This is the single
+    place that applies the title filter, so it behaves identically whether the
+    registry came from the .ndjson export or the live Saved Objects API.
+    """
+    if not include_titles:
+        return reg
+    wanted = {t.strip().lower() for t in include_titles}
+    dashboards = [
+        d for d in reg.get("dashboards", [])
+        if (d.get("title") or "").strip().lower() in wanted
+    ]
+    out = dict(reg)
+    out["dashboards"] = dashboards
+    out["dashboard_count"] = len(dashboards)
+    return out
+
+
 def write_registry(reg: Registry, out_path: str) -> None:
     with open(out_path, "w") as f:
         json.dump(registry_to_dict(reg), f, indent=2)

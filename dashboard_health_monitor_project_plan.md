@@ -54,6 +54,11 @@ the same structure:
   `config/dashboards.generated.json` (`scripts/build_registry.py`). Useful for a
   first run without the API; re-run when the export changes.
 
+Either source is narrowed by `collector.include_titles`, which defaults to
+`["Federal Overview"]` — so by default we monitor just the Federal Overview
+dashboard. Set specific titles to monitor those, or `[]` to monitor every
+dashboard in the space (overridable via `DHM_INCLUDE_TITLES`).
+
 Either way:
 
 - **We know the expected panel inventory per dashboard**, so the collector can

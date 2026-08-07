@@ -65,9 +65,10 @@ class CollectorConfig:
     #   api    - query Kibana's Saved Objects API live each run; always reflects
     #            production, needs no export file on the server.
     registry_source: str = "export"
-    # api mode only: monitor just these dashboard titles (empty = every dashboard
-    # in the space).
-    include_titles: List[str] = field(default_factory=list)
+    # Which dashboards to monitor, by title. Defaults to just "Federal Overview".
+    # Set to specific titles to monitor those; set to an empty list ([]) to monitor
+    # every dashboard in the space. Applies to both registry sources.
+    include_titles: List[str] = field(default_factory=lambda: ["Federal Overview"])
     headless: bool = True
     # Browser automation backend. "playwright" (default) or "selenium" — the
     # Selenium fallback is for environments where the playwright pip package
@@ -113,6 +114,17 @@ def load_settings(path: str = "config/settings.yaml") -> Settings:
     es = raw.get("elasticsearch", {}) or {}
     col = raw.get("collector", {}) or {}
 
+    # include_titles precedence: DHM_INCLUDE_TITLES (comma-separated) > yaml > default.
+    # An explicit empty value ([] in yaml, or "" in the env var) means "all
+    # dashboards in the space"; an absent value falls back to just Federal Overview.
+    env_titles = os.environ.get("DHM_INCLUDE_TITLES")
+    if env_titles is not None:
+        include_titles = [t.strip() for t in env_titles.split(",") if t.strip()]
+    elif "include_titles" in col:
+        include_titles = col["include_titles"] or []
+    else:
+        include_titles = ["Federal Overview"]
+
     s = Settings(
         app=raw.get("app", "federal_overview"),
         cluster=_env("DHM_CLUSTER", raw.get("cluster", "fed2")),
@@ -149,7 +161,7 @@ def load_settings(path: str = "config/settings.yaml") -> Settings:
         collector=CollectorConfig(
             registry_path=col.get("registry_path", "config/dashboards.generated.json"),
             registry_source=_env("DHM_REGISTRY_SOURCE", col.get("registry_source", "export")),
-            include_titles=col.get("include_titles", []) or [],
+            include_titles=include_titles,
             headless=bool(col.get("headless", True)),
             backend=_env("DHM_BACKEND", col.get("backend", "playwright")),
             browser_channel=_env("DHM_BROWSER_CHANNEL", col.get("browser_channel", "msedge")),
