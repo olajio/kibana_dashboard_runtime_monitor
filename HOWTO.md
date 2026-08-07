@@ -124,7 +124,7 @@ the DOM selectors need adjusting for the Kibana version — see
 ### 3A.3 Full dry run, then write for real
 
 ```bash
-# collect the monitored dashboards (default: just "Federal Overview"), write nothing
+# collect the monitored dashboards (default: Federal Overview + all linked), write nothing
 python scripts/run_collector.py --es-api-key "<id:key>" --dry-run --out run.json
 
 # looks good? write to Elasticsearch
@@ -153,16 +153,17 @@ Set the registry source to `api` (in `settings.yaml` or via env):
 
 ```bash
 export DHM_REGISTRY_SOURCE=api
-# Which dashboards to monitor (default: just "Federal Overview"):
-#   set collector.include_titles in settings.yaml, or DHM_INCLUDE_TITLES (comma-sep)
-#   - ["Federal Overview"]        -> just the hub (default)
-#   - ["Federal Overview", "..."] -> specific titles
-#   - []  (DHM_INCLUDE_TITLES="") -> every dashboard in the space
+# Which dashboards to monitor (collector.selection, default 'linked'):
+#   - linked (default) -> the "Federal Overview" hub + every dashboard reachable
+#                         from its navigation (the dashboards linked from that page)
+#   - titles           -> exactly collector.include_titles
+#   - all              -> every dashboard in the space
+# Override via DHM_SELECTION / DHM_HUB_TITLE / DHM_INCLUDE_TITLES.
 ```
 
 No `build_registry.py` step and no export file are needed in production. Each run
 re-reads the current dashboards and their panels from Kibana, then applies the
-`include_titles` filter.
+selection.
 
 ### 3B.1 Store the key in AWS Secrets Manager
 

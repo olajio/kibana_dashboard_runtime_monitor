@@ -60,17 +60,18 @@ a historical trend. Delivered across the Tasks below.
   server and dashboard/panel changes are picked up automatically. Test/offline uses
   `registry_source: export` — drop in a new `.ndjson`, re-run `build_registry.py`,
   review the diff, commit.
-  Both sources are narrowed by `collector.include_titles`, which defaults to
-  `["Federal Overview"]` (monitor just the hub); `[]` monitors every dashboard in
-  the space. The filter is applied uniformly (`registry.filter_registry_dict`).
+  Both sources are narrowed by `collector.selection` (default `linked`): the hub
+  (`hub_title`) plus every dashboard reachable from its navigation (Links panels +
+  drilldowns, transitively) — applied uniformly by `registry.select_registry`.
+  `titles` monitors an explicit list; `all` monitors the whole space.
 - **Acceptance criteria:**
   - `api` mode returns the current dashboards/panels from the space with no export
     file present.
-  - Default monitors only "Federal Overview"; `include_titles` (or
-    `DHM_INCLUDE_TITLES`) selects other titles or all.
+  - Default (`linked`) monitors "Federal Overview" + all dashboards reachable from
+    it (22 in the current export); `titles`/`all` change the scope.
   - `export` mode still works for offline/test.
-  - Discovery, the title filter, and config precedence are unit-tested
-    (`tests/test_discovery.py`, `tests/test_registry.py`, `tests/test_config.py`).
+  - Reachability, selection, discovery, and config precedence are unit-tested
+    (`tests/test_registry.py`, `tests/test_discovery.py`, `tests/test_config.py`).
 
 ---
 

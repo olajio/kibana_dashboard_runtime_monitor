@@ -1,4 +1,4 @@
-"""Tests for include_titles resolution precedence (env > yaml > default)."""
+"""Tests for monitoring-selection config (selection / hub_title / include_titles)."""
 import os
 import sys
 
@@ -13,34 +13,44 @@ def _write(tmp_path, body):
     return str(p)
 
 
-def test_default_is_federal_overview(monkeypatch):
-    monkeypatch.delenv("DHM_INCLUDE_TITLES", raising=False)
+def _clean(monkeypatch):
+    for v in ("DHM_SELECTION", "DHM_HUB_TITLE", "DHM_INCLUDE_TITLES"):
+        monkeypatch.delenv(v, raising=False)
+
+
+def test_defaults_are_linked_federal_overview(monkeypatch):
+    _clean(monkeypatch)
     s = load_settings("does_not_exist.yaml")
-    assert s.collector.include_titles == ["Federal Overview"]
-
-
-def test_yaml_empty_means_all(monkeypatch, tmp_path):
-    monkeypatch.delenv("DHM_INCLUDE_TITLES", raising=False)
-    path = _write(tmp_path, "collector:\n  include_titles: []\n")
-    s = load_settings(path)
+    assert s.collector.selection == "linked"
+    assert s.collector.hub_title == "Federal Overview"
     assert s.collector.include_titles == []
 
 
-def test_yaml_specific_titles(monkeypatch, tmp_path):
-    monkeypatch.delenv("DHM_INCLUDE_TITLES", raising=False)
-    path = _write(tmp_path, 'collector:\n  include_titles: ["A", "B"]\n')
-    s = load_settings(path)
+def test_yaml_selection_all(monkeypatch, tmp_path):
+    _clean(monkeypatch)
+    s = load_settings(_write(tmp_path, "collector:\n  selection: all\n"))
+    assert s.collector.selection == "all"
+
+
+def test_yaml_titles(monkeypatch, tmp_path):
+    _clean(monkeypatch)
+    s = load_settings(_write(tmp_path, 'collector:\n  selection: titles\n  include_titles: ["A", "B"]\n'))
+    assert s.collector.selection == "titles"
     assert s.collector.include_titles == ["A", "B"]
 
 
-def test_env_overrides_yaml(monkeypatch, tmp_path):
+def test_env_overrides(monkeypatch):
+    monkeypatch.setenv("DHM_SELECTION", "titles")
+    monkeypatch.setenv("DHM_HUB_TITLE", "Other Hub")
     monkeypatch.setenv("DHM_INCLUDE_TITLES", "X, Y")
-    path = _write(tmp_path, 'collector:\n  include_titles: ["A"]\n')
-    s = load_settings(path)
+    s = load_settings("does_not_exist.yaml")
+    assert s.collector.selection == "titles"
+    assert s.collector.hub_title == "Other Hub"
     assert s.collector.include_titles == ["X", "Y"]
 
 
-def test_env_empty_means_all(monkeypatch):
+def test_env_include_titles_empty_is_all(monkeypatch):
+    _clean(monkeypatch)
     monkeypatch.setenv("DHM_INCLUDE_TITLES", "")
     s = load_settings("does_not_exist.yaml")
     assert s.collector.include_titles == []

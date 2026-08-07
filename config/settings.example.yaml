@@ -69,12 +69,16 @@ collector:
   #            automatically); needs no export file on the server. Use this in prod.
   registry_source: export          # [DHM_REGISTRY_SOURCE] export | api
   registry_path: config/dashboards.generated.json   # used when registry_source=export
-  # Which dashboards to monitor, by title (applies to both registry sources).
-  #   default (["Federal Overview"]) -> monitor just the Federal Overview dashboard
-  #   ["A", "B"]                      -> monitor those specific titles
-  #   []                             -> monitor EVERY dashboard in the space
-  # Override with DHM_INCLUDE_TITLES (comma-separated; empty string = all).
-  include_titles: ["Federal Overview"]   # [DHM_INCLUDE_TITLES]
+  # How we choose which dashboards to monitor (applies to both registry sources):
+  #   linked (default) - the hub (hub_title) plus every dashboard reachable from its
+  #                      navigation: the Federal Overview dashboard and all the
+  #                      dashboards linked to it (found by following its Links panels
+  #                      and drilldowns). Adapts automatically if the nav changes.
+  #   titles           - exactly the dashboards named in include_titles.
+  #   all              - every dashboard in the space.
+  selection: linked                # [DHM_SELECTION] linked | titles | all
+  hub_title: "Federal Overview"    # [DHM_HUB_TITLE] starting dashboard for 'linked'
+  include_titles: []               # [DHM_INCLUDE_TITLES] used only when selection=titles
   headless: true
   # Automation backend:
   #   playwright - default

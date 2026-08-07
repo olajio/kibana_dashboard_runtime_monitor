@@ -62,9 +62,10 @@ def _get_with_retries(session: requests.Session, settings: Settings, url: str, p
         return resp
 
 
-def fetch_dashboard_objects(settings: Settings) -> List[Dict[str, Any]]:
-    """Page through the Saved Objects API and return all dashboard objects in the
-    configured space."""
+def fetch_saved_objects(settings: Settings) -> List[Dict[str, Any]]:
+    """Page through the Saved Objects API and return all `dashboard` and `links`
+    objects in the configured space. Links objects are needed to resolve
+    navigation-menu destinations for reachability."""
     base = settings.kibana.base_url + _space_prefix(settings)
     url = f"{base}/api/saved_objects/_find"
     per_page = 1000
@@ -73,7 +74,8 @@ def fetch_dashboard_objects(settings: Settings) -> List[Dict[str, Any]]:
 
     with requests.Session() as session:
         while True:
-            params = {"type": "dashboard", "per_page": per_page, "page": page}
+            # multiple `type` params -> type=dashboard&type=links
+            params = {"type": ["dashboard", "links"], "per_page": per_page, "page": page}
             data = _get_with_retries(session, settings, url, params).json()
             objs = data.get("saved_objects", [])
             out.extend(objs)
@@ -86,10 +88,9 @@ def fetch_dashboard_objects(settings: Settings) -> List[Dict[str, Any]]:
 
 def build_registry_from_api(settings: Settings) -> Registry:
     """Build a registry of every dashboard in the space from the live Saved
-    Objects API. Title filtering (`include_titles`) is applied uniformly by the
-    caller via `registry.filter_registry_dict`, so both registry sources behave
-    identically."""
-    objs = fetch_dashboard_objects(settings)
+    Objects API. Which dashboards we actually monitor is decided by the caller
+    (`registry.select_registry`), so both registry sources behave identically."""
+    objs = fetch_saved_objects(settings)
     return registry_from_objects(
         objs, settings.app, generated_from=f"kibana-api:{settings.kibana_space}"
     )

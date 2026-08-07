@@ -74,7 +74,7 @@ def test_kibana_headers_api_key():
     assert h["kbn-xsrf"] == "dhm"
 
 
-def test_fetch_dashboard_objects_single_page(monkeypatch):
+def test_fetch_saved_objects_single_page(monkeypatch):
     s = _settings()
     page = {"saved_objects": [_dash_obj("d1", "A", [("lens", "x")]),
                               _dash_obj("d2", "B", [("lens", "y")])],
@@ -82,37 +82,26 @@ def test_fetch_dashboard_objects_single_page(monkeypatch):
     session = FakeSession([page])
     monkeypatch.setattr(discovery.requests, "Session", lambda: session)
 
-    objs = discovery.fetch_dashboard_objects(s)
+    objs = discovery.fetch_saved_objects(s)
     assert len(objs) == 2
-    assert session.calls[0]["params"]["type"] == "dashboard"
+    # fetches both dashboard and links types
+    assert session.calls[0]["params"]["type"] == ["dashboard", "links"]
     assert session.calls[0]["url"] == "https://kib.example/s/fed2/api/saved_objects/_find"
 
 
-def test_build_registry_from_api_all(monkeypatch):
+def test_build_registry_from_api_returns_all_in_space(monkeypatch):
+    # Discovery itself returns everything; selection is applied by the caller.
     s = _settings()
     s.app = "federal_overview"
-    monkeypatch.setattr(discovery, "fetch_dashboard_objects", lambda settings: [
+    monkeypatch.setattr(discovery, "fetch_saved_objects", lambda settings: [
         _dash_obj("hub", "Federal Overview", [("lens", "Connected Agencies"), ("links", "Nav")]),
-        _dash_obj("d2", "Agency Details", [("lens", "y")]),
-    ])
-    reg = discovery.build_registry_from_api(s)
-    assert reg.dashboard_count == 2
-    hub = [d for d in reg.dashboards if d.is_hub][0]
-    assert hub.title == "Federal Overview"
-    # links panel recorded but not a data panel
-    assert hub.data_panel_count == 1
-
-
-def test_build_registry_from_api_returns_all_in_space(monkeypatch):
-    # Discovery itself returns everything; title filtering is applied by the caller.
-    s = _settings()
-    monkeypatch.setattr(discovery, "fetch_dashboard_objects", lambda settings: [
-        _dash_obj("hub", "Federal Overview", [("lens", "x")]),
         _dash_obj("d2", "Agency Details", [("lens", "y")]),
         _dash_obj("d3", "Unrelated Dashboard", [("lens", "z")]),
     ])
     reg = discovery.build_registry_from_api(s)
     assert reg.dashboard_count == 3
+    hub = [d for d in reg.dashboards if d.is_hub][0]
+    assert hub.title == "Federal Overview"
 
 
 def test_registry_from_objects_matches_shape():

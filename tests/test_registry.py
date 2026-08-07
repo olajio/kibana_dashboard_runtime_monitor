@@ -9,6 +9,9 @@ import pytest
 from dhm.registry import (
     build_registry,
     filter_registry_dict,
+    reachable_from_hub,
+    select_registry,
+    registry_from_objects,
     registry_to_dict,
     DATA_PANEL_TYPES,
     NAV_PANEL_TYPES,
@@ -16,35 +19,48 @@ from dhm.registry import (
 
 
 def _reg_dict():
+    # hub -> d2 (drilldown) and via nav -> d3; d4 is unrelated/unreachable
     return {
-        "dashboard_count": 3,
+        "dashboard_count": 4,
         "dashboards": [
-            {"title": "Federal Overview", "dashboard_id": "hub"},
-            {"title": "Agency Details", "dashboard_id": "d2"},
-            {"title": "Unrelated Dashboard", "dashboard_id": "d3"},
+            {"title": "Federal Overview", "dashboard_id": "hub", "linked_dashboards": ["d2", "d3"]},
+            {"title": "Agency Details", "dashboard_id": "d2", "linked_dashboards": []},
+            {"title": "CyHy Overview", "dashboard_id": "d3", "linked_dashboards": ["hub"]},
+            {"title": "Unrelated Dashboard", "dashboard_id": "d4", "linked_dashboards": []},
         ],
     }
 
 
-def test_filter_default_single_title():
-    out = filter_registry_dict(_reg_dict(), ["Federal Overview"])
-    assert out["dashboard_count"] == 1
-    assert out["dashboards"][0]["dashboard_id"] == "hub"
-
-
-def test_filter_multiple_titles_case_insensitive():
+def test_filter_titles_case_insensitive():
     out = filter_registry_dict(_reg_dict(), ["federal overview", "AGENCY DETAILS"])
     assert {d["dashboard_id"] for d in out["dashboards"]} == {"hub", "d2"}
 
 
 def test_filter_empty_means_all():
-    out = filter_registry_dict(_reg_dict(), [])
-    assert out["dashboard_count"] == 3
+    assert filter_registry_dict(_reg_dict(), [])["dashboard_count"] == 4
 
 
-def test_filter_no_match_is_empty():
-    out = filter_registry_dict(_reg_dict(), ["Nope"])
-    assert out["dashboard_count"] == 0
+def test_reachable_from_hub_includes_hub_and_linked():
+    ids = reachable_from_hub(_reg_dict(), "Federal Overview")
+    assert ids == {"hub", "d2", "d3"}  # d4 unreachable
+
+
+def test_reachable_hub_not_found_is_empty():
+    assert reachable_from_hub(_reg_dict(), "Nonexistent") == set()
+
+
+def test_select_linked_is_hub_plus_reachable():
+    out = select_registry(_reg_dict(), "linked", "Federal Overview", [])
+    assert {d["dashboard_id"] for d in out["dashboards"]} == {"hub", "d2", "d3"}
+
+
+def test_select_all():
+    assert select_registry(_reg_dict(), "all", "Federal Overview", [])["dashboard_count"] == 4
+
+
+def test_select_titles():
+    out = select_registry(_reg_dict(), "titles", "Federal Overview", ["Agency Details"])
+    assert {d["dashboard_id"] for d in out["dashboards"]} == {"d2"}
 
 NDJSON = os.path.join(os.path.dirname(__file__), "..", "federal_overview.ndjson")
 
@@ -117,3 +133,12 @@ def test_hub_links_to_other_dashboards(reg):
     known_ids = {d.dashboard_id for d in reg.dashboards}
     for did in hub.linked_dashboards:
         assert did in known_ids
+
+
+def test_federal_overview_reaches_all_22(reg):
+    # Following the hub's navigation transitively reaches every dashboard.
+    reg_dict = registry_to_dict(reg)
+    ids = reachable_from_hub(reg_dict, "Federal Overview")
+    assert len(ids) == 22
+    linked = select_registry(reg_dict, "linked", "Federal Overview", [])
+    assert linked["dashboard_count"] == 22
