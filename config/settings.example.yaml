@@ -106,6 +106,13 @@ collector:
   # Load-time classification (dashboard level). Baselines refine this later.
   degraded_over_ms: 15000
   failed_over_ms: 45000
+  # A dashboard is 'failed' when the share of not-ok panels reaches this pct
+  # (0-100). Below it, any not-ok panel makes the dashboard 'degraded'. Panels
+  # with a Kibana error state always mark the dashboard failed regardless.
+  # 0   = ANY not-ok panel is a failure
+  # 50  = default; more than half not-ok is a failure
+  # 101 = disable the threshold entirely (use only load-time + error signals)
+  failed_not_ok_pct: 50.0
   # Politeness: pause between dashboard loads so we do not hammer Kibana.
   inter_request_delay_ms: 500
   # Retry a dashboard this many extra times if the initial navigation fails.

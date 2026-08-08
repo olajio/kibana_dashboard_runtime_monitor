@@ -61,6 +61,21 @@ def _match_observed(
     return None
 
 
+def _clean_title(t: str) -> str:
+    """Normalize a title extracted from the DOM. Kibana's aria-labelledby target
+    can carry both a screen-reader label and the visible title
+    ("Panel: My Chart\\nMy Chart"); collapse to the visible one."""
+    if not t:
+        return ""
+    lines = [ln.strip() for ln in t.replace("\r", "\n").split("\n") if ln.strip()]
+    if not lines:
+        return ""
+    tail = lines[-1]
+    if tail.startswith("Panel: "):
+        tail = tail[len("Panel: "):].strip()
+    return tail
+
+
 def _record_for(exp, obs, resolve_times_ms):
     """Build a per-panel record from a matched expected/observed pair."""
     pid = str(exp.get("panel_id") or "")
@@ -69,7 +84,7 @@ def _record_for(exp, obs, resolve_times_ms):
     key = obs.get("id") or obs.get("title") or f"idx:{obs.get('index')}"
     return {
         "panel_id": pid or (obs.get("id") or ""),
-        "panel_title": title or obs.get("title") or "",
+        "panel_title": title or _clean_title(obs.get("title") or ""),
         "panel_type": exp.get("panel_type"),
         "render_status": status,
         "render_status_detail": obs.get("emptyText"),
