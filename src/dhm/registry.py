@@ -130,12 +130,29 @@ def _parse_panel(p: Dict[str, Any], refs: List[Dict[str, Any]]) -> Panel:
     )
 
 
-def _linked_dashboard_ids(refs: List[Dict[str, Any]]) -> List[str]:
-    """Dashboard ids this dashboard drills down / links to (deduped, ordered)."""
+def _nav_dashboard_ids(
+    refs: List[Dict[str, Any]], links_by_id: Dict[str, Dict[str, Any]]
+) -> List[str]:
+    """Dashboards this dashboard navigates to — the set a user can reach in one
+    click from it: panel drilldowns (direct `dashboard` references) plus the
+    destinations of its Links-panel navigation menus (`links` references resolved
+    to the Links saved object's own `dashboard` references)."""
     out: List[str] = []
+
+    def add(did: str):
+        if did and did not in out:
+            out.append(did)
+
     for r in refs:
-        if r.get("type") == "dashboard" and r.get("id") not in out:
-            out.append(r["id"])
+        rtype = r.get("type")
+        if rtype == "dashboard":
+            add(r.get("id"))  # panel drilldown
+        elif rtype == "links":
+            lo = links_by_id.get(r.get("id"))
+            if lo:
+                for lr in lo.get("references", []) or []:
+                    if lr.get("type") == "dashboard":
+                        add(lr.get("id"))
     return out
 
 
@@ -151,7 +168,9 @@ def _detect_hub(dashboards: List[Dashboard], app: str) -> Optional[str]:
     return max(dashboards, key=lambda d: len(d.linked_dashboards)).dashboard_id
 
 
-def _dashboard_from_object(d: Dict[str, Any]) -> Dashboard:
+def _dashboard_from_object(
+    d: Dict[str, Any], links_by_id: Dict[str, Dict[str, Any]]
+) -> Dashboard:
     """Build one Dashboard from a saved-object dict (from an export line OR a
     Saved Objects API `_find` result — both share this shape)."""
     attrs = d.get("attributes", {}) or {}
@@ -171,16 +190,21 @@ def _dashboard_from_object(d: Dict[str, Any]) -> Dashboard:
         panel_count=len(panels),
         data_panel_count=len(data_panels),
         panels=panels,
-        linked_dashboards=_linked_dashboard_ids(refs),
+        linked_dashboards=_nav_dashboard_ids(refs, links_by_id),
     )
 
 
 def registry_from_objects(
     objects: List[Dict[str, Any]], app: str, generated_from: str
 ) -> Registry:
-    """Build a Registry from a list of saved-object dicts (source-agnostic)."""
+    """Build a Registry from a list of saved-object dicts (source-agnostic).
+
+    `objects` should include both `dashboard` and `links` saved objects so that
+    navigation-menu destinations can be resolved for reachability.
+    """
+    links_by_id = {o["id"]: o for o in objects if o.get("type") == "links"}
     dash_objs = [o for o in objects if o.get("type") == "dashboard"]
-    dashboards = [_dashboard_from_object(d) for d in dash_objs]
+    dashboards = [_dashboard_from_object(d, links_by_id) for d in dash_objs]
 
     hub_id = _detect_hub(dashboards, app)
     for d in dashboards:
@@ -207,6 +231,76 @@ def build_registry(ndjson_path: str, app: str = "federal_overview") -> Registry:
 
 def registry_to_dict(reg: Registry) -> Dict[str, Any]:
     return asdict(reg)
+
+
+def filter_registry_dict(reg: Dict[str, Any], include_titles: List[str]) -> Dict[str, Any]:
+    """Keep only dashboards whose title is in `include_titles` (case-insensitive).
+
+    An empty/falsy `include_titles` means "keep everything". This is the single
+    place that applies the title filter, so it behaves identically whether the
+    registry came from the .ndjson export or the live Saved Objects API.
+    """
+    if not include_titles:
+        return reg
+    wanted = {t.strip().lower() for t in include_titles}
+    dashboards = [
+        d for d in reg.get("dashboards", [])
+        if (d.get("title") or "").strip().lower() in wanted
+    ]
+    out = dict(reg)
+    out["dashboards"] = dashboards
+    out["dashboard_count"] = len(dashboards)
+    return out
+
+
+def _subset_registry(reg: Dict[str, Any], keep_ids: set) -> Dict[str, Any]:
+    dashboards = [d for d in reg.get("dashboards", []) if d.get("dashboard_id") in keep_ids]
+    out = dict(reg)
+    out["dashboards"] = dashboards
+    out["dashboard_count"] = len(dashboards)
+    return out
+
+
+def reachable_from_hub(reg: Dict[str, Any], hub_title: str) -> set:
+    """Ids of the hub (matched by title, case-insensitive) plus every dashboard
+    reachable from it by following `linked_dashboards` transitively — i.e. every
+    dashboard a user can click into starting from the hub."""
+    want = (hub_title or "").strip().lower()
+    by_id = {d["dashboard_id"]: d for d in reg.get("dashboards", [])}
+    start = next((d["dashboard_id"] for d in reg.get("dashboards", [])
+                  if (d.get("title") or "").strip().lower() == want), None)
+    if start is None:
+        return set()
+    seen = {start}
+    stack = [start]
+    while stack:
+        cur = stack.pop()
+        for nxt in by_id.get(cur, {}).get("linked_dashboards", []) or []:
+            if nxt in by_id and nxt not in seen:
+                seen.add(nxt)
+                stack.append(nxt)
+    return seen
+
+
+def select_registry(
+    reg: Dict[str, Any], selection: str, hub_title: str, include_titles: List[str]
+) -> Dict[str, Any]:
+    """Narrow the full registry to the dashboards we actually monitor.
+
+    selection:
+      - "linked" (default): the hub (`hub_title`) plus everything reachable from
+        its navigation — the Federal Overview dashboard and all the dashboards
+        linked to it.
+      - "titles": exactly the dashboards named in `include_titles`.
+      - "all": every dashboard in the space.
+    """
+    if selection == "all":
+        return reg
+    if selection == "titles":
+        return filter_registry_dict(reg, include_titles)
+    # default: linked / reachable from the hub
+    ids = reachable_from_hub(reg, hub_title)
+    return _subset_registry(reg, ids)
 
 
 def write_registry(reg: Registry, out_path: str) -> None:

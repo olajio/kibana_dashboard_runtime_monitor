@@ -54,6 +54,14 @@ the same structure:
   `config/dashboards.generated.json` (`scripts/build_registry.py`). Useful for a
   first run without the API; re-run when the export changes.
 
+Either source is then narrowed by `collector.selection` (default `linked`): the
+hub (`hub_title`, "Federal Overview") plus every dashboard reachable from its
+navigation — its Links panels and drilldowns, followed transitively. That is "the
+Federal Overview dashboard and all the dashboards linked to it," derived from the
+hub's actual navigation rather than a hardcoded list, so it adapts if the nav
+changes. `selection: titles` monitors an explicit `include_titles` list;
+`selection: all` monitors every dashboard in the space.
+
 Either way:
 
 - **We know the expected panel inventory per dashboard**, so the collector can

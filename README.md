@@ -111,6 +111,18 @@ It has two sources (set `collector.registry_source`):
 - **`export`** — a static manifest built from a `.ndjson` export (this command);
   good for test/offline. Re-run when the export changes.
 
+Either source is then narrowed by `collector.selection`:
+
+- **`linked`** (default) — the **hub** (`hub_title`, default "Federal Overview")
+  **plus every dashboard reachable from its navigation** (its Links panels and
+  drilldowns, followed transitively). This is the Federal Overview dashboard and
+  all the dashboards reachable from it by clicking through, and it adapts
+  automatically if the navigation changes.
+- **`titles`** — exactly the dashboards named in `include_titles`.
+- **`all`** — every dashboard in the space.
+
+Override via `DHM_SELECTION` / `DHM_HUB_TITLE` / `DHM_INCLUDE_TITLES`.
+
 ```bash
 python scripts/build_registry.py federal_overview.ndjson \
     --app federal_overview \
@@ -232,7 +244,7 @@ curl -s "$DHM_ES_URL/_ilm/policy/dashboard-health-monitor"     -H "Authorization
 
 ## Stage 3 — Render-detection spike (do this once, early)
 
-Before we trust the collector across all 22 dashboards, we confirm the DOM signals
+Before we trust the collector across the monitored dashboards, we confirm the DOM signals
 in `src/dhm/selectors.py` match our Kibana version. With the Kibana auth from
 Stage 2 in place, point the collector at the dashboards in a dry run (nothing is
 written to ES) and inspect the result:
@@ -260,13 +272,17 @@ python scripts/run_collector.py --es-api-key "<id:key>" --dry-run --out run.json
 Per-dashboard progress prints as it goes:
 
 ```
-Collecting 22 dashboards for app 'federal_overview' (cluster=fed2, space=federal) [backend=playwright, browser=chrome]
+Collecting 22 dashboards for app 'federal_overview' (cluster=fed2, space=fed2) [backend=playwright, browser=chrome, registry=export, selection=linked (hub='Federal Overview' + reachable)]
   Federal Overview                         ok         2841ms ok=6 not_ok=0
   Agency Details                           degraded  16522ms ok=10 not_ok=1
   ...
 ```
 
-**Validate (manual):** open `run.json` and confirm each of the 22 dashboards has a
+(By default `selection: linked` monitors the Federal Overview hub and every
+dashboard reachable from it — 22 in this export. Use `selection: all` or
+`selection: titles` to change the scope.)
+
+**Validate (manual):** open `run.json` and confirm each monitored dashboard has a
 sensible `load_time_ms`, a `panels` array with `render_ms` and `render_status` per
 panel, and correct rollups (`panels_ok`, `panels_not_ok`, `panels_missing`, …).
 

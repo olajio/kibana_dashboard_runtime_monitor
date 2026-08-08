@@ -65,8 +65,15 @@ class CollectorConfig:
     #   api    - query Kibana's Saved Objects API live each run; always reflects
     #            production, needs no export file on the server.
     registry_source: str = "export"
-    # api mode only: monitor just these dashboard titles (empty = every dashboard
-    # in the space).
+    # How we choose which dashboards to monitor:
+    #   linked (default) - the hub (`hub_title`) plus every dashboard reachable from
+    #                      its navigation: the Federal Overview dashboard and all the
+    #                      dashboards linked to it.
+    #   titles           - exactly the dashboards named in `include_titles`.
+    #   all              - every dashboard in the space.
+    selection: str = "linked"
+    hub_title: str = "Federal Overview"
+    # Used only when selection == "titles".
     include_titles: List[str] = field(default_factory=list)
     headless: bool = True
     # Browser automation backend. "playwright" (default) or "selenium" — the
@@ -113,6 +120,14 @@ def load_settings(path: str = "config/settings.yaml") -> Settings:
     es = raw.get("elasticsearch", {}) or {}
     col = raw.get("collector", {}) or {}
 
+    # include_titles (used only when selection == "titles"):
+    # DHM_INCLUDE_TITLES (comma-separated) > yaml > empty.
+    env_titles = os.environ.get("DHM_INCLUDE_TITLES")
+    if env_titles is not None:
+        include_titles = [t.strip() for t in env_titles.split(",") if t.strip()]
+    else:
+        include_titles = col.get("include_titles", []) or []
+
     s = Settings(
         app=raw.get("app", "federal_overview"),
         cluster=_env("DHM_CLUSTER", raw.get("cluster", "fed2")),
@@ -149,7 +164,9 @@ def load_settings(path: str = "config/settings.yaml") -> Settings:
         collector=CollectorConfig(
             registry_path=col.get("registry_path", "config/dashboards.generated.json"),
             registry_source=_env("DHM_REGISTRY_SOURCE", col.get("registry_source", "export")),
-            include_titles=col.get("include_titles", []) or [],
+            selection=_env("DHM_SELECTION", col.get("selection", "linked")),
+            hub_title=_env("DHM_HUB_TITLE", col.get("hub_title", "Federal Overview")),
+            include_titles=include_titles,
             headless=bool(col.get("headless", True)),
             backend=_env("DHM_BACKEND", col.get("backend", "playwright")),
             browser_channel=_env("DHM_BROWSER_CHANNEL", col.get("browser_channel", "msedge")),
