@@ -69,10 +69,19 @@ PANEL_STATE_JS = r"""
     }
     if (!title) {
       // Follow aria-labelledby to the heading element that carries the title.
+      // Kibana composes that element with a screen-reader label AND the visible
+      // title, so innerText can look like: "Panel: My Chart\nMy Chart". Pick
+      // the last non-empty line and strip the "Panel: " a11y prefix.
       const labelId = el.getAttribute('aria-labelledby');
       if (labelId) {
         const labelEl = document.getElementById(labelId);
-        if (labelEl && labelEl.innerText) title = labelEl.innerText.trim();
+        if (labelEl && labelEl.innerText) {
+          const lines = labelEl.innerText.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+          if (lines.length) {
+            title = lines[lines.length - 1];
+            if (title.startsWith('Panel: ')) title = title.slice('Panel: '.length).trim();
+          }
+        }
       }
     }
     if (!title) {

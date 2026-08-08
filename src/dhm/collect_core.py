@@ -46,11 +46,38 @@ def panel_key(state: Dict[str, Any]) -> str:
 def load_status(
     settings: Settings, load_time_ms: int, roll: Dict[str, int], load_error: Optional[str]
 ) -> str:
-    if load_error or roll["panels_missing"] or roll["panels_error"] or roll["panels_timeout"]:
+    """Classify a dashboard's health.
+
+    failed:
+      - a dashboard-level load_error, or
+      - any panel showed a Kibana `error` state (real regression), or
+      - the fraction of not-ok panels is >= `failed_not_ok_pct` (default 50%), or
+      - the load time exceeded `failed_over_ms`.
+
+    degraded:
+      - any panel is not ok (empty/error/missing/timeout), or
+      - the load time exceeded `degraded_over_ms`.
+
+    Otherwise ok.
+
+    A single missing or timeout panel no longer marks the whole dashboard as
+    failed — those show up as degraded, so the operator can see something is off
+    without treating a partial detection edge as a full outage.
+    """
+    if load_error:
+        return "failed"
+    if roll.get("panels_error", 0) > 0:
+        return "failed"
+
+    checked = roll.get("panels_checked", 0)
+    not_ok = roll.get("panels_not_ok", 0)
+    pct = (100.0 * not_ok / checked) if checked else 0.0
+
+    if pct >= settings.collector.failed_not_ok_pct:
         return "failed"
     if load_time_ms >= settings.collector.failed_over_ms:
         return "failed"
-    if load_time_ms >= settings.collector.degraded_over_ms or roll["panels_empty"]:
+    if not_ok > 0 or load_time_ms >= settings.collector.degraded_over_ms:
         return "degraded"
     return "ok"
 
@@ -120,6 +147,12 @@ def collect_dashboard(
 
     if load_error is None:
         deadline = t0 + timeout_ms / 1000.0
+        # We know from the registry how many data panels this dashboard has.
+        # Heavy dashboards render progressively — if we exited the moment the
+        # first few panels reported render-complete, we'd miss the rest. Only
+        # exit early once we've observed at least this many panels AND they've
+        # all resolved (or the deadline hits).
+        expected_min = int(dashboard.get("data_panel_count") or 0)
         while True:
             elapsed_ms = int((time.monotonic() - t0) * 1000)
             states = driver.read_panel_states() or []
@@ -129,8 +162,7 @@ def collect_dashboard(
                     key = panel_key(st)
                     if key not in resolve_times and is_resolved(st):
                         resolve_times[key] = elapsed_ms
-                # done when every panel currently on the page has resolved
-                if all(is_resolved(s) for s in states):
+                if len(states) >= expected_min and all(is_resolved(s) for s in states):
                     break
             if time.monotonic() >= deadline:
                 break

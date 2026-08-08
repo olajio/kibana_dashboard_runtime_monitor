@@ -91,6 +91,10 @@ class CollectorConfig:
     concurrency: int = 1
     degraded_over_ms: int = 15000
     failed_over_ms: int = 45000
+    # A dashboard is 'failed' when the share of not-ok panels reaches this
+    # percentage (0-100). Below it, any not-ok panel makes the dashboard
+    # 'degraded'. Set 0 to make ANY not-ok panel a failure; 101 to disable.
+    failed_not_ok_pct: float = 50.0
     # Politeness: pause between dashboard loads so we do not hammer Kibana.
     inter_request_delay_ms: int = 500
     # Retry a dashboard once if the initial navigation fails.
@@ -176,6 +180,7 @@ def load_settings(path: str = "config/settings.yaml") -> Settings:
             concurrency=int(col.get("concurrency", 1)),
             degraded_over_ms=int(col.get("degraded_over_ms", 15000)),
             failed_over_ms=int(col.get("failed_over_ms", 45000)),
+            failed_not_ok_pct=float(col.get("failed_not_ok_pct", 50.0)),
             inter_request_delay_ms=int(col.get("inter_request_delay_ms", 500)),
             load_retries=int(col.get("load_retries", 1)),
         ),

@@ -99,21 +99,132 @@ def test_happy_path_ok():
     assert doc["collector_run_id"] == "run1"
 
 
-def test_empty_panel_is_degraded():
+def test_minority_empty_is_degraded():
+    # 1 empty out of 3 = 33% not_ok, below the 50% threshold -> degraded.
     s = _fast_settings()
-    dash = _dash([{"panel_id": "p1", "title": "Chart", "panel_type": "lens", "is_data_panel": True}])
-    driver = FakeDriver(states=[_panel("p1", "Chart", renderComplete=True, emptyText="No results found")])
+    dash = _dash([
+        {"panel_id": f"p{i}", "title": f"Chart {i}", "panel_type": "lens", "is_data_panel": True}
+        for i in range(3)
+    ])
+    driver = FakeDriver(states=[
+        _panel("p0", "Chart 0", index=0, renderComplete=True),
+        _panel("p1", "Chart 1", index=1, renderComplete=True, emptyText="No results found"),
+        _panel("p2", "Chart 2", index=2, renderComplete=True),
+    ])
     doc = collect_dashboard(driver, s, dash, "run1")
     assert doc["load_status"] == "degraded"
     assert doc["panels_empty"] == 1
 
 
-def test_missing_panel_is_failed():
+def test_majority_not_ok_is_failed():
+    # 2 empty out of 3 = 66% not_ok, at/above the 50% threshold -> failed.
     s = _fast_settings()
-    dash = _dash([{"panel_id": "gone", "title": "Vanished", "panel_type": "lens", "is_data_panel": True}])
-    driver = FakeDriver(states=[])  # nothing renders
+    dash = _dash([
+        {"panel_id": f"p{i}", "title": f"Chart {i}", "panel_type": "lens", "is_data_panel": True}
+        for i in range(3)
+    ])
+    driver = FakeDriver(states=[
+        _panel("p0", "Chart 0", index=0, renderComplete=True),
+        _panel("p1", "Chart 1", index=1, renderComplete=True, emptyText="No results found"),
+        _panel("p2", "Chart 2", index=2, renderComplete=True, emptyText="No results found"),
+    ])
+    doc = collect_dashboard(driver, s, dash, "run1")
+    assert doc["load_status"] == "failed"
+
+
+def test_single_missing_out_of_many_is_degraded():
+    # A partial detection edge (1 missing out of 4 = 25%) shouldn't mark the
+    # whole dashboard failed under the new policy — degraded, not failed.
+    s = _fast_settings()
+    dash = _dash([
+        {"panel_id": f"p{i}", "title": f"Chart {i}", "panel_type": "lens", "is_data_panel": True}
+        for i in range(4)
+    ])
+    driver = FakeDriver(states=[
+        _panel("p0", "Chart 0", index=0, renderComplete=True),
+        _panel("p1", "Chart 1", index=1, renderComplete=True),
+        _panel("p2", "Chart 2", index=2, renderComplete=True),
+        # p3 is missing
+    ])
     doc = collect_dashboard(driver, s, dash, "run1")
     assert doc["panels_missing"] == 1
+    assert doc["load_status"] == "degraded"
+
+
+def test_does_not_exit_until_expected_panels_observed():
+    # Simulates Kibana rendering panels progressively on a heavy dashboard.
+    # On poll 1 only 2 panels are on the page (both resolved). Old logic exited
+    # here and marked the other 8 panels missing. New logic waits for expected.
+    s = _fast_settings()
+    dash = _dash([
+        {"panel_id": f"p{i}", "title": f"Chart {i}", "panel_type": "lens", "is_data_panel": True}
+        for i in range(10)
+    ])
+    poll_states = [
+        # first poll: only 2 panels rendered, both resolved
+        [_panel(f"p{i}", f"Chart {i}", index=i, renderComplete=True) for i in range(2)],
+        # later poll: all 10 rendered and resolved
+        [_panel(f"p{i}", f"Chart {i}", index=i, renderComplete=True) for i in range(10)],
+    ]
+
+    class ProgressiveDriver:
+        def __init__(self):
+            self._i = 0
+
+        def goto(self, url, timeout_ms):
+            pass
+
+        def wait_for_panel(self, timeout_ms):
+            pass
+
+        def read_panel_states(self):
+            i = min(self._i, len(poll_states) - 1)
+            self._i += 1
+            return poll_states[i]
+
+    doc = collect_dashboard(ProgressiveDriver(), s, dash, "run1")
+    assert doc["panels_ok"] == 10
+    assert doc["panels_missing"] == 0
+
+
+def test_title_cleanup_from_dom():
+    # Kibana's aria-labelledby element carries both a screen-reader label and
+    # the visible title: "Panel: My Chart\nMy Chart". The record's panel_title
+    # is taken from the registry if present, but if only the DOM has it we
+    # normalize to the visible title.
+    from dhm.render_detection import _clean_title, _record_for
+    assert _clean_title("Panel: My Chart\nMy Chart") == "My Chart"
+    assert _clean_title("Just A Title") == "Just A Title"
+    assert _clean_title("") == ""
+    # in a record: registry title wins when present; DOM title is cleaned otherwise
+    exp = {"panel_id": "p1", "title": "", "panel_type": "lens", "is_data_panel": True}
+    obs = _panel(pid=None, title="Panel: My Chart\nMy Chart", renderComplete=True)
+    rec = _record_for(exp, obs, {})
+    assert rec["panel_title"] == "My Chart"
+
+
+def test_all_missing_is_failed():
+    # 1 expected, 0 observed -> 100% missing -> failed.
+    s = _fast_settings()
+    dash = _dash([{"panel_id": "gone", "title": "Vanished", "panel_type": "lens", "is_data_panel": True}])
+    driver = FakeDriver(states=[])
+    doc = collect_dashboard(driver, s, dash, "run1")
+    assert doc["panels_missing"] == 1
+    assert doc["load_status"] == "failed"
+
+
+def test_any_error_panel_is_failed():
+    # A single Kibana `error` state -> failed regardless of ratio.
+    s = _fast_settings()
+    dash = _dash([
+        {"panel_id": f"p{i}", "title": f"Chart {i}", "panel_type": "lens", "is_data_panel": True}
+        for i in range(10)
+    ])
+    states = [_panel(f"p{i}", f"Chart {i}", index=i, renderComplete=True) for i in range(10)]
+    states[0] = _panel("p0", "Chart 0", index=0, renderComplete=True, hasError=True)
+    driver = FakeDriver(states=states)
+    doc = collect_dashboard(driver, s, dash, "run1")
+    assert doc["panels_error"] == 1
     assert doc["load_status"] == "failed"
 
 
