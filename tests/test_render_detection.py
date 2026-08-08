@@ -105,6 +105,53 @@ def test_reconcile_skips_navigation_panels():
     assert recs[0]["panel_id"] == "p1"
 
 
+def test_positional_fallback_when_ids_and_titles_absent():
+    # Simulates Kibana 8.19: browser observes panels with no ids and no titles;
+    # the reconciler must line them up with the registry by DOM order.
+    expected = [
+        {"panel_id": "reg1", "title": "A", "panel_type": "lens", "is_data_panel": True},
+        {"panel_id": "reg2", "title": "B", "panel_type": "lens", "is_data_panel": True},
+        {"panel_id": "reg3", "title": "",  "panel_type": "lens", "is_data_panel": True},
+    ]
+    observed = [
+        _state(id=None, title="", index=0, renderComplete=True),
+        _state(id=None, title="", index=1, renderComplete=True, emptyText="No results found"),
+        _state(id=None, title="", index=2, renderComplete=True),
+    ]
+    recs = reconcile(expected, observed, {})
+    assert [r["render_status"] for r in recs] == [OK, EMPTY, OK]
+    # positions preserved, registry ids/titles carried through
+    assert [r["panel_id"] for r in recs] == ["reg1", "reg2", "reg3"]
+
+
+def test_title_match_still_wins_over_position():
+    # If the browser reports panels out of order but with titles, use titles.
+    expected = [
+        {"panel_id": "reg1", "title": "A", "panel_type": "lens", "is_data_panel": True},
+        {"panel_id": "reg2", "title": "B", "panel_type": "lens", "is_data_panel": True},
+    ]
+    observed = [
+        _state(id=None, title="B", index=0, renderComplete=True, emptyText="No results found"),
+        _state(id=None, title="A", index=1, renderComplete=True),
+    ]
+    recs = reconcile(expected, observed, {})
+    # Expected 'A' matches observed[1] -> OK; expected 'B' matches observed[0] -> EMPTY.
+    assert [r["render_status"] for r in recs] == [OK, EMPTY]
+
+
+def test_positional_fallback_does_not_reuse_matched_observations():
+    # Observed panel titled "A" pairs with expected "A". The remaining unmatched
+    # expected must NOT pull the same observation again — it must be missing.
+    expected = [
+        {"panel_id": "reg1", "title": "A", "panel_type": "lens", "is_data_panel": True},
+        {"panel_id": "reg2", "title": "",  "panel_type": "lens", "is_data_panel": True},
+    ]
+    observed = [_state(id=None, title="A", index=0, renderComplete=True)]
+    recs = reconcile(expected, observed, {})
+    assert recs[0]["render_status"] == OK
+    assert recs[1]["render_status"] == MISSING
+
+
 def test_summarize_counts():
     recs = [
         {"render_status": OK},

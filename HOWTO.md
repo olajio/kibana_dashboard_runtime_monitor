@@ -273,7 +273,12 @@ period, retire the manual daily review.
   confirm Python is 3.10+.
 - **All panels `timeout`/`missing`** — DOM selectors don't match this Kibana
   version. Everything version-specific is in `src/dhm/selectors.py`; adjust it and
-  re-run the spike (step 3A.2).
+  re-run the spike (step 3A.2). To see exactly what the browser sees on this
+  version, run the diagnostic: `python scripts/debug_spike.py --es-api-key
+  "$APIKEY" --dashboard-title "Federal Overview" --out debug.json`. Compare the
+  observed attributes to what `selectors.py` expects and adjust. Kibana 8.19
+  needed us to follow `aria-labelledby` for titles and add a DOM-order fallback,
+  both included.
 - **`no Elasticsearch API key`** — pass `--es-api-key`, set `DHM_ES_API_KEY`, or set
   `elasticsearch.aws_secret_id` (+ AWS credentials).
 - **`boto3 is not installed`** — the AWS path needs boto3 (`pip install -r
