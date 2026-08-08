@@ -19,7 +19,7 @@ both:
 
 ## 0. Prerequisites (once per machine)
 
-- Python 3.9+
+- Python 3.10+ (required by the pinned Playwright version)
 - The browser already installed: **Chrome** (test) or **Edge** (prod). No browser
   is downloaded.
 - Network access from the machine to Kibana and Elasticsearch.
@@ -263,6 +263,14 @@ period, retire the manual daily review.
 
 ## Troubleshooting
 
+- **`pip install` fails building `greenlet` (e.g. `"this header requires
+  Py_BUILD_CORE define"`, or a C++ compile error under `TMainGreenlet.cpp`)** —
+  the installed Playwright version is too old for the Python version in use, so
+  pip falls back to compiling an incompatible `greenlet` from source instead of
+  using a prebuilt wheel. `requirements.txt` pins a Playwright version that
+  supports current Python releases; make sure the environment is on that pinned
+  version (`pip install -r requirements.txt` again, in a clean virtualenv), and
+  confirm Python is 3.10+.
 - **All panels `timeout`/`missing`** — DOM selectors don't match this Kibana
   version. Everything version-specific is in `src/dhm/selectors.py`; adjust it and
   re-run the spike (step 3A.2).
