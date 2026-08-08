@@ -1,5 +1,12 @@
 # Runtime dependencies for the Dashboard Health & Load-Time Monitor
-playwright==1.44.0        # headless browser used to load dashboards and read render state
+#
+# playwright pin: must stay recent enough to pull a greenlet version with a
+# prebuilt wheel for the Python version in use. An older pin (e.g. 1.44.0)
+# resolves to an old greenlet that fails to compile from source on newer
+# Pythons (e.g. 3.13 - "this header requires Py_BUILD_CORE define"). 1.62.0
+# declares Python 3.13/3.14 support (PyPI classifiers) and pulls a greenlet
+# with prebuilt 3.13 wheels, so no compilation is needed.
+playwright==1.62.0        # headless browser used to load dashboards and read render state; requires Python >=3.10
 requests==2.32.3          # Elasticsearch/Kibana REST calls (index writes, template setup)
 PyYAML==6.0.1             # settings file parsing
 boto3==1.34.100          # AWS Secrets Manager (production API-key retrieval); unused if keys are passed on the CLI
