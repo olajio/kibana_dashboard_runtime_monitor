@@ -61,6 +61,22 @@ def _match_observed(
     return None
 
 
+def _record_for(exp, obs, resolve_times_ms):
+    """Build a per-panel record from a matched expected/observed pair."""
+    pid = str(exp.get("panel_id") or "")
+    title = exp.get("title") or ""
+    status = classify_panel(obs)
+    key = obs.get("id") or obs.get("title") or f"idx:{obs.get('index')}"
+    return {
+        "panel_id": pid or (obs.get("id") or ""),
+        "panel_title": title or obs.get("title") or "",
+        "panel_type": exp.get("panel_type"),
+        "render_status": status,
+        "render_status_detail": obs.get("emptyText"),
+        "render_ms": resolve_times_ms.get(key),
+    }
+
+
 def reconcile(
     expected_panels: List[Dict[str, Any]],
     observed_states: List[Dict[str, Any]],
@@ -68,50 +84,55 @@ def reconcile(
 ) -> List[Dict[str, Any]]:
     """Merge expected (registry) data panels with what the browser observed.
 
-    `expected_panels` items are registry panel dicts (panel_id, title,
-    panel_type, is_data_panel). `observed_states` are the last raw states read
-    from the page. `resolve_times_ms` maps a panel key -> ms from nav start to
-    first terminal state.
+    Matches in three passes:
+      1. by embeddable id (== panelIndex, when Kibana exposes it),
+      2. by exact title (case-sensitive, non-empty),
+      3. by DOM order among still-unmatched panels — a robust fallback for
+         Kibana versions that hide panel ids/titles from the DOM (e.g. 8.19),
+         since Kibana renders panels in gridData order and the registry lists
+         them in that same panelsJSON order.
 
-    Returns one record per expected data panel, plus any unexpected observed
-    data panels, each with a final `render_status` and `render_ms`.
+    Returns one record per expected data panel with a final `render_status`
+    and `render_ms`.
     """
-    records: List[Dict[str, Any]] = []
-    used_indexes = set()
+    expected_data = [e for e in expected_panels if e.get("is_data_panel")]
+    matched: Dict[int, Dict[str, Any]] = {}  # index into expected_data -> observed
+    used_obs_indexes = set()
 
-    for exp in expected_panels:
-        if not exp.get("is_data_panel"):
-            continue
+    # Pass 1 + 2: id match, then title match.
+    for i, exp in enumerate(expected_data):
         pid = str(exp.get("panel_id") or "")
         title = exp.get("title") or ""
         obs = _match_observed(pid, title, observed_states)
+        if obs is not None and obs.get("index") not in used_obs_indexes:
+            matched[i] = obs
+            used_obs_indexes.add(obs.get("index"))
 
+    # Pass 3: positional fallback for anything still unmatched.
+    remaining_expected = [i for i in range(len(expected_data)) if i not in matched]
+    remaining_observed = [
+        o for o in observed_states if o.get("index") not in used_obs_indexes
+    ]
+    remaining_observed.sort(key=lambda o: o.get("index", 0))
+    for i, obs in zip(remaining_expected, remaining_observed):
+        matched[i] = obs
+        used_obs_indexes.add(obs.get("index"))
+
+    # Build records in the registry's order.
+    records: List[Dict[str, Any]] = []
+    for i, exp in enumerate(expected_data):
+        obs = matched.get(i)
         if obs is None:
-            records.append(
-                {
-                    "panel_id": pid,
-                    "panel_title": title,
-                    "panel_type": exp.get("panel_type"),
-                    "render_status": MISSING,
-                    "render_status_detail": "expected panel not found on page",
-                    "render_ms": None,
-                }
-            )
-            continue
-
-        used_indexes.add(obs.get("index"))
-        status = classify_panel(obs)
-        key = obs.get("id") or obs.get("title") or f"idx:{obs.get('index')}"
-        records.append(
-            {
-                "panel_id": pid or (obs.get("id") or ""),
-                "panel_title": title or obs.get("title") or "",
+            records.append({
+                "panel_id": str(exp.get("panel_id") or ""),
+                "panel_title": exp.get("title") or "",
                 "panel_type": exp.get("panel_type"),
-                "render_status": status,
-                "render_status_detail": obs.get("emptyText"),
-                "render_ms": resolve_times_ms.get(key),
-            }
-        )
+                "render_status": MISSING,
+                "render_status_detail": "expected panel not found on page",
+                "render_ms": None,
+            })
+        else:
+            records.append(_record_for(exp, obs, resolve_times_ms))
 
     return records
 

@@ -5,8 +5,9 @@ upgrade is a one-file change (see the project plan, "render-state detection
 fragility"). The collector and the browser-side extraction script import from
 this module only.
 
-Verified against Kibana 8.x. If panels stop being detected after an upgrade,
-re-run the render-detection spike and adjust the constants below.
+Verified against Kibana 8.x (through 8.19). If panels stop being detected after
+an upgrade, re-run the render-detection spike (`scripts/debug_spike.py`) and
+adjust the constants below.
 """
 
 # Container element for every dashboard panel (data or navigation).
@@ -52,14 +53,32 @@ PANEL_STATE_JS = r"""
     );
     const emptyText = emptyEl ? (emptyEl.innerText || '').trim().slice(0, 200) : null;
 
-    // identity: data-test-embeddable-id matches the panelIndex in the export
+    // identity: older Kibana exposed data-test-embeddable-id; newer 8.x
+    // (verified on 8.19) does not — the panel is identified by aria-labelledby
+    // pointing to a DOM heading whose text is the panel title. We keep every
+    // signal we can and let the Python reconciler use whichever exists.
     const id =
       el.getAttribute('data-test-embeddable-id') ||
       el.getAttribute('data-embeddable-id') ||
       null;
-    const titleEl = el.querySelector('[data-test-subj="dashboardPanelTitle"]');
-    const title = (el.getAttribute('data-title') ||
-      (titleEl ? titleEl.innerText : '') || '').trim();
+
+    let title = (el.getAttribute('data-title') || '').trim();
+    if (!title) {
+      const t1 = el.querySelector('[data-test-subj="dashboardPanelTitle"]');
+      if (t1 && t1.innerText) title = t1.innerText.trim();
+    }
+    if (!title) {
+      // Follow aria-labelledby to the heading element that carries the title.
+      const labelId = el.getAttribute('aria-labelledby');
+      if (labelId) {
+        const labelEl = document.getElementById(labelId);
+        if (labelEl && labelEl.innerText) title = labelEl.innerText.trim();
+      }
+    }
+    if (!title) {
+      const t2 = el.querySelector('[data-shared-item-title]');
+      if (t2) title = (t2.getAttribute('data-shared-item-title') || '').trim();
+    }
 
     return { id, title, index: idx, renderComplete, loading, hasError, emptyText };
   });
