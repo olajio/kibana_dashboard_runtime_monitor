@@ -58,7 +58,7 @@ add alerting and the trend dashboard.
 
 ## Prerequisites
 
-- Python 3.9+
+- Python 3.10+ (required by the pinned Playwright version)
 - Network access from the runner to Kibana and Elasticsearch
 - An automation credential for Kibana (see [Stage 2](#stage-2--configure--set-up-elasticsearch))
 - **Microsoft Edge or Google Chrome already installed.** The collector drives the
