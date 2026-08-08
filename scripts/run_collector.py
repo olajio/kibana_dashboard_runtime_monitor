@@ -41,16 +41,26 @@ def _select_backend(backend: str):
 
 
 def _load_registry(settings) -> dict:
-    """Get the dashboards to monitor, from the live API or the export file."""
+    """Get the full registry (from the live API or the export file), then narrow it
+    to the dashboards we monitor. Default: the Federal Overview hub plus every
+    dashboard reachable from its navigation."""
+    from dhm.registry import select_registry
+
     if settings.collector.registry_source == "api":
         from dhm.discovery import build_registry_from_api
         from dhm.registry import registry_to_dict
 
-        reg = build_registry_from_api(settings, include_titles=settings.collector.include_titles)
-        return registry_to_dict(reg)
-    with open(settings.collector.registry_path) as f:
-        import json as _json
-        return _json.load(f)
+        reg = registry_to_dict(build_registry_from_api(settings))
+    else:
+        with open(settings.collector.registry_path) as f:
+            reg = json.load(f)
+
+    return select_registry(
+        reg,
+        settings.collector.selection,
+        settings.collector.hub_title,
+        settings.collector.include_titles,
+    )
 
 
 def main() -> int:
@@ -86,10 +96,20 @@ def main() -> int:
 
     registry = _load_registry(settings)
 
+    sel = settings.collector.selection
+    if sel == "linked":
+        scope = f"linked (hub='{settings.collector.hub_title}' + reachable)"
+    elif sel == "titles":
+        scope = f"titles={settings.collector.include_titles}"
+    else:
+        scope = "all in space"
     print(f"Collecting {registry['dashboard_count']} dashboards for app "
           f"'{settings.app}' (cluster={settings.cluster}, space={settings.kibana_space}) "
           f"[backend={settings.collector.backend}, browser={settings.collector.browser_channel}, "
-          f"registry={settings.collector.registry_source}]")
+          f"registry={settings.collector.registry_source}, selection={scope}]")
+    if registry["dashboard_count"] == 0:
+        print("WARNING: selection matched no dashboards; nothing to collect. "
+              "Check selection/hub_title/include_titles.", file=sys.stderr)
     run = _select_backend(settings.collector.backend)
     docs = run(settings, registry)
 
