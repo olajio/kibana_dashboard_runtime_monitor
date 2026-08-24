@@ -1,19 +1,19 @@
 {
   "policy": {
     "_meta": {
-      "description": "Retention for dashboard health results: roll over daily or at 5gb, keep 180 days."
+      "description": "Retention for dashboard health results: roll over monthly (or at 5gb), keep 365 days (~1 year of historical performance)."
     },
     "phases": {
       "hot": {
         "actions": {
           "rollover": {
-            "max_age": "1d",
+            "max_age": "30d",
             "max_primary_shard_size": "5gb"
           }
         }
       },
       "delete": {
-        "min_age": "180d",
+        "min_age": "365d",
         "actions": {
           "delete": {}
         }
