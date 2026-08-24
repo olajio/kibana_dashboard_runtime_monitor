@@ -39,7 +39,9 @@ kibana:
     aws_secret_id: ""                        # [DHM_KIBANA_AWS_SECRET_ID]
     aws_secret_json_key: api_key             # field name if the secret is JSON
   # Time range applied to every dashboard load (Kibana global state).
-  time_from: now-24h
+  # Match this to the window the team reviews manually. now-30d suits a monthly
+  # review; heavier windows pull more data so tune dashboard_timeout_ms if needed.
+  time_from: now-30d
   time_to: now
   verify_tls: true                           # [DHM_KIBANA_VERIFY_TLS] false only for lab
 
@@ -51,7 +53,11 @@ elasticsearch:
   api_key: ""                                # [DHM_ES_API_KEY] base64 id:key
   aws_secret_id: ""                          # [DHM_ES_AWS_SECRET_ID] e.g. elastic/kibana/dhm-es
   aws_secret_json_key: api_key               # field name if the secret is JSON
-  index: .dashboard-health-monitor
+  # Data-stream name. NOT dot-prefixed: Kibana hides dot-prefixed streams from
+  # the data-view picker (system indices), and some ES setups refuse to let
+  # non-system users create them. If a `.dashboard-health-monitor` stream was
+  # created by a previous version, delete it first (see the HOWTO).
+  index: dashboard-health-monitor
   verify_tls: true                           # [DHM_ES_VERIFY_TLS] false only for lab
   # Operational limits for ES REST calls.
   request_timeout_s: 30                      # per-request timeout
@@ -96,16 +102,18 @@ collector:
   # Empty -> found on PATH or via Selenium Manager.
   webdriver_path: ""               # [DHM_WEBDRIVER_PATH]
   # Per-dashboard hard cap. A dashboard that has not finished by this point is
-  # recorded as load_status=failed and its unrendered panels as timeout.
-  dashboard_timeout_ms: 90000
+  # recorded as load_status=failed and its unrendered panels as timeout. Sized
+  # for prod with time_from=now-30d and heavy dashboards (e.g. Priority Risks,
+  # 35 panels); raise if some dashboards still hit the cap.
+  dashboard_timeout_ms: 180000
   # How often we poll the page for per-panel render progress.
   poll_interval_ms: 250
   # How many dashboards to load concurrently. Start at 1; raise only after
   # measuring browser memory on the runner.
   concurrency: 1
   # Load-time classification (dashboard level). Baselines refine this later.
-  degraded_over_ms: 15000
-  failed_over_ms: 45000
+  degraded_over_ms: 30000
+  failed_over_ms: 120000
   # A dashboard is 'failed' when the share of not-ok panels reaches this pct
   # (0-100). Below it, any not-ok panel makes the dashboard 'degraded'. Panels
   # with a Kibana error state always mark the dashboard failed regardless.

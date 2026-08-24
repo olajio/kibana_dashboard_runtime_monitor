@@ -24,7 +24,7 @@ both:
   is downloaded.
 - Network access from the machine to Kibana and Elasticsearch.
 - An Elasticsearch API key with: **read** on the monitored Kibana space, and
-  **write** to `.dashboard-health-monitor`.
+  **write** to `dashboard-health-monitor`.
 
 ```bash
 git clone <this repo> && cd kibana_dashboard_runtime_monitor
@@ -134,7 +134,7 @@ python scripts/run_collector.py --es-api-key "<id:key>"
 **Verify:**
 
 ```bash
-curl -s "$DHM_ES_URL/.dashboard-health-monitor/_search?size=1" \
+curl -s "$DHM_ES_URL/dashboard-health-monitor/_search?size=1" \
   -H "Authorization: ApiKey <id:key>" | python -m json.tool
 ```
 
@@ -234,18 +234,58 @@ Set the dead-man's-switch rule's window to 2× this interval (e.g. 40m).
 
 ## 6. Trend dashboard
 
-In Kibana: create a data view over `.dashboard-health-monitor` (time field
-`@timestamp`), then build load-time-over-time (split by `dashboard_title`),
-per-panel render time (nested `panels.render_ms`), and a panel-health heatmap over
-`panels.render_status`. Once it and the alerts have run cleanly for an agreed soak
-period, retire the manual daily review.
+### 6.1 Create the data view in Kibana
+
+1. Kibana → **Stack Management → Data Views → Create data view**.
+2. **Name:** `Dashboard Health & Load-Time Monitor` (or anything).
+3. **Index pattern:** `dashboard-health-monitor*` (asterisk matches every ILM
+   rollover of the data stream).
+4. **Timestamp field:** `@timestamp`.
+5. Save.
+
+If the pattern picker doesn't list any matching stream, run one live cycle
+first — the data stream is created by the first `_bulk` write, not by
+`setup_elasticsearch.py`. Then reload the picker.
+
+### 6.2 Build the dashboard
+
+- Load-time over time — Lens on `load_time_ms`, split by `dashboard_title`.
+- Per-panel render time — Lens on nested `panels.render_ms`, split by
+  `panels.panel_title`.
+- Panel-health heatmap — count over `panels.render_status`.
+- Top-line tiles — "dashboards failed now", "panels not_ok now" from the
+  top-level rollups.
+
+Once it and the alerts have run cleanly for an agreed soak period, retire the
+manual daily review.
+
+### 6.3 Migrating from a previous `.dashboard-health-monitor` stream
+
+Older versions used a dot-prefixed name that Kibana hides from the data-view
+picker. If a stream by that old name already exists, delete it and its template
+before applying the new ones:
+
+```bash
+curl -sS -X DELETE "$DHM_ES_URL/_data_stream/.dashboard-health-monitor" \
+  -H "Authorization: ApiKey <id:key>"
+curl -sS -X DELETE "$DHM_ES_URL/_index_template/dashboard-health-monitor" \
+  -H "Authorization: ApiKey <id:key>"
+python scripts/setup_elasticsearch.py --es-api-key "<id:key>"
+python scripts/run_collector.py --es-api-key "<id:key>"        # writes first docs
+```
+
+Historical data on the old stream is lost by the delete — but at this point in
+rollout there shouldn't be much of it yet. If keeping the old data matters, use
+[Reindex API](https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-reindex.html)
+into the new stream before deleting.
 
 ---
 
 ## Operational notes (built in)
 
-- **Timeouts:** each dashboard is capped at `collector.dashboard_timeout_ms` (90s);
-  a hung dashboard is recorded `failed` and the cycle continues.
+- **Timeouts:** each dashboard is capped at `collector.dashboard_timeout_ms`
+  (180s, sized for `time_from=now-30d` and heavy dashboards); a hung dashboard is
+  recorded `failed` and the cycle continues.
 - **Politeness / request limits:** `collector.inter_request_delay_ms` (500ms) paces
   loads so Kibana is not hammered; dashboards load sequentially by default
   (`concurrency: 1`).
@@ -256,8 +296,9 @@ period, retire the manual daily review.
   (500) so no single `_bulk` request is oversized.
 - **Isolation:** an unexpected error on one dashboard becomes a `failed` document,
   never an aborted run.
-- **Retention:** the ILM policy rolls the data stream daily and deletes after 180
-  days.
+- **Retention:** the ILM policy rolls the data stream monthly (or at 5 GB) and
+  deletes after 365 days — roughly one year of historical performance kept per
+  cluster. Tune both in `es/ilm_policy.json`.
 
 ---
 

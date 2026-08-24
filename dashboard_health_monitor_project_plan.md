@@ -83,7 +83,7 @@ config/dashboards.generated.json ──▶ dashboard_health_check (collector)
                                         - classifies each panel's health
                                         │
                                         ▼
-                            .dashboard-health-monitor  (ES data stream)
+                            dashboard-health-monitor  (ES data stream)
                                         │
                         ┌───────────────┼────────────────┐
                         ▼                                ▼
@@ -126,7 +126,7 @@ concrete about the mechanism (and de-risk it early — see the Phase 2 spike):
 
 ## 5. Data model
 
-Data stream: `.dashboard-health-monitor` (one document per dashboard per cycle).
+Data stream: `dashboard-health-monitor` (one document per dashboard per cycle).
 
 ```json
 {
@@ -179,10 +179,10 @@ Notes:
 |---|---|---|
 | **Phase 1 — Registry** | Two sources: `scripts/build_registry.py` parses a `.ndjson` export (`export` mode), and `src/dhm/discovery.py` builds it live from Kibana's Saved Objects API (`api` mode, production) | Both produce the same structure and are unit tested. Done in this repo. |
 | **Phase 2 — Render-detection spike (de-risk)** | A throwaway Playwright run against one real dashboard proving we can read render-complete + per-panel `ok/empty/error/timeout` off the DOM against our Kibana version | Do this before trusting Phase 3 at scale. Validates the §4.1 selectors. |
-| **Phase 3 — Index + collector (MVP)** | ES data stream (template + ILM), then the collector loads every registry dashboard, records load time + per-panel render time + health, writes to `.dashboard-health-monitor` | The whole MVP. Auth to Kibana is the main build risk — see Section 7. |
+| **Phase 3 — Index + collector (MVP)** | ES data stream (template + ILM), then the collector loads every registry dashboard, records load time + per-panel render time + health, writes to `dashboard-health-monitor` | The whole MVP. Auth to Kibana is the main build risk — see Section 7. |
 | **Phase 4 — Optional query enrichment** | For easy-to-resolve panels, add hit count + freshness from a direct ES query | Purely additive; skip where inconvenient. |
 | **Phase 5 — Alerting** | Kibana Alerting rules: load degraded/failed, panel unhealthy, collector dead-man's-switch (`es/alerting/*.json`) | Elasticsearch Query rule type. Validate against historical data before enabling notifications. |
-| **Phase 6 — Trend dashboard** | A Kibana dashboard over `.dashboard-health-monitor`: load-time trend and panel-health heatmap; then hand the daily review over to it | Final step — the dashboard that replaces the manual check. |
+| **Phase 6 — Trend dashboard** | A Kibana dashboard over `dashboard-health-monitor`: load-time trend and panel-health heatmap; then hand the daily review over to it | Final step — the dashboard that replaces the manual check. |
 
 ## 7. Auth strategy (the main open question)
 
@@ -198,7 +198,7 @@ browser.
 - We confirm with Cloud Automation whether an existing service identity can front
   this before building anything more elaborate.
 - **Credential hygiene**: the automation identity needs only read on the monitored
-  space plus write to `.dashboard-health-monitor`. Secrets come from the
+  space plus write to `dashboard-health-monitor`. Secrets come from the
   environment / Secrets Manager, never the repo. `config/settings.yaml` is
   git-ignored; every secret has an environment-variable override. We define a
   rotation cadence up front.
@@ -225,7 +225,8 @@ browser.
   (via `msedgedriver`/`chromedriver`) and shares the same timing, health logic, and
   document schema (`collect_core`), so results are identical. Only the browser
   plumbing differs between backends.
-- **Per-dashboard hard timeout** (default 90s) caps each load so one hung
+- **Per-dashboard hard timeout** (default 180s, sized for `time_from=now-30d`
+  and heavy dashboards) caps each load so one hung
   dashboard cannot stall the cycle — it is recorded as `failed` and its panels as
   `timeout`, and we move on. A failed load is retried once (`load_retries`), and an
   unexpected per-dashboard error is isolated into a `failed` document rather than
@@ -243,8 +244,11 @@ browser.
   Because a heavy dashboard and a light one have different "normal," we seed
   per-dashboard baselines from the first week of data and refine the thresholds
   from there.
-- **Retention**: an ILM policy on the data stream (default: roll over daily,
-  delete after 180 days) keeps history bounded.
+- **Retention**: an ILM policy on the data stream (default: roll over monthly
+  or at 5 GB, delete after 365 days — roughly one year of historical dashboard
+  performance) keeps history bounded. The data stream name is
+  `dashboard-health-monitor` (no leading dot) so Kibana's data-view picker
+  surfaces it without needing the "hidden indices" toggle.
 - **Liveness**: the dead-man's-switch rule fires if no document is written within
   2x the expected interval.
 

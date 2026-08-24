@@ -46,7 +46,7 @@ scripts/
   run_collector.py                 # run one collection cycle
 es/
   index_template.json              # data stream mapping (nested panels)
-  ilm_policy.json                  # retention (rollover daily, delete after 180d)
+  ilm_policy.json                  # retention (rollover monthly / 5gb, delete after 365d)
   alerting/*.json                  # three Kibana Alerting rule payloads
 tests/                             # unit tests (registry + render detection)
 ```
@@ -186,7 +186,7 @@ The headless browser needs an authenticated Kibana session. Pick one method in
   PKI/SAML-only Kibana where we use a service-account session.
 
 The credential needs only **read** on the monitored space and **write** to
-`.dashboard-health-monitor`.
+`dashboard-health-monitor`.
 
 ### API keys — command line in test, AWS Secrets Manager in production
 
@@ -296,7 +296,7 @@ python scripts/run_collector.py                            # production (key fro
 **Validate:**
 
 ```bash
-curl -s "$DHM_ES_URL/.dashboard-health-monitor/_search?size=1" \
+curl -s "$DHM_ES_URL/dashboard-health-monitor/_search?size=1" \
   -H "Authorization: ApiKey <id:key>" | python -m json.tool
 ```
 
@@ -358,7 +358,7 @@ the notification connector once the rule fires and recovers correctly.
 
 ## Stage 6 — Trend dashboard
 
-1. In Kibana, create a **data view** over `.dashboard-health-monitor`
+1. In Kibana, create a **data view** over `dashboard-health-monitor`
    (time field `@timestamp`).
 2. Build a dashboard with:
    - Load time over time, split by `dashboard_title` (line).
@@ -380,7 +380,7 @@ environment):
 */20 * * * * cd /opt/dhm && /opt/dhm/.venv/bin/python scripts/run_collector.py >> /var/log/dhm.log 2>&1
 ```
 
-The per-dashboard hard timeout (`collector.dashboard_timeout_ms`, default 90s)
+The per-dashboard hard timeout (`collector.dashboard_timeout_ms`, default 180s)
 ensures one hung dashboard never stalls the cycle. Raise `collector.concurrency`
 only after measuring browser memory on the runner.
 

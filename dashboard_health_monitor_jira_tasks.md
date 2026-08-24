@@ -107,7 +107,7 @@ a historical trend. Delivered across the Tasks below.
 ### DHM-7 — Provision the least-privilege automation identity + secret
 - **Type:** Task · **Size:** S · **Status:** resolution implemented (`src/dhm/secrets.py`)
 - **Description:** Create the automation credential (read on the monitored space +
-  write to `.dashboard-health-monitor`), store it in AWS Secrets Manager, and set
+  write to `dashboard-health-monitor`), store it in AWS Secrets Manager, and set
   `elasticsearch.aws_secret_id` (+ `aws_region`). Grant the runner
   `secretsmanager:GetSecretValue`. Define a rotation cadence. The code already
   resolves keys by precedence: `--es-api-key` > `DHM_ES_API_KEY` > AWS Secrets
@@ -187,7 +187,7 @@ a historical trend. Delivered across the Tasks below.
   write and confirm the documents land.
 - **Acceptance criteria:**
   - All 22 dashboards produce sensible load times and per-panel results.
-  - Documents are queryable in `.dashboard-health-monitor`.
+  - Documents are queryable in `dashboard-health-monitor`.
 - **Dependencies:** DHM-8, DHM-11, DHM-7
 
 ---
@@ -256,7 +256,7 @@ a historical trend. Delivered across the Tasks below.
 
 ### DHM-19 — Data view + trend dashboard
 - **Type:** Story · **Size:** M
-- **Description:** Create a Kibana data view over `.dashboard-health-monitor` and a
+- **Description:** Create a Kibana data view over `dashboard-health-monitor` and a
   dashboard: load-time trend (per dashboard, per panel) and a panel-health heatmap.
 - **Acceptance criteria:**
   - Load-time trend and panel-health history are visible and filterable.
