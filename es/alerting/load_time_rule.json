@@ -6,7 +6,7 @@
   "schedule": { "interval": "15m" },
   "params": {
     "searchType": "esQuery",
-    "index": [".dashboard-health-monitor"],
+    "index": ["dashboard-health-monitor"],
     "timeField": "@timestamp",
     "esQuery": "{\"query\":{\"bool\":{\"filter\":[{\"terms\":{\"load_status\":[\"degraded\",\"failed\"]}}]}}}",
     "size": 100,

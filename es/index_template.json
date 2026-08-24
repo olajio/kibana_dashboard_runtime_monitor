@@ -1,5 +1,5 @@
 {
-  "index_patterns": [".dashboard-health-monitor*"],
+  "index_patterns": ["dashboard-health-monitor*"],
   "data_stream": {},
   "template": {
     "settings": {

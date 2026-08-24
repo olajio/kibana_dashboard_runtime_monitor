@@ -34,7 +34,7 @@ class KibanaAuth:
 class KibanaConfig:
     base_url: str = ""
     auth: KibanaAuth = field(default_factory=KibanaAuth)
-    time_from: str = "now-24h"
+    time_from: str = "now-30d"
     time_to: str = "now"
     verify_tls: bool = True
 
@@ -43,7 +43,9 @@ class KibanaConfig:
 class ESConfig:
     base_url: str = ""
     api_key: str = ""
-    index: str = ".dashboard-health-monitor"
+    # No leading dot: dot-prefixed streams are hidden from Kibana's data-view
+    # picker and some ES setups refuse to let non-system users create them.
+    index: str = "dashboard-health-monitor"
     verify_tls: bool = True
     # Optional AWS Secrets Manager source for the Elasticsearch API key
     # (production default; test passes the key on the command line instead).
@@ -86,11 +88,14 @@ class CollectorConfig:
     browser_channel: str = "msedge"
     # Selenium only: path to msedgedriver/chromedriver. Empty -> PATH / Selenium Manager.
     webdriver_path: str = ""
-    dashboard_timeout_ms: int = 90000
+    # Per-dashboard hard timeout. Sized for prod with time_from=now-30d and
+    # heavy dashboards (e.g. Priority Risks, 35 panels); tune per environment.
+    dashboard_timeout_ms: int = 180000
     poll_interval_ms: int = 250
     concurrency: int = 1
-    degraded_over_ms: int = 15000
-    failed_over_ms: int = 45000
+    # Load-time classification, in ms.
+    degraded_over_ms: int = 30000
+    failed_over_ms: int = 120000
     # A dashboard is 'failed' when the share of not-ok panels reaches this
     # percentage (0-100). Below it, any not-ok panel makes the dashboard
     # 'degraded'. Set 0 to make ANY not-ok panel a failure; 101 to disable.
@@ -147,7 +152,7 @@ def load_settings(path: str = "config/settings.yaml") -> Settings:
                 aws_secret_id=_env("DHM_KIBANA_AWS_SECRET_ID", ka.get("aws_secret_id", "")),
                 aws_secret_json_key=ka.get("aws_secret_json_key", "api_key"),
             ),
-            time_from=k.get("time_from", "now-24h"),
+            time_from=k.get("time_from", "now-30d"),
             time_to=k.get("time_to", "now"),
             verify_tls=str(_env("DHM_KIBANA_VERIFY_TLS", k.get("verify_tls", True))).lower()
             not in ("false", "0", "no"),
@@ -155,7 +160,7 @@ def load_settings(path: str = "config/settings.yaml") -> Settings:
         elasticsearch=ESConfig(
             base_url=_env("DHM_ES_URL", es.get("base_url", "")).rstrip("/"),
             api_key=_env("DHM_ES_API_KEY", es.get("api_key", "")),
-            index=es.get("index", ".dashboard-health-monitor"),
+            index=es.get("index", "dashboard-health-monitor"),
             verify_tls=str(_env("DHM_ES_VERIFY_TLS", es.get("verify_tls", True))).lower()
             not in ("false", "0", "no"),
             aws_secret_id=_env("DHM_ES_AWS_SECRET_ID", es.get("aws_secret_id", "")),
@@ -175,11 +180,11 @@ def load_settings(path: str = "config/settings.yaml") -> Settings:
             backend=_env("DHM_BACKEND", col.get("backend", "playwright")),
             browser_channel=_env("DHM_BROWSER_CHANNEL", col.get("browser_channel", "msedge")),
             webdriver_path=_env("DHM_WEBDRIVER_PATH", col.get("webdriver_path", "")),
-            dashboard_timeout_ms=int(col.get("dashboard_timeout_ms", 90000)),
+            dashboard_timeout_ms=int(col.get("dashboard_timeout_ms", 180000)),
             poll_interval_ms=int(col.get("poll_interval_ms", 250)),
             concurrency=int(col.get("concurrency", 1)),
-            degraded_over_ms=int(col.get("degraded_over_ms", 15000)),
-            failed_over_ms=int(col.get("failed_over_ms", 45000)),
+            degraded_over_ms=int(col.get("degraded_over_ms", 30000)),
+            failed_over_ms=int(col.get("failed_over_ms", 120000)),
             failed_not_ok_pct=float(col.get("failed_not_ok_pct", 50.0)),
             inter_request_delay_ms=int(col.get("inter_request_delay_ms", 500)),
             load_retries=int(col.get("load_retries", 1)),
