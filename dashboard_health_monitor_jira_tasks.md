@@ -1,15 +1,192 @@
 # Dashboard Health & Load-Time Monitor — Jira Breakdown
 
-This breaks `dashboard_health_monitor_project_plan.md` into a Jira hierarchy:
+This file has two sections:
+
+1. **[Current delivery status](#current-delivery-status)** — the concise 7-task
+   view (DHM-A → DHM-G) that reflects what has actually been delivered in
+   pre-staging and what remains to reach production. **Use this for planning
+   the production rollout.**
+2. **[Original planning breakdown](#original-planning-breakdown)** — the full
+   pre-implementation task decomposition (DHM-1 → DHM-24) kept for historical
+   reference.
+
+Scope reminder: we monitor **one** application bundle — the Federal Overview
+family of ~22 dashboards reachable from the hub's navigation — in **one**
+cluster and space. There is no multi-cluster rollout.
+
+---
+
+# Current delivery status
+
+The seven tasks below capture what shipped through pre-staging validation and
+what remains for production. Keep them all under a single **Epic** (Dashboard
+Health & Load-Time Monitor). Blocking links: **DHM-F blocked by DHM-E; DHM-G
+blocked by DHM-F.**
+
+## ✅ Completed (mark as Done)
+
+### DHM-A — Collector: implementation and validation
+- **Type:** Story · **Size:** L · **Status:** Done
+- **Description:** Built a Python collector that opens each dashboard in a
+  headless browser, times per-dashboard and per-panel render, classifies health
+  (`ok | degraded | failed`), and writes one nested document per dashboard per
+  cycle. Includes:
+  - Reachability-based scope — starts at the "Federal Overview" hub and follows
+    its navigation transitively (22 dashboards in fed2).
+  - Live Kibana Saved Objects API discovery (no `.ndjson` on server).
+  - Playwright with support for Chrome (test) and Edge (prod) via
+    `browser_channel`; Selenium fallback path.
+  - Kibana 8.19-compatible panel detection (`aria-labelledby` title extraction
+    + DOM-order positional fallback).
+  - Threshold-based classification (`failed_not_ok_pct: 50%`, per-dashboard
+    load-time bands).
+  - Operational hardening: retry/backoff on 429/5xx, per-request timeout, bulk
+    chunking, per-dashboard hard timeout, error isolation, inter-request pacing.
+  - Secret resolution: CLI arg > env > AWS Secrets Manager.
+- **Acceptance criteria:**
+  - Collector produces valid docs for all 22 dashboards in one cycle.
+  - 74 unit tests pass locally.
+  - Codebase merged to `main`.
+
+### DHM-B — Elasticsearch storage: data stream, template, ILM
+- **Type:** Task · **Size:** M · **Status:** Done
+- **Description:** Created the `dashboard-health-monitor` data stream (no dot
+  prefix — visible in Kibana data-view picker), an index template with nested
+  `panels` mapping, and an ILM policy for one year of history.
+- **Acceptance criteria:**
+  - Data stream `dashboard-health-monitor` exists in fed2.
+  - ILM: rollover monthly (or 5 GB), delete after 365 days.
+  - Index template contains all rollup + nested per-panel fields.
+
+### DHM-C — Pre-staging deployment on macOS
+- **Type:** Task · **Size:** S · **Status:** Done
+- **Description:** Deployed the collector on a Mac laptop running against the
+  fed2 pre-staging cluster; scheduled via cron; verified end-to-end data flow
+  into `dashboard-health-monitor`.
+- **Acceptance criteria:**
+  - Cron writes new docs on every cycle.
+  - Wrapper handles env, secrets, logs (`~/Library/Logs/dhm/`).
+  - Docs queryable in Kibana Dev Tools.
+
+### DHM-D — Kibana trend dashboard (initial)
+- **Type:** Story · **Size:** M · **Status:** Done (initial pass)
+- **Description:** Built the Kibana trend dashboard on
+  `dashboard-health-monitor*`: three health tiles (ok / degraded / failed),
+  latest-load-time table per dashboard, load-time-over-time line, latest-cycle
+  bar chart.
+- **Acceptance criteria:**
+  - Dashboard reflects live data with 30-second auto-refresh.
+  - Health tiles are color-coded (green/amber/red).
+  - Load-time trend line shows per-dashboard series.
+
+## 🔨 Remaining work
+
+### DHM-E — Request production server from infrastructure / DevOps
+- **Type:** Task · **Size:** S · **Status:** To Do
+- **Description:** Request a production-grade Linux (or Windows-with-Edge)
+  VM/host from the Infrastructure / DevOps team to run the collector on
+  schedule. Not a Mac, not a laptop.
+- **Requirements to include in the request:**
+  - Python 3.10+ available (or installable).
+  - **Microsoft Edge** installed and available on `PATH` (production browser).
+  - Outbound HTTPS to the production Kibana and Elasticsearch endpoints.
+  - AWS SDK / IAM instance-role access with `secretsmanager:GetSecretValue` on
+    the ES API-key secret.
+  - Cron (or systemd timers) available.
+  - Persistent local disk for the collector's log directory (~50 MB/month with
+    rotation).
+  - Ability to install pip packages (or a pre-baked image with `playwright`,
+    `requests`, `PyYAML`, `boto3`).
+- **Acceptance criteria:**
+  - Ticket raised with infra/DevOps referencing the requirements above.
+  - Server provisioned, hostname/IP shared, sudo/SSH access confirmed for the
+    deploy engineer.
+
+### DHM-F — Deploy collector to the production server + schedule
+- **Type:** Story · **Size:** M · **Status:** To Do · **Blocked by:** DHM-E
+- **Description:** Install and run the collector on the provisioned production
+  host against the production Kibana / Elasticsearch cluster.
+- **Steps (high level):**
+  - Clone the repo, create virtualenv, `pip install -r requirements.txt`.
+  - Populate `config/settings.yaml`: production `kibana.base_url`,
+    `elasticsearch.base_url`, `kibana_space`, `browser_channel: msedge`,
+    `elasticsearch.aws_secret_id`, `aws_region`.
+  - Confirm the runner can read the Elasticsearch API key from AWS Secrets
+    Manager (no key on the command line).
+  - Run `python scripts/setup_elasticsearch.py` once to apply the template +
+    ILM in prod.
+  - Run one manual `python scripts/run_collector.py` to confirm end-to-end.
+  - Wire up cron or a systemd timer for the chosen cadence (default: every
+    20–30 minutes).
+- **Acceptance criteria:**
+  - Data stream `dashboard-health-monitor` exists in production.
+  - Scheduled cycles land docs on schedule; log rotation working.
+  - No secrets stored on disk in the repo or in the crontab — the ES API key
+    resolves from AWS on every cycle.
+
+### DHM-G — Kibana alerting rules (dashboard failure + collector liveness)
+- **Type:** Story · **Size:** M · **Status:** To Do · **Blocked by:** DHM-F
+- **Description:** Configure Kibana Alerting rules so operators are notified
+  when dashboards regress or when the collector itself stops running. Use
+  Elasticsearch Query rules and an existing notification connector (Slack /
+  email / PagerDuty — whichever ops uses).
+- **Sub-work:**
+
+  **G.1 — Dashboard-failed alert**
+  - Rule type: Elasticsearch Query
+  - Index: `dashboard-health-monitor*`
+  - Query: `load_status : "failed"` over the last `2 × cron cadence` (e.g.
+    60 min if cron runs every 30 min)
+  - Threshold: `count > 0`
+  - Group by: `dashboard_title` (so ops sees which dashboard(s) failed)
+  - Notification: Slack channel / email — include `dashboard_title`,
+    `load_time_ms`, and count of `panels_not_ok`.
+
+  **G.2 — Panel-unhealthy alert (optional but recommended)**
+  - Rule type: Elasticsearch Query
+  - Query: `panels_not_ok > 0`
+  - Threshold: `count > 0` in the last 2× cron cadence
+  - Group by: `dashboard_title`
+  - Notification: same channel, lower severity.
+
+  **G.3 — Collector liveness / dead-man's switch**
+  - Rule type: Elasticsearch Query
+  - Index: `dashboard-health-monitor*`
+  - Query: `match_all`
+  - Threshold: `count < expected_docs_per_cycle` in the last
+    `2 × cron cadence`
+  - Fires when the collector stops writing (script crash, host down, cron
+    broken, secret expired).
+  - Notification: same channel, high severity — the tag "monitor is silent"
+    makes it clear this is meta-alerting.
+
+  Rule payload skeletons are already in the repo at `es/alerting/*.json` — G.1
+  and G.3 can be adapted from `load_time_rule.json` and
+  `dead_mans_switch_rule.json`.
+
+- **Acceptance criteria:**
+  - All three rules exist in prod and are enabled.
+  - Each rule dry-runs successfully against historical data (or an injected bad
+    doc).
+  - A test failure — e.g. temporarily stopping the collector — triggers G.3
+    within 2× cron cadence.
+  - A dashboard forced into the `failed` state triggers G.1.
+  - Notification channel confirmed reaching the on-call recipient.
+
+---
+
+# Original planning breakdown
+
+*Historical — the pre-implementation task decomposition. Kept for reference;
+DHM-A → DHM-G above is the current source of truth.*
+
+This section breaks `dashboard_health_monitor_project_plan.md` into a Jira
+hierarchy:
 
 - **1 Epic** — the whole project.
 - **Tasks** — one per plan phase / workstream.
 - **Sub-tasks** (`DHM-*`) — the individual, ticketable units under each Task,
   each sized to fit a single card (roughly 0.5–3 days).
-
-Scope reminder: we monitor **one** application bundle — the Federal Overview
-family of 22 dashboards and their 215 data panels — in **one** cluster and space.
-There is no multi-cluster rollout.
 
 **Legend** — sub-task `Type`: Story / Task / Spike. `Size`: S (≤1d) / M (1–3d) /
 L (3–5d). `Status` notes where a sub-task is already implemented in this repo.
