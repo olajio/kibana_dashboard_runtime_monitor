@@ -19,12 +19,41 @@ cluster: fed2                   # [DHM_CLUSTER] the single cluster we monitor
 # dashboard URL.
 kibana_space: fed2              # [DHM_SPACE] space ID the dashboards live in
 
-# AWS region for Secrets Manager (production API-key retrieval). Falls back to
-# the standard AWS_REGION env var.
-aws_region: ""                  # [DHM_AWS_REGION] e.g. us-gov-west-1
+# --- AWS Secrets Manager ----------------------------------------------------
+# How production is configured. Ansible deploys this repo to the server and sets
+# `aws_secret_id` (or DHM_AWS_SECRET_ID); nothing else environment-specific and
+# nothing sensitive needs to live on the server.
+#
+# `aws_secret_id` names ONE secret whose payload is a JSON object holding the
+# connection settings:
+#
+#     {
+#       "kibana_url":     "https://kibana.example.gov:9243",
+#       "es_url":         "https://es.example.gov:9243",
+#       "api_key":        "<base64 id:key>",
+#       "kibana_api_key": "<base64 id:key>"    # optional; defaults to api_key
+#     }
+#
+# Precedence for each value, most explicit first:
+#   CLI flag  >  env var  >  this bundle  >  value-specific secret (keys only)
+#           >  the literal values in this file
+# The bundle deliberately outranks this file: the file carries per-environment
+# defaults, the secret is the source of truth. Configure either the bundle or
+# the value-specific secrets below, not both.
+#
+# Leave aws_secret_id empty (the test default) and AWS is never contacted.
+aws_region: us-east-1           # [DHM_AWS_REGION] our default; AWS_REGION also honoured
+aws_secret_id: ""               # [DHM_AWS_SECRET_ID] e.g. elastic/dhm/connection
+# Field names inside the bundle, if the secret already exists with other names.
+aws_secret_keys:
+  kibana_url: kibana_url
+  es_url: es_url
+  api_key: api_key
+  kibana_api_key: kibana_api_key
 
 # --- Kibana (the browser target) --------------------------------------------
 kibana:
+  # Test: set it here. Production: leave it and let the AWS bundle supply it.
   base_url: https://kibana.example.gov      # [DHM_KIBANA_URL] no trailing slash
   # Authentication for the headless browser. Choose ONE method.
   #   api_key : injected as an "Authorization: ApiKey <key>" header
@@ -34,8 +63,10 @@ kibana:
     api_key: ""                              # [DHM_KIBANA_API_KEY] base64 id:key
     cookie_name: sid
     cookie_value: ""                         # [DHM_KIBANA_COOKIE]
-    # Optional: read the Kibana API key from AWS Secrets Manager in production.
-    # If left empty, the Kibana key falls back to the Elasticsearch key below.
+    # Optional: a SEPARATE secret holding only the Kibana API key, for split-secret
+    # setups. Normally unnecessary — the top-level bundle's kibana_api_key (or, if
+    # absent, its api_key) covers this, and an empty value falls back to the
+    # Elasticsearch key below.
     aws_secret_id: ""                        # [DHM_KIBANA_AWS_SECRET_ID]
     aws_secret_json_key: api_key             # field name if the secret is JSON
   # Time range applied to every dashboard load (Kibana global state).
@@ -47,10 +78,16 @@ kibana:
 
 # --- Elasticsearch (where results are written) ------------------------------
 elasticsearch:
+  # NOTE: this is a different host from kibana.base_url (typically ...es... vs
+  # ...kb...). Pointing both at Kibana makes every _bulk write 404 — the
+  # collector warns when it sees them match.
+  # Test: set it here. Production: leave it and let the AWS bundle supply it.
   base_url: https://es.example.gov:9200      # [DHM_ES_URL]
-  # API key resolution order: --es-api-key  >  DHM_ES_API_KEY  >  AWS Secrets Manager.
-  # Leave api_key empty and set aws_secret_id for production.
+  # Resolution order: --es-api-key > DHM_ES_API_KEY > the top-level AWS bundle
+  # > the value-specific secret below > this literal value.
   api_key: ""                                # [DHM_ES_API_KEY] base64 id:key
+  # Optional: a SEPARATE secret holding only the ES API key, for split-secret
+  # setups. Normally unnecessary — use the top-level aws_secret_id bundle.
   aws_secret_id: ""                          # [DHM_ES_AWS_SECRET_ID] e.g. elastic/kibana/dhm-es
   aws_secret_json_key: api_key               # field name if the secret is JSON
   # Data-stream name. NOT dot-prefixed: Kibana hides dot-prefixed streams from
