@@ -39,11 +39,31 @@ pip install -r requirements.txt
 > If the `playwright` pip package is blocked in the boundary, use the Selenium
 > backend instead — see [Appendix A](#appendix-a--selenium-fallback).
 
-### 0.0 Shell variables for this runbook's `curl` commands
+### 0.0 What the server needs — and what it does not
 
-**These are not settings.** They exist only so the `curl` verification commands in
-this runbook are readable. The collector never reads them, and deliberately cannot:
-its endpoints come from the AWS secret. Set them once per shell session.
+Read this before the shell block below, because the block is easy to mistake for a
+deployment step. It is not one.
+
+**The deployed server needs exactly two environment variables**, and the Ansible
+playbook sets both in the cron entry for us — there is nothing to export by hand:
+
+| On the server | Value | Why |
+|---|---|---|
+| `DHM_AWS_SECRET_ID` | e.g. `elastic/dhm/connection` | which secret to read |
+| `DHM_AWS_REGION` | `us-east-1` | optional — this is already the default |
+
+Plus AWS credentials, which are not an environment variable: an instance or task role
+with `secretsmanager:GetSecretValue` on that secret (§3B.2).
+
+**The server needs no URL and no API key.** `kibana_url`, `elastic_url` and
+`ans_dashboard_health_monitor` are read from the secret at the start of every run.
+Nothing else about the connection lives on the host.
+
+#### Optional: shorthand for this runbook's `curl` checks
+
+The block below is for **your own terminal**, not the server, and only if you want to
+run the `curl` verification commands in this runbook. Skip it entirely and the
+deployment is unaffected — or paste the URLs inline instead.
 
 ```bash
 # Note the names carry NO "DHM_" prefix — see the rule below.
@@ -455,6 +475,17 @@ Leave `kibana.base_url`, `elasticsearch.base_url` and every `api_key` field empt
 the file holds defaults, the secret is the source of truth.) There are no
 `DHM_KIBANA_URL` / `DHM_ES_URL` overrides to worry about — the URLs are not
 environment-settable, so the secret cannot be bypassed by a stray export.
+
+**Nothing else needs setting on the host.** To be explicit about what is *not*
+required there:
+
+| Not on the server | Where it comes from instead |
+|---|---|
+| the Kibana URL | the secret's `kibana_url` field |
+| the Elasticsearch URL | the secret's `elastic_url` field |
+| the API key | the secret's `ans_dashboard_health_monitor` field |
+| `KB_URL` / `ES_URL` / `APIKEY` | nowhere — those are §0.0 shorthand for a human running `curl`, and the collector never reads them |
+| a `.ndjson` export | Kibana's Saved Objects API, live, every run (§3B.0) |
 
 The runner needs AWS credentials with `secretsmanager:GetSecretValue` on that
 secret (instance role / task role / `AWS_PROFILE` — however this host normally gets
