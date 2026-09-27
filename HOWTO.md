@@ -49,36 +49,34 @@ are in the repo — paste the body into Dev Tools after `POST /_security/api_key
 
 | File | Use it when |
 |---|---|
-| [`es/api_key_collector.json`](es/api_key_collector.json) | **Start here.** Local indices + Kibana. Uses only privilege names present in every 8.x release, so the POST will not be rejected. |
-| [`es/api_key_collector_ccs.json`](es/api_key_collector_ccs.json) | The same, plus a `remote_indices` block for the cross-cluster data views. Needs ES 8.14+ and the API-key-based remote-cluster model. |
-
-Start with the first, run the collector, and only move to the CCS variant if the
-cross-cluster panels come back `empty` (see *Which one do I need?* below).
+| [`es/api_key_collector_ccs.json`](es/api_key_collector_ccs.json) | **This is the one we use.** Local indices + the cross-cluster `remote_indices` grant + Kibana. Needs ES 8.14+ and the API-key-based remote-cluster model. |
+| [`es/api_key_collector.json`](es/api_key_collector.json) | Fallback: identical but with no `remote_indices` block. Use this if the POST above is rejected (see below). |
 
 Both create a key named `dashboard_health_monitor` whose inline role grants:
 
 ```
-cluster      manage_index_templates, manage_ilm     -> PUT _index_template, PUT _ilm/policy
-indices      dashboard-health-monitor*              -> create_doc, auto_configure, create_index,
-                                                        read, view_index_metadata
-             cdm_*, data_dictionary                 -> read, view_index_metadata
-applications kibana-.kibana on space:fed2            -> read
+cluster        manage_index_templates, manage_ilm    -> PUT _index_template, PUT _ilm/policy
+indices        dashboard-health-monitor*             -> create_doc, auto_configure, create_index,
+                                                         read, view_index_metadata
+               cdm_*, data_dictionary                -> read, view_index_metadata
+remote_indices agency-dashboard* / cdm_*             -> read, read_cross_cluster,
+                 (CCS variant only)                     view_index_metadata
+applications   kibana-.kibana on space:fed2           -> read
 ```
 
-**Which one do I need?** It depends on how this deployment trusts its remote
-clusters, which we cannot tell from the dashboards alone:
+Those patterns are checked against the real export: the 22 dashboards resolve to
+**32 distinct data-view patterns — 18 local, 14 cross-cluster — and the role covers
+every one**. Every local pattern is `cdm_*` except `data_dictionary`; every remote
+pattern is a `cdm_*` index on a cluster matching `agency-dashboard*` (which covers
+both the `agency-dashboard*` and `agency-dashboard-*` aliases in use). Re-check after
+any dashboard change that introduces a new data view.
 
-- **API-key-based remote clusters (ES 8.14+)** — the `remote_indices` block in the
-  CCS file is how you grant cross-cluster reads, and it belongs in this key.
-- **Certificate-based (legacy) trust** — remote reads are authorized on the *remote*
-  cluster, so the equivalent role must exist there with `read` +
-  `read_cross_cluster` on those indices. `remote_indices` here will not help, and
-  older versions reject the field outright, failing the whole POST. This is why the
-  default file omits it.
-
-Confirm with whoever owns the remote-cluster configuration. If `POST` of the CCS
-variant fails with an unknown-field error, that answers it — use the default file
-and have the remote cluster's role updated instead.
+**If the CCS POST is rejected** with an unknown-field error on `remote_indices`, this
+deployment uses certificate-based (legacy) remote-cluster trust rather than the
+API-key-based model. In that case remote reads are authorized on the *remote*
+cluster: use `es/api_key_collector.json` here, and have the equivalent role created
+on the remote cluster with `read` + `read_cross_cluster` on those indices. Whoever
+owns the remote-cluster configuration will know which model is in play.
 
 **The shortcut that avoids all of this:** the analysts who review these dashboards
 by hand already have exactly the read access the collector needs. Dump the role that
