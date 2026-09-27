@@ -1,0 +1,156 @@
+---
+# Deploy the Dashboard Health & Load-Time Monitor onto an existing server.
+#
+# The repo is the artifact: this playbook checks it out, builds a virtualenv,
+# renders config/settings.yaml (which holds no endpoints and no credentials —
+# those come from AWS Secrets Manager), and installs the schedule.
+#
+#   # first time on a host: also apply the ILM policy + index template
+#   ansible-playbook -i inventory deploy/dhm-deploy.yml --tags all,setup
+#
+#   # routine redeploy (idempotent; leaves the cluster assets alone)
+#   ansible-playbook -i inventory deploy/dhm-deploy.yml
+#
+# Prerequisites on the target host, which the preflight tasks check:
+#   - Python 3.10+
+#   - Microsoft Edge on PATH
+#   - outbound HTTPS to the Kibana and Elasticsearch endpoints
+#   - an instance/task role with secretsmanager:GetSecretValue on dhm_aws_secret_id
+- name: Deploy the Dashboard Health Monitor
+  hosts: dhm_runners
+  become: true
+
+  vars:
+    dhm_root: /opt/dashboard-health-monitor
+    dhm_repo: https://github.com/olajio/kibana_dashboard_runtime_monitor.git
+    dhm_version: main
+    dhm_log_dir: /var/log/dhm
+    dhm_user: dhm
+
+    # --- environment-specific ---
+    dhm_aws_region: us-east-1
+    dhm_aws_secret_id: elastic/dhm/connection
+    dhm_cluster: fed2
+    dhm_space: fed2
+    dhm_hub_title: Federal Overview
+
+    # --- tuning ---
+    dhm_time_from: now-30d
+    dhm_verify_tls: "true"
+    dhm_dashboard_timeout_ms: 180000
+    dhm_cron_minute: "*/30"
+
+  tasks:
+    # ---------------------------------------------------------------- preflight
+    - name: Check Python is 3.10 or newer
+      ansible.builtin.command: python3 -c "import sys; assert sys.version_info >= (3, 10)"
+      changed_when: false
+
+    - name: Locate Microsoft Edge
+      ansible.builtin.command: which microsoft-edge microsoft-edge-stable msedge
+      register: dhm_edge
+      changed_when: false
+      failed_when: false
+
+    - name: Fail early if Edge is missing
+      ansible.builtin.fail:
+        msg: >-
+          Microsoft Edge was not found on PATH. The collector drives the system
+          browser and downloads nothing, so Edge must be installed. Install it, or
+          set browser_channel to an installed browser in
+          deploy/settings.prod.yaml.j2.
+      when: dhm_edge.rc != 0
+
+    # ------------------------------------------------------------------- deploy
+    - name: Create the service account
+      ansible.builtin.user:
+        name: "{{ dhm_user }}"
+        system: true
+        create_home: false
+        shell: /usr/sbin/nologin
+
+    - name: Check out the repository
+      ansible.builtin.git:
+        repo: "{{ dhm_repo }}"
+        dest: "{{ dhm_root }}"
+        version: "{{ dhm_version }}"
+      notify: Reinstall requirements
+
+    - name: Install Python requirements into a virtualenv
+      ansible.builtin.pip:
+        requirements: "{{ dhm_root }}/requirements.txt"
+        virtualenv: "{{ dhm_root }}/.venv"
+        virtualenv_command: python3 -m venv
+
+    - name: Render settings (no endpoints, no credentials — those come from AWS)
+      ansible.builtin.template:
+        src: settings.prod.yaml.j2
+        dest: "{{ dhm_root }}/config/settings.yaml"
+        owner: "{{ dhm_user }}"
+        mode: "0644"
+
+    - name: Create the log directory
+      ansible.builtin.file:
+        path: "{{ dhm_log_dir }}"
+        state: directory
+        owner: "{{ dhm_user }}"
+        mode: "0755"
+
+    - name: Give the service account the checkout
+      ansible.builtin.file:
+        path: "{{ dhm_root }}"
+        state: directory
+        owner: "{{ dhm_user }}"
+        recurse: true
+
+    - name: Rotate the collector log
+      ansible.builtin.copy:
+        dest: /etc/logrotate.d/dashboard-health-monitor
+        mode: "0644"
+        content: |
+          {{ dhm_log_dir }}/collector.log {
+              weekly
+              rotate 8
+              compress
+              missingok
+              notifempty
+              copytruncate
+          }
+
+    # --------------------------------------------------- one-off cluster assets
+    # Tagged 'setup' so a routine redeploy does not touch the cluster. This needs
+    # cluster privileges (manage_ilm, manage_index_templates) that the long-lived
+    # collector key does not have to keep — see HOWTO §0.1.
+    - name: Apply the ILM policy and index template
+      become_user: "{{ dhm_user }}"
+      ansible.builtin.command:
+        cmd: "{{ dhm_root }}/.venv/bin/python scripts/setup_elasticsearch.py"
+        chdir: "{{ dhm_root }}"
+      environment:
+        DHM_AWS_SECRET_ID: "{{ dhm_aws_secret_id }}"
+        DHM_AWS_REGION: "{{ dhm_aws_region }}"
+      register: dhm_setup
+      changed_when: "'setup complete' in dhm_setup.stdout"
+      tags: [setup, never]
+
+    # ----------------------------------------------------------------- schedule
+    # The data stream itself is created by the first real write, not by the setup
+    # step above, so the first cron run is what brings the index into existence.
+    - name: Schedule the collection cycle
+      ansible.builtin.cron:
+        name: dashboard-health-monitor
+        user: "{{ dhm_user }}"
+        minute: "{{ dhm_cron_minute }}"
+        job: >-
+          cd {{ dhm_root }} &&
+          DHM_AWS_SECRET_ID={{ dhm_aws_secret_id }}
+          DHM_AWS_REGION={{ dhm_aws_region }}
+          {{ dhm_root }}/.venv/bin/python scripts/run_collector.py
+          >> {{ dhm_log_dir }}/collector.log 2>&1
+
+  handlers:
+    - name: Reinstall requirements
+      ansible.builtin.pip:
+        requirements: "{{ dhm_root }}/requirements.txt"
+        virtualenv: "{{ dhm_root }}/.venv"
+        virtualenv_command: python3 -m venv

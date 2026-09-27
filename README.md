@@ -22,7 +22,8 @@ and the Jira breakdown in
 ## Repository layout
 
 ```
-federal_overview.ndjson            # the saved-objects export we monitor (source of truth)
+federal_overview.ndjson            # saved-objects export, pre-staging (test/offline registry)
+federal_overview_dashboard.ndjson  # the same export taken from the production cluster
 HOWTO.md                           # step-by-step implementation runbook (test + prod)
 requirements.txt                   # base deps (Playwright backend + boto3 for AWS)
 requirements-selenium.txt          # extra deps for the Selenium fallback backend
@@ -42,13 +43,19 @@ src/dhm/
   es_writer.py                     # ES writes with retry/backoff + bulk chunking
 scripts/
   build_registry.py                # export -> config/dashboards.generated.json
-  setup_elasticsearch.py           # create ILM policy + index template
+  setup_elasticsearch.py           # apply ILM policy + index template (NOT the index)
   run_collector.py                 # run one collection cycle
+  debug_spike.py                   # dump raw panel DOM when selectors drift
+deploy/
+  dhm-deploy.yml                   # Ansible playbook: checkout, venv, settings, cron, logrotate
+  settings.prod.yaml.j2            # rendered settings.yaml — no endpoints, no credentials
 es/
   index_template.json              # data stream mapping (nested panels)
   ilm_policy.json                  # retention (rollover monthly / 5gb, delete after 365d)
+  api_key_collector_ccs.json       # the API key to create (local + cross-cluster reads)
+  api_key_collector.json           # same, without the remote_indices block
   alerting/*.json                  # three Kibana Alerting rule payloads
-tests/                             # unit tests (registry + render detection)
+tests/                             # unit tests (118, no live cluster needed)
 ```
 
 The stages below run in order. Stages 1–4 stand up the collector; Stages 5–6
@@ -269,6 +276,19 @@ identical across them — only the launch target changes.
 `selenium` (the fallback described under [Install](#fallback-selenium-backend)).
 Both backends honour `browser_channel` and produce identical documents.
 
+### Shell variables for the validation commands
+
+The `curl` checks below refer to these. They are for our own verification only — the
+collector reads `settings.yaml` / the AWS secret and ignores them (the two URLs are
+not environment-settable at all; see the precedence table above).
+
+```bash
+# Kibana and Elasticsearch are DIFFERENT hosts — check ...kb... vs ...es...
+export DHM_KIBANA_URL="https://<host>.kb.<domain>:9243"
+export DHM_ES_URL="https://<host>.es.<domain>:9243"
+export DHM_ES_API_KEY="<base64 id:key>"        # this one IS read by the collector
+```
+
 ### Set up the index (once per cluster)
 
 ```bash
@@ -278,7 +298,11 @@ python scripts/setup_elasticsearch.py --es-api-key "<id:key>"
 python scripts/setup_elasticsearch.py
 ```
 
-This creates the ILM policy and the data-stream index template.
+This creates the ILM policy and the data-stream index template — and **not** the
+index. The `dashboard-health-monitor` data stream is auto-created by the first
+`_bulk` write in Stage 4, which is what the key's `auto_configure` privilege is for.
+So right after this step `_search` returns 404 and Kibana's data-view picker lists
+nothing; that is expected.
 
 **Validate:**
 
@@ -382,9 +406,8 @@ Add a notification connector id to each rule's `actions` array, then create them
 in Kibana:
 
 ```bash
-KIBANA="$DHM_KIBANA_URL"
 for rule in es/alerting/*.json; do
-  curl -sS -X POST "$KIBANA/api/alerting/rule" \
+  curl -sS -X POST "$DHM_KIBANA_URL/api/alerting/rule" \
     -H "Authorization: ApiKey $DHM_KIBANA_API_KEY" \
     -H "kbn-xsrf: true" -H "Content-Type: application/json" \
     -d @"$rule"

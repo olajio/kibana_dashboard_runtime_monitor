@@ -1,0 +1,66 @@
+{#
+  Production settings for the Dashboard Health & Load-Time Monitor.
+
+  Rendered by deploy/dhm-deploy.yml to <dhm_root>/config/settings.yaml.
+
+  This file deliberately contains NO endpoints and NO credentials: the Kibana URL,
+  the Elasticsearch URL and the API key all come from the AWS Secrets Manager secret
+  named by aws_secret_id. That is what makes it safe to commit alongside the
+  playbook and to leave world-readable on the server.
+#}
+# MANAGED BY ANSIBLE — edit deploy/settings.prod.yaml.j2, not this file.
+
+# --- What we are monitoring -------------------------------------------------
+app: federal_overview
+cluster: {{ dhm_cluster }}
+kibana_space: {{ dhm_space }}
+
+# --- AWS Secrets Manager ----------------------------------------------------
+# One secret supplies kibana_url, elastic_url and ans_dashboard_health_monitor.
+# The runner needs secretsmanager:GetSecretValue on it (instance/task role).
+aws_region: {{ dhm_aws_region }}
+aws_secret_id: {{ dhm_aws_secret_id }}
+
+# --- Kibana -----------------------------------------------------------------
+kibana:
+  # base_url intentionally omitted — supplied by the AWS secret.
+  auth:
+    method: api_key
+    # api_key intentionally omitted — supplied by the AWS secret.
+  time_from: {{ dhm_time_from }}
+  time_to: now
+  verify_tls: {{ dhm_verify_tls | lower }}
+
+# --- Elasticsearch ----------------------------------------------------------
+elasticsearch:
+  # base_url and api_key intentionally omitted — supplied by the AWS secret.
+  index: dashboard-health-monitor
+  verify_tls: {{ dhm_verify_tls | lower }}
+  request_timeout_s: 30
+  max_retries: 4
+  retry_backoff_s: 2.0
+  bulk_chunk_size: 500
+
+# --- Collector --------------------------------------------------------------
+collector:
+  # api: read the dashboard list from Kibana's Saved Objects API on every run, so
+  # no .ndjson export is kept on the server and dashboard changes are picked up
+  # automatically. This MUST be 'api' in production — the default is 'export',
+  # which would look for a config/dashboards.generated.json that is not deployed.
+  registry_source: api
+  # linked: the hub plus every dashboard reachable from its navigation.
+  selection: linked
+  hub_title: "{{ dhm_hub_title }}"
+  include_titles: []
+  headless: true
+  backend: playwright
+  # msedge: drive the system Microsoft Edge; nothing is downloaded.
+  browser_channel: msedge
+  dashboard_timeout_ms: {{ dhm_dashboard_timeout_ms }}
+  poll_interval_ms: 250
+  concurrency: 1
+  degraded_over_ms: 30000
+  failed_over_ms: 120000
+  failed_not_ok_pct: 50.0
+  inter_request_delay_ms: 500
+  load_retries: 1
