@@ -276,10 +276,12 @@ identical across them — only the launch target changes.
 `selenium` (the fallback described under [Install](#fallback-selenium-backend)).
 Both backends honour `browser_channel` and produce identical documents.
 
-### Shell variables for the validation commands
+### Optional: shorthand for the validation commands
 
-The `curl` checks below refer to these. **They are not settings** — they exist only to
-keep the commands readable.
+**For your own terminal, not the deployed server.** The `curl` checks below refer to
+these; skip them and paste URLs inline if you prefer. A deployed server needs none of
+them — it needs only `DHM_AWS_SECRET_ID` (plus `DHM_AWS_REGION`, which already
+defaults to `us-east-1`) and an instance role that can read the secret.
 
 ```bash
 # No "DHM_" prefix: these change nothing about a run, they are just curl shorthand.
