@@ -39,7 +39,7 @@ def main() -> int:
                     help="Elasticsearch base URL. Overrides env/AWS/settings.")
     ap.add_argument("--aws-secret-id", default=None,
                     help="AWS Secrets Manager secret holding the connection bundle "
-                         "(JSON: kibana_url, es_url, api_key).")
+                         "(JSON: kibana_url, elastic_url, ans_dashboard_health_monitor).")
     ap.add_argument("--aws-region", default=None,
                     help="AWS region for Secrets Manager (default us-east-1).")
     args = ap.parse_args()
