@@ -19,7 +19,11 @@ both:
 
 ## 0. Prerequisites (once per machine)
 
-- Python 3.10+ (required by the pinned Playwright version)
+- Python **3.10 – 3.14**. The pins in `requirements.txt` have prebuilt wheels for
+  this whole range; going outside it means a C extension (PyYAML, greenlet) has no
+  wheel and the install fails to build. Verify with `python -V` **inside the
+  activated virtualenv** — the tracebacks name the interpreter, which is the
+  fastest way to spot a venv that is not actually being used.
 - The browser already installed: **Chrome** (test) or **Edge** (prod). No browser
   is downloaded.
 - Network access from the machine to Kibana and Elasticsearch.
@@ -731,6 +735,30 @@ into the new stream before deleting.
   For a secret that holds only a key, use `elasticsearch.aws_secret_id` instead.
 - **Values show `<-settings` when they should come from AWS** — the field is missing
   from the secret, or named differently; check it against `aws_secret_keys`.
+- **`ModuleNotFoundError: No module named 'yaml'`** (or `requests`, `boto3`) when
+  running pytest or a script — a dependency did not install. Almost always a wheel
+  problem rather than a missing step: a C-extension package pinned below the Python
+  in use has no prebuilt wheel, pip falls back to the sdist, the build fails, and the
+  module is simply absent. Check which interpreter is in play first, since the
+  traceback names it:
+
+  ```bash
+  python -V && python -c "import sys; print(sys.executable)"
+  pip install -r requirements.txt            # re-run and read the BUILD error
+  python -c "import yaml, requests, boto3; print('deps ok')"
+  ```
+
+  We hit this twice: `playwright==1.44.0` pulled an old `greenlet` that would not
+  compile on Python 3.13, and `PyYAML==6.0.1` (wheels only to cp312) failed on Python
+  3.14. Both are fixed in the current `requirements.txt`, which covers cp310–cp314 —
+  so if you see this, make sure the environment is on the current pins
+  (`pip install -r requirements.txt` in a clean virtualenv), not an older checkout's.
+  To check a pin yourself:
+
+  ```bash
+  curl -s https://pypi.org/pypi/PyYAML/6.0.3/json | grep -o 'cp3[0-9]*' | sort -u
+  ```
+
 - **`boto3 is not installed`** — the AWS path needs boto3 (`pip install -r
   requirements.txt` includes it), or pass the values on the command line instead.
 - **`both ... 404 on _bulk`** — the warning means Kibana's and Elasticsearch's URLs

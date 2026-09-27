@@ -65,7 +65,9 @@ add alerting and the trend dashboard.
 
 ## Prerequisites
 
-- Python 3.10+ (required by the pinned Playwright version)
+- Python **3.10 – 3.14** — the range our pinned dependencies ship prebuilt wheels
+  for. Outside it, a C extension (PyYAML, greenlet) has no wheel and the install
+  fails to build.
 - Network access from the runner to Kibana and Elasticsearch
 - An automation credential for Kibana (see [Stage 2](#stage-2--configure--set-up-elasticsearch))
 - **Microsoft Edge or Google Chrome already installed.** The collector drives the

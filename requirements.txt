@@ -1,15 +1,29 @@
 # Runtime dependencies for the Dashboard Health & Load-Time Monitor
 #
-# playwright pin: must stay recent enough to pull a greenlet version with a
-# prebuilt wheel for the Python version in use. An older pin (e.g. 1.44.0)
-# resolves to an old greenlet that fails to compile from source on newer
-# Pythons (e.g. 3.13 - "this header requires Py_BUILD_CORE define"). 1.62.0
-# declares Python 3.13/3.14 support (PyPI classifiers) and pulls a greenlet
-# with prebuilt 3.13 wheels, so no compilation is needed.
-playwright==1.62.0        # headless browser used to load dashboards and read render state; requires Python >=3.10
-requests==2.32.3          # Elasticsearch/Kibana REST calls (index writes, template setup)
-PyYAML==6.0.1             # settings file parsing
-boto3==1.34.100          # AWS Secrets Manager (production API-key retrieval); unused if keys are passed on the CLI
+# RULE FOR EVERY PIN HERE: it must have a prebuilt wheel for the Python in use.
+# Packages with C extensions (PyYAML, and greenlet via playwright) publish
+# per-Python wheels; an older pin has none for a newer interpreter, so pip falls
+# back to the sdist and the build fails. We have been bitten twice:
+#   - playwright 1.44.0 pulled an old greenlet -> failed to compile on 3.13
+#     ("this header requires Py_BUILD_CORE define")
+#   - PyYAML 6.0.1 has wheels only up to cp312 -> failed on 3.14
+#     ("ModuleNotFoundError: No module named 'yaml'" once the build was skipped)
+# When adding a Python version to the supported range, check the wheel tags:
+#   curl -s https://pypi.org/pypi/<pkg>/<version>/json | python -m json.tool | grep filename
 
-# Dev / test only
-pytest==8.2.0
+# Drives the already-installed browser. Wheels are platform-tagged
+# (py3-none-<platform>), so any Python >=3.10 works; what matters is its
+# greenlet>=3.1.1,<4 dependency resolving to greenlet 3.2+, which has cp313/cp314
+# wheels. Pinned exactly because our DOM selectors are version-sensitive.
+playwright==1.62.0
+
+# Pure-Python, so Python-version-agnostic.
+requests==2.32.3          # Elasticsearch/Kibana REST calls (index writes, template setup)
+boto3==1.34.100           # AWS Secrets Manager; unused if keys are passed on the CLI
+
+# C extension: 6.0.3 is the first release with cp314 wheels, and it covers
+# cp310-cp314, i.e. our whole supported range. Do NOT pin below 6.0.3.
+PyYAML==6.0.3             # settings file parsing
+
+# Dev / test only. 9.x is the first series declaring Python 3.14 support.
+pytest==9.1.1
