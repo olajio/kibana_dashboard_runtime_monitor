@@ -39,17 +39,18 @@ pip install -r requirements.txt
 > If the `playwright` pip package is blocked in the boundary, use the Selenium
 > backend instead — see [Appendix A](#appendix-a--selenium-fallback).
 
-### 0.0 Shell variables used throughout this runbook
+### 0.0 Shell variables for this runbook's `curl` commands
 
-Every `curl` below refers to these three. Set them once per shell session, before
-anything else — they are for our own verification commands only; the collector
-itself reads `settings.yaml` / AWS and never needs them.
+**These are not settings.** They exist only so the `curl` verification commands in
+this runbook are readable. The collector never reads them, and deliberately cannot:
+its endpoints come from the AWS secret. Set them once per shell session.
 
 ```bash
+# Note the names carry NO "DHM_" prefix — see the rule below.
 # Kibana and Elasticsearch are DIFFERENT hosts — check the ...kb... vs ...es...
 # segment. Pointing both at Kibana makes every write 404.
-export DHM_KIBANA_URL="https://<host>.kb.<domain>:9243"
-export DHM_ES_URL="https://<host>.es.<domain>:9243"
+export KB_URL="https://<host>.kb.<domain>:9243"
+export ES_URL="https://<host>.es.<domain>:9243"
 
 # The base64 `encoded` value from the create-key response in §0.1 — the same
 # string we pass to --es-api-key. Not the key id, and not id:key in plain text.
@@ -59,15 +60,26 @@ export APIKEY="<base64 id:key>"
 **Verify:** both hosts answer and the key authenticates.
 
 ```bash
-curl -s "$DHM_ES_URL" -H "Authorization: ApiKey $APIKEY" | head -5
-curl -s -o /dev/null -w '%{http_code}\n' "$DHM_KIBANA_URL/api/status" \
+curl -s "$ES_URL" -H "Authorization: ApiKey $APIKEY" | head -5
+curl -s -o /dev/null -w '%{http_code}\n' "$KB_URL/api/status" \
   -H "Authorization: ApiKey $APIKEY"          # expect 200
 ```
 
-> These exports are **only** for the `curl` commands in this runbook. The collector
-> ignores them: the two URLs are not environment-overridable by design, so a stale
-> export in a shell or crontab cannot redirect a run. `DHM_ES_API_KEY` *is* honoured
-> by the collector, so keep that one out of production shells.
+> **How to tell a setting from a scratch variable:** every environment variable the
+> collector actually reads is prefixed **`DHM_`** (`DHM_AWS_SECRET_ID`,
+> `DHM_ES_API_KEY`, `DHM_SPACE`, ...). The variables above have no such prefix
+> precisely because they change nothing about a run — `KB_URL` and `ES_URL` are just
+> shorthand for typing `curl`.
+>
+> **There is no `DHM_KIBANA_URL` or `DHM_ES_URL`.** The two endpoints are not
+> environment-settable at all: they resolve from the AWS secret's `kibana_url` and
+> `elastic_url` fields (or `settings.yaml`, or a one-off `--kibana-url` / `--es-url`
+> flag). So no stale export in a shell or a crontab can redirect a collection run.
+> Every run prints a `Connection:` line naming the source of each value, so this is
+> verifiable rather than a matter of trust.
+>
+> `DHM_ES_API_KEY` *is* honoured by the collector — that is how the test environment
+> passes the key — so keep that one out of production shells.
 
 ---
 
@@ -167,10 +179,10 @@ dashboard. `$APIKEY` is the `encoded` value from the create-key response:
 
 ```bash
 # 1. The key authenticates at all
-curl -s "$DHM_ES_URL/_security/_authenticate" -H "Authorization: ApiKey $APIKEY"
+curl -s "$ES_URL/_security/_authenticate" -H "Authorization: ApiKey $APIKEY"
 
 # 2. ES cluster + index privileges (every "has_all_requested" should be true)
-curl -s "$DHM_ES_URL/_security/user/_has_privileges" \
+curl -s "$ES_URL/_security/user/_has_privileges" \
   -H "Authorization: ApiKey $APIKEY" -H 'Content-Type: application/json' -d '{
   "cluster": ["manage_index_templates", "manage_ilm"],
   "index": [
@@ -184,12 +196,12 @@ curl -s "$DHM_ES_URL/_security/user/_has_privileges" \
 
 # 3. Kibana accepts it for the space (should return the dashboards, not a 403)
 curl -s -H "Authorization: ApiKey $APIKEY" -H 'kbn-xsrf: dhm' \
-  "$DHM_KIBANA_URL/s/fed2/api/saved_objects/_find?type=dashboard&type=links&per_page=1"
+  "$KB_URL/s/fed2/api/saved_objects/_find?type=dashboard&type=links&per_page=1"
 
 # 4. Cross-cluster reads actually resolve (empty hits + no error = privileges fine
 #    but no data; a security_exception = the CCS grant is missing)
 curl -s -H "Authorization: ApiKey $APIKEY" \
-  "$DHM_ES_URL/agency-dashboard*:cdm_vuln_current/_search?size=0"
+  "$ES_URL/agency-dashboard*:cdm_vuln_current/_search?size=0"
 ```
 
 Then swap it in and compare against a known-good run:
@@ -310,7 +322,7 @@ does **not** create the index.
 ```bash
 for asset in _ilm/policy/dashboard-health-monitor _index_template/dashboard-health-monitor; do
   curl -s -o /dev/null -w "$asset -> %{http_code}\n" \
-    "$DHM_ES_URL/$asset" -H "Authorization: ApiKey $APIKEY"
+    "$ES_URL/$asset" -H "Authorization: ApiKey $APIKEY"
 done
 ```
 
@@ -352,11 +364,11 @@ the DOM selectors need adjusting for the Kibana version — see
 
 ```bash
 # the data stream now exists (it did not before this run)
-curl -s "$DHM_ES_URL/_data_stream/dashboard-health-monitor" \
+curl -s "$ES_URL/_data_stream/dashboard-health-monitor" \
   -H "Authorization: ApiKey $APIKEY" | python -m json.tool | head -20
 
 # and holds documents
-curl -s "$DHM_ES_URL/dashboard-health-monitor/_search?size=1" \
+curl -s "$ES_URL/dashboard-health-monitor/_search?size=1" \
   -H "Authorization: ApiKey $APIKEY" | python -m json.tool
 ```
 
@@ -558,7 +570,7 @@ them in Kibana:
 
 ```bash
 for rule in es/alerting/*.json; do
-  curl -sS -X POST "$DHM_KIBANA_URL/api/alerting/rule" \
+  curl -sS -X POST "$KB_URL/api/alerting/rule" \
     -H "Authorization: ApiKey $APIKEY" \
     -H "kbn-xsrf: true" -H "Content-Type: application/json" \
     -d @"$rule"
@@ -622,9 +634,9 @@ picker. If a stream by that old name already exists, delete it and its template
 before applying the new ones:
 
 ```bash
-curl -sS -X DELETE "$DHM_ES_URL/_data_stream/.dashboard-health-monitor" \
+curl -sS -X DELETE "$ES_URL/_data_stream/.dashboard-health-monitor" \
   -H "Authorization: ApiKey <id:key>"
-curl -sS -X DELETE "$DHM_ES_URL/_index_template/dashboard-health-monitor" \
+curl -sS -X DELETE "$ES_URL/_index_template/dashboard-health-monitor" \
   -H "Authorization: ApiKey <id:key>"
 python scripts/setup_elasticsearch.py --es-api-key "<id:key>"
 python scripts/run_collector.py --es-api-key "<id:key>"        # writes first docs
