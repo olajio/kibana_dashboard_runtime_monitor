@@ -1,12 +1,22 @@
 #!/usr/bin/env python3
 """Run one collection cycle: load every dashboard, write results to ES.
 
-The Kibana URL, the Elasticsearch URL and the API key(s) each resolve by the
-same precedence, most explicit first:
+The two URLs resolve, most explicit first:
 
-    1. command-line flag         --kibana-url / --es-url / --es-api-key / --kibana-api-key
-    2. environment variable      DHM_KIBANA_URL / DHM_ES_URL / DHM_ES_API_KEY / DHM_KIBANA_API_KEY
-    3. AWS connection bundle     one JSON secret named by `aws_secret_id`
+    1. command-line flag         --kibana-url / --es-url   (for debugging)
+    2. AWS connection bundle     one JSON secret named by `aws_secret_id`
+                                 (fields: kibana_url, elastic_url)
+    3. config/settings.yaml
+
+There is deliberately no environment variable for the URLs — the endpoints belong to
+the AWS secret, so a stale export cannot redirect a run.
+
+The API key(s) keep an env step, because passing the key by hand is how the test
+environment runs:
+
+    1. command-line flag         --es-api-key / --kibana-api-key
+    2. environment variable      DHM_ES_API_KEY / DHM_KIBANA_API_KEY
+    3. AWS connection bundle     (field: ans_dashboard_health_monitor)
     4. value-specific AWS secret elasticsearch.aws_secret_id / kibana.auth.aws_secret_id
     5. config/settings.yaml
 
@@ -114,14 +124,14 @@ def main() -> int:
         print(f"WARNING: {warning}", file=sys.stderr)
 
     if not settings.kibana.base_url:
-        print("ERROR: no Kibana URL (pass --kibana-url, set DHM_KIBANA_URL, put "
-              "kibana_url in the AWS secret named by aws_secret_id, or set "
-              "kibana.base_url in settings.yaml).", file=sys.stderr)
+        print("ERROR: no Kibana URL. Put 'kibana_url' in the AWS secret named by "
+              "aws_secret_id, set kibana.base_url in settings.yaml, or pass "
+              "--kibana-url.", file=sys.stderr)
         return 2
     if not args.dry_run and not settings.elasticsearch.base_url:
-        print("ERROR: no Elasticsearch URL (pass --es-url, set DHM_ES_URL, put "
-              "es_url in the AWS secret named by aws_secret_id, or set "
-              "elasticsearch.base_url in settings.yaml).", file=sys.stderr)
+        print("ERROR: no Elasticsearch URL. Put 'elastic_url' in the AWS secret named "
+              "by aws_secret_id, set elasticsearch.base_url in settings.yaml, or pass "
+              "--es-url.", file=sys.stderr)
         return 2
     if not args.dry_run and not settings.elasticsearch.api_key:
         print("ERROR: no Elasticsearch API key (pass --es-api-key, set DHM_ES_API_KEY, "

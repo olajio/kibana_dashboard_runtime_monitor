@@ -131,13 +131,42 @@ def test_aws_secret_id_from_yaml_and_env(monkeypatch, tmp_path):
     assert load_settings(path).aws_secret_id == "elastic/dhm/prod"
 
 
-def test_aws_secret_keys_default_and_override(monkeypatch, tmp_path):
+def test_aws_secret_keys_default_to_production_field_names(monkeypatch):
     _clean_aws(monkeypatch)
-    s = load_settings("does_not_exist.yaml")
-    assert (s.aws_secret_keys.kibana_url, s.aws_secret_keys.es_url) == ("kibana_url", "es_url")
-    assert s.aws_secret_keys.api_key == "api_key"
+    k = load_settings("does_not_exist.yaml").aws_secret_keys
+    assert k.kibana_url == "kibana_url"
+    assert k.es_url == "elastic_url"
+    assert k.api_key == "ans_dashboard_health_monitor"
+    assert k.kibana_api_key == "kibana_api_key"
 
+
+def test_aws_secret_keys_override(monkeypatch, tmp_path):
+    _clean_aws(monkeypatch)
     s = load_settings(_write(tmp_path, "aws_secret_keys:\n  kibana_url: kbn\n  api_key: key\n"))
     assert s.aws_secret_keys.kibana_url == "kbn"
     assert s.aws_secret_keys.api_key == "key"
-    assert s.aws_secret_keys.es_url == "es_url"  # unspecified fields keep defaults
+    # unspecified fields keep their defaults
+    assert s.aws_secret_keys.es_url == "elastic_url"
+
+
+# --- URLs are deliberately NOT environment-overridable ----------------------
+
+def test_url_env_vars_do_not_override_settings(monkeypatch, tmp_path):
+    """The endpoints come from the AWS secret (or this file, or a CLI flag). An env
+    var must not be able to redirect them."""
+    path = _write(tmp_path, "kibana:\n  base_url: https://kb.yaml\n"
+                            "elasticsearch:\n  base_url: https://es.yaml\n")
+    monkeypatch.setenv("DHM_KIBANA_URL", "https://kb.env")
+    monkeypatch.setenv("DHM_ES_URL", "https://es.env")
+    s = load_settings(path)
+    assert s.kibana.base_url == "https://kb.yaml"
+    assert s.elasticsearch.base_url == "https://es.yaml"
+
+
+def test_api_key_env_vars_still_work(monkeypatch):
+    # Passing the key by hand is how the test environment runs, so keys keep env.
+    monkeypatch.setenv("DHM_ES_API_KEY", "env-es-key")
+    monkeypatch.setenv("DHM_KIBANA_API_KEY", "env-kb-key")
+    s = load_settings("does_not_exist.yaml")
+    assert s.elasticsearch.api_key == "env-es-key"
+    assert s.kibana.auth.api_key == "env-kb-key"
