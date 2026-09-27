@@ -52,7 +52,7 @@ kibana_space: fed2              # [DHM_SPACE] space ID the dashboards live in
 #
 # Leave aws_secret_id empty (the test default) and AWS is never contacted.
 aws_region: us-east-1           # [DHM_AWS_REGION] our default; AWS_REGION also honoured
-aws_secret_id: ""               # [DHM_AWS_SECRET_ID] e.g. elastic/dhm/connection
+aws_secret_id: ""               # [DHM_AWS_SECRET_ID] e.g. federal_store
 # Field names inside the bundle. Change these only if the secret uses other names;
 # a few common spellings (es_url, api_key, elasticsearch_url, ...) are also
 # accepted automatically, case-insensitively.
