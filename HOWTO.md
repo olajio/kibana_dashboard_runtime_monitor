@@ -34,10 +34,41 @@ python -m venv .venv && source .venv/bin/activate     # Windows: .venv\Scripts\a
 pip install -r requirements.txt
 ```
 
-**Verify:** `python -m pytest -q` → all tests pass.
+**Verify:** `python -m pytest -q` → all tests pass (113 at the time of writing).
 
 > If the `playwright` pip package is blocked in the boundary, use the Selenium
 > backend instead — see [Appendix A](#appendix-a--selenium-fallback).
+
+### 0.0 Shell variables used throughout this runbook
+
+Every `curl` below refers to these three. Set them once per shell session, before
+anything else — they are for our own verification commands only; the collector
+itself reads `settings.yaml` / AWS and never needs them.
+
+```bash
+# Kibana and Elasticsearch are DIFFERENT hosts — check the ...kb... vs ...es...
+# segment. Pointing both at Kibana makes every write 404.
+export DHM_KIBANA_URL="https://<host>.kb.<domain>:9243"
+export DHM_ES_URL="https://<host>.es.<domain>:9243"
+
+# The base64 `encoded` value from the create-key response in §0.1 — the same
+# string we pass to --es-api-key. Not the key id, and not id:key in plain text.
+export APIKEY="<base64 id:key>"
+```
+
+**Verify:** both hosts answer and the key authenticates.
+
+```bash
+curl -s "$DHM_ES_URL" -H "Authorization: ApiKey $APIKEY" | head -5
+curl -s -o /dev/null -w '%{http_code}\n' "$DHM_KIBANA_URL/api/status" \
+  -H "Authorization: ApiKey $APIKEY"          # expect 200
+```
+
+> These exports are for interactive use. `DHM_KIBANA_URL` and `DHM_ES_URL` are also
+> real settings overrides that outrank the AWS secret, so do **not** leave them set
+> in a production shell or a crontab — that would silently bypass Secrets Manager.
+> The `Connection:` line each run prints would show `<-env` instead of
+> `<-aws-bundle`, which is how to catch it.
 
 ---
 
@@ -207,7 +238,7 @@ list:
 - **`api` mode (production):** query Kibana's Saved Objects API live on every run.
   No file on the server, and any dashboard/panel added, removed, or renamed is
   picked up automatically the next cycle. **This is the recommended production
-  path** — see [3B](#3b-run-in-production-edge--aws-secrets-manager). Nothing to do
+  path** — see [3B](#3b-run-in-production-edge--aws-secrets-manager--live-discovery). Nothing to do
   in this step.
 - **`export` mode (test / offline):** build a static manifest from a `.ndjson`
   export. Handy for a first run without hitting the API. Do this step only for
@@ -255,46 +286,83 @@ Set the browser to Chrome (either in `settings.yaml` or with an env var):
 export DHM_BROWSER_CHANNEL=chrome
 ```
 
-### 3A.1 Create the index (once per cluster)
+### 3A.1 Apply the ILM policy and index template (once per cluster)
 
 ```bash
-python scripts/setup_elasticsearch.py --es-api-key "<id:key>"
+python scripts/setup_elasticsearch.py --es-api-key "$APIKEY"
 ```
 
-**Verify:**
+This creates exactly two things: the **ILM policy** and the **index template**. It
+does **not** create the index.
+
+> **The index is created automatically, not by us.** Because the template declares
+> `data_stream: {}`, the first `_bulk` write in §3A.3 auto-creates the
+> `dashboard-health-monitor` data stream and its first backing index
+> (`.ds-dashboard-health-monitor-000001`). That is what the key's `auto_configure` /
+> `create_index` privileges are for. So right after this step there is **no index
+> yet** — `_search` returns 404 and Kibana's data-view picker lists nothing. That is
+> expected. If you ever want to pre-create it anyway, use the data-stream API
+> (`PUT /_data_stream/dashboard-health-monitor`) and **never** `PUT
+> /dashboard-health-monitor`, which makes an ordinary index that then collides with
+> this template.
+
+**Verify:** both assets exist (expect `200` twice).
 
 ```bash
-curl -s "$DHM_ES_URL/_index_template/dashboard-health-monitor" \
-  -H "Authorization: ApiKey <id:key>" | head
+for asset in _ilm/policy/dashboard-health-monitor _index_template/dashboard-health-monitor; do
+  curl -s -o /dev/null -w "$asset -> %{http_code}\n" \
+    "$DHM_ES_URL/$asset" -H "Authorization: ApiKey $APIKEY"
+done
 ```
 
-### 3A.2 Smoke test the browser (render-detection spike)
+### 3A.2 Smoke test one dashboard
+
+Before collecting all 22, confirm the browser can drive Kibana and read render state
+off a single dashboard:
 
 ```bash
-python scripts/run_collector.py --es-api-key "<id:key>" --dry-run --out spike.json
+python scripts/debug_spike.py --es-api-key "$APIKEY" \
+    --dashboard-title "Federal Overview" --out debug.json
 ```
 
-**Verify:** open `spike.json` — panels have `render_ms` values and a mix of real
-`render_status` values (`ok`, maybe `empty`). If everything is `timeout`/`missing`,
-the DOM selectors need adjusting for the Kibana version — see
-[Troubleshooting](#troubleshooting).
+**Verify:** `debug.json` lists panels with real identity attributes, and the console
+prints what the registry expected for that dashboard. If the two line up, the
+selectors match this Kibana version.
+
+If the browser fails to launch at all, fix that before going further — check
+`DHM_BROWSER_CHANNEL` matches an installed browser (`chrome` here, not the `msedge`
+default).
 
 ### 3A.3 Full dry run, then write for real
 
 ```bash
 # collect the monitored dashboards (default: Federal Overview + all linked), write nothing
-python scripts/run_collector.py --es-api-key "<id:key>" --dry-run --out run.json
+python scripts/run_collector.py --es-api-key "$APIKEY" --dry-run --out run.json
 
-# looks good? write to Elasticsearch
-python scripts/run_collector.py --es-api-key "<id:key>"
+# looks good? write to Elasticsearch — this is what creates the data stream
+python scripts/run_collector.py --es-api-key "$APIKEY"
 ```
 
-**Verify:**
+`--dry-run` needs no Elasticsearch access at all, so it is a safe first pass even
+before the key's write privileges are sorted out.
+
+**Verify:** open `run.json` — panels have `render_ms` values and a mix of real
+`render_status` values (`ok`, maybe `empty`). If everything is `timeout`/`missing`,
+the DOM selectors need adjusting for the Kibana version — see
+[Troubleshooting](#troubleshooting). Then confirm the write landed:
 
 ```bash
+# the data stream now exists (it did not before this run)
+curl -s "$DHM_ES_URL/_data_stream/dashboard-health-monitor" \
+  -H "Authorization: ApiKey $APIKEY" | python -m json.tool | head -20
+
+# and holds documents
 curl -s "$DHM_ES_URL/dashboard-health-monitor/_search?size=1" \
-  -H "Authorization: ApiKey <id:key>" | python -m json.tool
+  -H "Authorization: ApiKey $APIKEY" | python -m json.tool
 ```
+
+The collector also prints `Indexed <n> documents into dashboard-health-monitor` —
+`n` should match the dashboard count in the line above it.
 
 ---
 
@@ -381,12 +449,17 @@ AWS access):
 }
 ```
 
-### 3B.3 Create the index, then run — **no URLs, no keys on the command line**
+### 3B.3 Apply the assets, then run — **no URLs, no keys on the command line**
 
 ```bash
-python scripts/setup_elasticsearch.py          # URL + key from AWS
-python scripts/run_collector.py                # Edge; URL + key from AWS
+python scripts/setup_elasticsearch.py          # ILM policy + template; URL + key from AWS
+python scripts/run_collector.py                # Edge; creates the data stream on first write
 ```
+
+As in §3A.1, the first command creates only the ILM policy and index template; the
+data stream appears on the first write. Make sure `DHM_KIBANA_URL` / `DHM_ES_URL` are
+**not** set in this shell — they outrank the AWS secret, and the `Connection:` line
+below is how to confirm they are not interfering.
 
 Each run opens with a secret-free provenance line, so we can confirm the values
 really came from AWS:
@@ -466,11 +539,15 @@ them in Kibana:
 ```bash
 for rule in es/alerting/*.json; do
   curl -sS -X POST "$DHM_KIBANA_URL/api/alerting/rule" \
-    -H "Authorization: ApiKey <kibana-id:key>" \
+    -H "Authorization: ApiKey $APIKEY" \
     -H "kbn-xsrf: true" -H "Content-Type: application/json" \
     -d @"$rule"
 done
 ```
+
+These are payloads we POST by hand — no script applies them. Creating rules needs
+more than the collector key's read access (Kibana alerting write privileges), so use
+an admin credential here rather than the key from §0.1.
 
 Rules: load degraded/failed, any unhealthy panel (`panels_not_ok > 0`), and a
 collector dead-man's-switch. **Validate each rule fires before attaching
@@ -484,7 +561,7 @@ Run one cycle every 15–30 minutes. Example cron for **production** (key from A
 so nothing secret is on the command line):
 
 ```cron
-*/20 * * * * cd /opt/dhm && /opt/dhm/.venv/bin/python scripts/run_collector.py >> /var/log/dhm.log 2>&1
+*/20 * * * * cd /opt/dashboard-health-monitor && DHM_AWS_SECRET_ID=elastic/dhm/connection /opt/dashboard-health-monitor/.venv/bin/python scripts/run_collector.py >> /var/log/dhm/collector.log 2>&1
 ```
 
 Set the dead-man's-switch rule's window to 2× this interval (e.g. 40m).
