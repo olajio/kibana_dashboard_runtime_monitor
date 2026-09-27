@@ -188,22 +188,57 @@ The headless browser needs an authenticated Kibana session. Pick one method in
 The credential needs only **read** on the monitored space and **write** to
 `dashboard-health-monitor`.
 
-### API keys — command line in test, AWS Secrets Manager in production
+### Connection settings — command line in test, AWS Secrets Manager in production
 
-The Elasticsearch API key is resolved by precedence:
+The Kibana URL, the Elasticsearch URL and the API key all resolve by the same
+precedence, most explicit first:
 
 ```
---es-api-key   >   $DHM_ES_API_KEY   >   AWS Secrets Manager (elasticsearch.aws_secret_id)
+CLI flag  >  env var  >  AWS connection bundle  >  value-specific AWS secret  >  settings.yaml
 ```
 
-- **Test:** pass `--es-api-key "<id:key>"` on each command (below).
-- **Production:** omit it and set `elasticsearch.aws_secret_id` (+ `aws_region`);
-  the key is read from AWS Secrets Manager (needs `secretsmanager:GetSecretValue`).
+| Value | CLI flag | Env var | Bundle field |
+|---|---|---|---|
+| Kibana URL | `--kibana-url` | `DHM_KIBANA_URL` | `kibana_url` |
+| Elasticsearch URL | `--es-url` | `DHM_ES_URL` | `es_url` |
+| Elasticsearch API key | `--es-api-key` | `DHM_ES_API_KEY` | `api_key` |
+| Kibana API key | `--kibana-api-key` | `DHM_KIBANA_API_KEY` | `kibana_api_key` |
 
-The Kibana browser-auth key follows the same precedence
-(`--kibana-api-key` / `DHM_KIBANA_API_KEY` / `kibana.auth.aws_secret_id`) and falls
-back to the ES key when not separately set. See **[`HOWTO.md`](HOWTO.md)** for the
-full test-vs-production walkthrough.
+- **Test:** keep the URLs in `settings.yaml` and pass `--es-api-key "<id:key>"` on
+  each command (below).
+- **Production:** set `aws_secret_id` to one AWS Secrets Manager secret and pass
+  nothing else. That secret's payload is a JSON object:
+
+  ```json
+  {
+    "kibana_url": "https://kibana.example.gov:9243",
+    "es_url":     "https://es.example.gov:9243",
+    "api_key":    "<base64 id:key>"
+  }
+  ```
+
+  One secret means one IAM grant (`secretsmanager:GetSecretValue`), one rotation
+  and one Ansible variable. We fetch it once per run. `aws_region` defaults to
+  `us-east-1` (override with `DHM_AWS_REGION` or the standard `AWS_REGION`).
+
+The Kibana API key falls back to the Elasticsearch key when not separately set,
+so a single Elastic API key that authorizes both needs only `api_key` in the
+bundle. `elasticsearch.aws_secret_id` / `kibana.auth.aws_secret_id` remain for
+split-secret setups where each value lives in its own secret.
+
+Note the bundle deliberately outranks `settings.yaml`: the file carries
+per-environment defaults that Ansible ships, while the secret is the source of
+truth. Every run prints where each value came from — never the value itself:
+
+```
+Connection: elasticsearch.api_key<-aws-bundle, elasticsearch.base_url<-aws-bundle, kibana.auth.api_key<-elasticsearch.api_key, kibana.base_url<-aws-bundle
+```
+
+It also warns if both URLs resolve to the same host — Kibana and Elasticsearch
+are normally different hostnames (`...kb...` vs `...es...`), and writing to
+Kibana's host makes every `_bulk` call 404.
+
+See **[`HOWTO.md`](HOWTO.md)** for the full test-vs-production walkthrough.
 
 ### Choose the browser
 

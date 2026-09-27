@@ -75,7 +75,10 @@ def _dash(panels):
 
 
 def test_dashboard_url_default_space_has_no_prefix():
+    # "default" is the one space Kibana serves without an /s/<id> prefix. It is no
+    # longer our default (that is fed2), so set it explicitly.
     s = _fast_settings()
+    s.kibana_space = "default"
     url = dashboard_url(s, "abc")
     assert "/app/dashboards#/view/abc" in url
     assert "/s/" not in url
@@ -85,6 +88,11 @@ def test_dashboard_url_named_space_has_prefix():
     s = _fast_settings()
     s.kibana_space = "fed"
     assert "/s/fed/app/dashboards#/view/abc" in dashboard_url(s, "abc")
+
+
+def test_dashboard_url_uses_fed2_by_default():
+    # Our dashboards live in fed2, so an unconfigured Settings targets it.
+    assert "/s/fed2/app/dashboards#/view/abc" in dashboard_url(_fast_settings(), "abc")
 
 
 def test_happy_path_ok():

@@ -107,11 +107,33 @@ class CollectorConfig:
 
 
 @dataclass
+class AWSSecretKeys:
+    """Field names to read out of the AWS connection-bundle secret's JSON.
+
+    Defaults match the documented bundle shape; override them to fit a secret
+    that already exists with different field names.
+    """
+    kibana_url: str = "kibana_url"
+    es_url: str = "es_url"
+    api_key: str = "api_key"
+    kibana_api_key: str = "kibana_api_key"
+
+
+@dataclass
 class Settings:
     app: str = "federal_overview"
     cluster: str = "fed2"
-    kibana_space: str = "default"
-    aws_region: str = ""
+    # The Kibana space ID (the /s/<id> URL slug), not the display name. Our
+    # dashboards live in fed2; "default" is the one space with no /s/ prefix.
+    kibana_space: str = "fed2"
+    # AWS region for Secrets Manager. us-east-1 is our default; override per
+    # environment with DHM_AWS_REGION (or the standard AWS_REGION).
+    aws_region: str = "us-east-1"
+    # One AWS Secrets Manager secret holding the connection settings as JSON
+    # (kibana_url, es_url, api_key). This is how production is configured: set
+    # this and nothing else. Empty -> AWS is never contacted for the bundle.
+    aws_secret_id: str = ""
+    aws_secret_keys: AWSSecretKeys = field(default_factory=AWSSecretKeys)
     kibana: KibanaConfig = field(default_factory=KibanaConfig)
     elasticsearch: ESConfig = field(default_factory=ESConfig)
     collector: CollectorConfig = field(default_factory=CollectorConfig)
@@ -128,6 +150,7 @@ def load_settings(path: str = "config/settings.yaml") -> Settings:
     ka = k.get("auth", {}) or {}
     es = raw.get("elasticsearch", {}) or {}
     col = raw.get("collector", {}) or {}
+    ask = raw.get("aws_secret_keys", {}) or {}
 
     # include_titles (used only when selection == "titles"):
     # DHM_INCLUDE_TITLES (comma-separated) > yaml > empty.
@@ -140,8 +163,17 @@ def load_settings(path: str = "config/settings.yaml") -> Settings:
     s = Settings(
         app=raw.get("app", "federal_overview"),
         cluster=_env("DHM_CLUSTER", raw.get("cluster", "fed2")),
-        kibana_space=_env("DHM_SPACE", raw.get("kibana_space", "default")),
-        aws_region=_env("DHM_AWS_REGION", _env("AWS_REGION", raw.get("aws_region", ""))),
+        kibana_space=_env("DHM_SPACE", raw.get("kibana_space", "") or "fed2"),
+        aws_region=_env(
+            "DHM_AWS_REGION", _env("AWS_REGION", raw.get("aws_region", "") or "us-east-1")
+        ),
+        aws_secret_id=_env("DHM_AWS_SECRET_ID", raw.get("aws_secret_id", "")),
+        aws_secret_keys=AWSSecretKeys(
+            kibana_url=ask.get("kibana_url", "kibana_url"),
+            es_url=ask.get("es_url", "es_url"),
+            api_key=ask.get("api_key", "api_key"),
+            kibana_api_key=ask.get("kibana_api_key", "kibana_api_key"),
+        ),
         kibana=KibanaConfig(
             base_url=_env("DHM_KIBANA_URL", k.get("base_url", "")).rstrip("/"),
             auth=KibanaAuth(

@@ -14,6 +14,11 @@ Scope reminder: we monitor **one** application bundle — the Federal Overview
 family of ~22 dashboards reachable from the hub's navigation — in **one**
 cluster and space. There is no multi-cluster rollout.
 
+Deployment shape: the code lives in GitHub and Ansible installs it on an existing
+server — no dedicated host is provisioned. Every environment-specific value (both
+endpoints and the API key) comes from one AWS Secrets Manager secret, region
+`us-east-1` by default.
+
 ---
 
 # Current delivery status
@@ -81,48 +86,60 @@ blocked by DHM-F.**
 
 ## 🔨 Remaining work
 
-### DHM-E — Request production server from infrastructure / DevOps
+### DHM-E — Create the AWS Secrets Manager connection secret + grant access
 - **Type:** Task · **Size:** S · **Status:** To Do
-- **Description:** Request a production-grade Linux (or Windows-with-Edge)
-  VM/host from the Infrastructure / DevOps team to run the collector on
-  schedule. Not a Mac, not a laptop.
-- **Requirements to include in the request:**
-  - Python 3.10+ available (or installable).
-  - **Microsoft Edge** installed and available on `PATH` (production browser).
-  - Outbound HTTPS to the production Kibana and Elasticsearch endpoints.
-  - AWS SDK / IAM instance-role access with `secretsmanager:GetSecretValue` on
-    the ES API-key secret.
-  - Cron (or systemd timers) available.
-  - Persistent local disk for the collector's log directory (~50 MB/month with
-    rotation).
-  - Ability to install pip packages (or a pre-baked image with `playwright`,
-    `requests`, `PyYAML`, `boto3`).
+- **Description:** Create one Secrets Manager secret holding the production
+  connection settings, and grant the deployment host read access to it. The
+  collector reads the Kibana URL, the Elasticsearch URL and the API key from this
+  one secret, so nothing environment-specific or sensitive lands on the server.
+- **Steps:**
+  - Create the secret (default region `us-east-1`), e.g.
+    `elastic/dhm/connection`, with a JSON payload:
+    `{"kibana_url": "https://<host>.kb.<domain>:9243", "es_url":
+    "https://<host>.es.<domain>:9243", "api_key": "<base64 id:key>"}`.
+    Add `kibana_api_key` only if Kibana needs a different key.
+  - Mint the least-privilege Elastic API key: read on the monitored space, write
+    to the `dashboard-health-monitor` data stream.
+  - Attach an IAM policy granting the host's instance/task role
+    `secretsmanager:GetSecretValue` on that secret's ARN only.
+  - Agree and document a rotation cadence. Rotation is a secret update — no
+    redeploy and no file change on the server.
 - **Acceptance criteria:**
-  - Ticket raised with infra/DevOps referencing the requirements above.
-  - Server provisioned, hostname/IP shared, sudo/SSH access confirmed for the
-    deploy engineer.
+  - `kibana_url` and `es_url` point at **different** hosts (`...kb...` vs
+    `...es...`). The collector warns if they match; pointing both at Kibana makes
+    every `_bulk` write 404.
+  - The deploy host can `GetSecretValue` on the secret and nothing else.
+  - Rotation cadence documented.
 
-### DHM-F — Deploy collector to the production server + schedule
+### DHM-F — Deploy to the existing server with Ansible + schedule
 - **Type:** Story · **Size:** M · **Status:** To Do · **Blocked by:** DHM-E
-- **Description:** Install and run the collector on the provisioned production
-  host against the production Kibana / Elasticsearch cluster.
+- **Description:** Deploy this repo to the existing production server with an
+  Ansible playbook and run it on a schedule against the production Kibana /
+  Elasticsearch cluster. No dedicated server is required — GitHub is the artifact
+  source and Ansible does the install. See `HOWTO.md` §3B.4 for the playbook sketch.
 - **Steps (high level):**
-  - Clone the repo, create virtualenv, `pip install -r requirements.txt`.
-  - Populate `config/settings.yaml`: production `kibana.base_url`,
-    `elasticsearch.base_url`, `kibana_space`, `browser_channel: msedge`,
-    `elasticsearch.aws_secret_id`, `aws_region`.
-  - Confirm the runner can read the Elasticsearch API key from AWS Secrets
-    Manager (no key on the command line).
-  - Run `python scripts/setup_elasticsearch.py` once to apply the template +
-    ILM in prod.
-  - Run one manual `python scripts/run_collector.py` to confirm end-to-end.
-  - Wire up cron or a systemd timer for the chosen cadence (default: every
-    20–30 minutes).
+  - Ansible: `git` checkout of the repo, `pip install -r requirements.txt` into a
+    virtualenv, template `config/settings.yaml`, install the cron/systemd unit.
+  - Set only two environment-specific values: `DHM_AWS_SECRET_ID` (the DHM-E
+    secret) and `DHM_AWS_REGION` (`us-east-1`). Leave `kibana.base_url`,
+    `elasticsearch.base_url` and every `api_key` field empty — the secret supplies
+    them.
+  - In `settings.yaml` set `browser_channel: msedge`,
+    `registry_source: api`, and the production `kibana_space`.
+  - Confirm the target host has Python 3.10+, Microsoft Edge on `PATH`, outbound
+    HTTPS to both endpoints, and the instance role from DHM-E.
+  - Run `python scripts/setup_elasticsearch.py` once to apply the template + ILM
+    in prod.
+  - Run one manual `python scripts/run_collector.py` to confirm end-to-end, then
+    enable the schedule (default: every 20–30 minutes).
 - **Acceptance criteria:**
+  - The playbook is idempotent — a second run reports no changes.
   - Data stream `dashboard-health-monitor` exists in production.
   - Scheduled cycles land docs on schedule; log rotation working.
-  - No secrets stored on disk in the repo or in the crontab — the ES API key
-    resolves from AWS on every cycle.
+  - No secrets or endpoints on disk in the repo, the templated settings file, or
+    the crontab. The run's opening `Connection:` line shows every value resolving
+    `<-aws-bundle` (with `kibana.auth.api_key<-elasticsearch.api_key` when one
+    Elastic key authorizes both).
 
 ### DHM-G — Kibana alerting rules (dashboard failure + collector liveness)
 - **Type:** Story · **Size:** M · **Status:** To Do · **Blocked by:** DHM-F
@@ -284,14 +301,15 @@ a historical trend. Delivered across the Tasks below.
 ### DHM-7 — Provision the least-privilege automation identity + secret
 - **Type:** Task · **Size:** S · **Status:** resolution implemented (`src/dhm/secrets.py`)
 - **Description:** Create the automation credential (read on the monitored space +
-  write to `dashboard-health-monitor`), store it in AWS Secrets Manager, and set
-  `elasticsearch.aws_secret_id` (+ `aws_region`). Grant the runner
-  `secretsmanager:GetSecretValue`. Define a rotation cadence. The code already
-  resolves keys by precedence: `--es-api-key` > `DHM_ES_API_KEY` > AWS Secrets
-  Manager (test passes the key on the CLI; prod reads AWS).
+  write to `dashboard-health-monitor`) and store it in AWS Secrets Manager. The code
+  resolves the Kibana URL, the Elasticsearch URL and the API key by the same
+  precedence: CLI flag > env var > the `aws_secret_id` connection bundle >
+  a value-specific AWS secret > `settings.yaml` (test passes the key on the CLI;
+  prod reads everything from AWS). **Superseded for the production rollout by
+  DHM-E**, which carries the concrete secret/IAM steps.
 - **Acceptance criteria:**
   - Test run authenticates with `--es-api-key`; prod run authenticates from AWS with
-    no key on the command line.
+    nothing on the command line.
   - Rotation cadence documented.
 - **Dependencies:** DHM-6
 

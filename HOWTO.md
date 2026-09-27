@@ -24,7 +24,9 @@ both:
   is downloaded.
 - Network access from the machine to Kibana and Elasticsearch.
 - An Elasticsearch API key with: **read** on the monitored Kibana space, and
-  **write** to `dashboard-health-monitor`.
+  **write** to `dashboard-health-monitor`. See
+  [§0.1 API key privileges](#01-api-key-privileges) for the exact set — getting this
+  wrong is the most common cause of a fleet-wide false failure.
 
 ```bash
 git clone <this repo> && cd kibana_dashboard_runtime_monitor
@@ -36,6 +38,71 @@ pip install -r requirements.txt
 
 > If the `playwright` pip package is blocked in the boundary, use the Selenium
 > backend instead — see [Appendix A](#appendix-a--selenium-fallback).
+
+---
+
+### 0.1 API key privileges
+
+The collector authenticates to **both** Elasticsearch and Kibana with the same API
+key, so the key needs three distinct kinds of privilege. A ready-to-post request is
+in [`es/api_key_collector.json`](es/api_key_collector.json) — paste it into Dev Tools
+after `POST /_security/api_key`.
+
+| What the collector does | Privilege it needs |
+|---|---|
+| `PUT /_ilm/policy/dashboard-health-monitor` (setup only) | cluster `manage_ilm` |
+| `PUT /_index_template/dashboard-health-monitor` (setup only) | cluster `manage_index_templates` |
+| `POST /_bulk` with `create` into the data stream | index `create_doc`, `auto_configure` on `dashboard-health-monitor` |
+| `GET /s/fed2/api/saved_objects/_find` (live discovery) | Kibana application `feature_dashboard.read` on `space:fed2` |
+| Browser opens each dashboard and every panel runs its own searches | Kibana `feature_dashboard.read` on `space:fed2` **plus** ES `read` + `view_index_metadata` on every index those panels query |
+
+Three things are easy to get wrong:
+
+- **Kibana access is *not* an index privilege.** Kibana authorizes through
+  *application* privileges under the application name `kibana-.kibana`. A key with
+  `"applications": []` has no Kibana access at all, however broad its cluster and
+  index privileges are — the Saved Objects call and the browser's dashboard loads
+  both 403.
+- **The `manage` index privilege cannot read or write documents.** It covers index
+  *administration* (settings, mappings, aliases, refresh, open/close) plus all
+  `monitor` privileges. Writing needs `create_doc` (or `write`); reading needs
+  `read`. A key holding only `manage` fails `_bulk` with
+  `action [indices:data/write/bulk] is unauthorized`.
+- **Roughly half the data views are cross-cluster.** 13 of the 31 data views behind
+  these dashboards are CCS patterns (`agency-dashboard*:cdm_…`). Local `read` does
+  not cover them — they need `read_cross_cluster` on the remote side. The exact
+  syntax depends on which remote-cluster trust model this deployment uses: the
+  `remote_indices` block in `api_key_collector.json` is the API-key-based model
+  (ES 8.14+); a certificate-based trust instead requires the role to exist with
+  `read` + `read_cross_cluster` on the **remote** cluster. Confirm with whoever owns
+  the remote cluster configuration.
+
+**The reliable shortcut:** the analysts who review these dashboards by hand already
+have exactly the read access the collector needs. Mirror their role's read
+privileges and add only `create_doc` + `auto_configure` on
+`dashboard-health-monitor`. That sidesteps having to re-derive the CCS setup.
+
+**Tightening after setup:** the two cluster privileges are only used by
+`scripts/setup_elasticsearch.py`, which runs once per cluster. Run that step with an
+admin credential and drop `"cluster"` to `[]` on the long-lived collector key, so
+the key that sits in Secrets Manager and runs every 30 minutes can create no
+templates and no policies.
+
+**Validating a new key** — swap it in and compare against a known-good run:
+
+```bash
+python scripts/run_collector.py --es-api-key "<new id:key>" --dry-run --out newkey.json
+```
+
+A privilege gap shows up as a *sharp* change in shape, not a subtle one: a Kibana
+application-privilege gap makes every dashboard `failed` with a `load_error`, and a
+missing ES `read` makes panels `empty` en masse while load times stay fast. Compare
+the per-status counts to the previous run before trusting the new key.
+
+> **Note on `expiration`.** A key created with `"expiration": "365d"` stops working
+> on day 365 with no warning — the collector simply starts 403ing. Put the rotation
+> in the calendar ahead of that date. Because the key is read from Secrets Manager,
+> rotation is a secret update with no redeploy and no file edit on the server.
 
 ---
 
@@ -78,10 +145,11 @@ Edit `config/settings.yaml`:
 
 - `kibana.base_url` — the Kibana URL.
 - `elasticsearch.base_url` — the Elasticsearch URL.
-- `kibana_space` — the space **ID** the dashboards live in. The space is displayed
-  as "Federal"; its ID (the `/s/<id>` URL slug) is almost certainly `federal`.
-  Confirm by opening the Federal Overview dashboard and reading the segment right
-  after `/s/` in the URL.
+- `kibana_space` — the space **ID** the dashboards live in. This is **`fed2`**, which
+  is also the built-in default in code, so it normally needs no change. It is the
+  `/s/<id>` URL slug, not the display name — confirm by opening the Federal Overview
+  dashboard and reading the segment right after `/s/` in the URL. Override per
+  environment with `DHM_SPACE`.
 - Leave `elasticsearch.api_key` **empty** — we supply it per-run (test) or via AWS
   (prod).
 
@@ -165,37 +233,138 @@ No `build_registry.py` step and no export file are needed in production. Each ru
 re-reads the current dashboards and their panels from Kibana, then applies the
 selection.
 
-### 3B.1 Store the key in AWS Secrets Manager
+### 3B.1 Store the connection settings in AWS Secrets Manager
 
-Create a secret holding the Elasticsearch API key. Either form works:
-
-- a **plain string** (the `id:key` value), or
-- **JSON**: `{"api_key": "<id:key>"}`.
-
-### 3B.2 Configure the secret in `settings.yaml`
-
-```yaml
-aws_region: us-gov-west-1            # or set AWS_REGION
-elasticsearch:
-  aws_secret_id: elastic/kibana/dhm-es      # the secret name/ARN
-  aws_secret_json_key: api_key              # field name if the secret is JSON
-```
-
-The runner needs AWS credentials with `secretsmanager:GetSecretValue` on that
-secret (instance role / task role / `AWS_PROFILE` — however this host normally
-gets AWS access).
-
-### 3B.3 Create the index, then run — **no `--es-api-key`**
+Production holds nothing environment-specific and nothing sensitive on disk. One
+secret carries the Kibana URL, the Elasticsearch URL and the API key as a JSON
+object:
 
 ```bash
-python scripts/setup_elasticsearch.py          # key comes from AWS
-python scripts/run_collector.py                # Edge + key from AWS
+aws secretsmanager create-secret \
+  --name elastic/dhm/connection \
+  --region us-east-1 \
+  --description "Dashboard Health Monitor: Kibana/ES endpoints + API key" \
+  --secret-string '{
+    "kibana_url": "https://<host>.kb.<domain>:9243",
+    "es_url":     "https://<host>.es.<domain>:9243",
+    "api_key":    "<base64 id:key>"
+  }'
 ```
+
+Two things to get right:
+
+- **`kibana_url` and `es_url` are different hosts** (typically `...kb...` vs
+  `...es...`). Pointing both at Kibana makes every `_bulk` write 404 — we hit this
+  in pre-staging. The collector now warns when the two resolve to the same host.
+- **`api_key`** is the base64 `id:key` value, the same string we pass to
+  `--es-api-key` in test. Add `"kibana_api_key"` only if Kibana needs a *different*
+  key; otherwise `api_key` is used for both.
+
+To rotate, update this one secret — no redeploy, no file edit on the server.
+
+### 3B.2 Point the deployment at the secret
+
+Only two values, and both can come from the environment, so Ansible does not have
+to template a settings file at all:
+
+```yaml
+aws_region: us-east-1                # [DHM_AWS_REGION] the default; AWS_REGION also works
+aws_secret_id: elastic/dhm/connection # [DHM_AWS_SECRET_ID] the secret name or ARN
+```
+
+Leave `kibana.base_url`, `elasticsearch.base_url` and every `api_key` field empty
+— the bundle supplies them. (If `settings.yaml` does carry URLs, the bundle wins:
+the file holds defaults, the secret is the source of truth.)
+
+The runner needs AWS credentials with `secretsmanager:GetSecretValue` on that
+secret (instance role / task role / `AWS_PROFILE` — however this host normally gets
+AWS access):
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Action": "secretsmanager:GetSecretValue",
+    "Resource": "arn:aws:secretsmanager:us-east-1:<account-id>:secret:elastic/dhm/connection-*"
+  }]
+}
+```
+
+### 3B.3 Create the index, then run — **no URLs, no keys on the command line**
+
+```bash
+python scripts/setup_elasticsearch.py          # URL + key from AWS
+python scripts/run_collector.py                # Edge; URL + key from AWS
+```
+
+Each run opens with a secret-free provenance line, so we can confirm the values
+really came from AWS:
+
+```
+Connection: elasticsearch.api_key<-aws-bundle, elasticsearch.base_url<-aws-bundle, kibana.auth.api_key<-elasticsearch.api_key, kibana.base_url<-aws-bundle
+```
+
+`kibana.auth.api_key<-elasticsearch.api_key` is the expected reading when one
+Elastic key authorizes both. Anything showing `<-settings` that we meant to come
+from AWS means the field is missing from the secret (check the field names against
+`aws_secret_keys`).
 
 **Verify:** same search query as 3A.3 returns fresh documents.
 
-> **Precedence recap:** `--es-api-key` > `DHM_ES_API_KEY` > AWS Secrets Manager.
-> Passing `--es-api-key` in prod would override AWS, which is why we omit it.
+> **Precedence recap:** CLI flag > env var > AWS bundle > value-specific AWS
+> secret > `settings.yaml`. Passing `--es-api-key` or `--kibana-url` in prod would
+> override AWS, which is why we omit them. A one-off override is still available
+> for debugging: `python scripts/run_collector.py --kibana-url https://... --dry-run`.
+
+### 3B.4 Deploying with Ansible
+
+The repo is the deployment artifact — clone it to the existing server, install the
+requirements into a virtualenv, drop in a `settings.yaml` (or just the two AWS env
+vars), and schedule it with cron/systemd. A minimal sketch:
+
+```yaml
+- name: Deploy the Dashboard Health Monitor
+  hosts: dhm_runners
+  vars:
+    dhm_root: /opt/dashboard-health-monitor
+    dhm_aws_secret_id: elastic/dhm/connection
+    dhm_aws_region: us-east-1
+  tasks:
+    - name: Check out the repository
+      ansible.builtin.git:
+        repo: https://github.com/olajio/kibana_dashboard_runtime_monitor.git
+        dest: "{{ dhm_root }}"
+        version: main
+
+    - name: Install Python requirements
+      ansible.builtin.pip:
+        requirements: "{{ dhm_root }}/requirements.txt"
+        virtualenv: "{{ dhm_root }}/.venv"
+        virtualenv_command: python3 -m venv
+
+    - name: Install settings (no secrets; endpoints come from AWS)
+      ansible.builtin.template:
+        src: settings.yaml.j2
+        dest: "{{ dhm_root }}/config/settings.yaml"
+        mode: "0644"
+
+    - name: Schedule the collection cycle
+      ansible.builtin.cron:
+        name: dashboard-health-monitor
+        minute: "*/30"
+        job: >-
+          cd {{ dhm_root }} &&
+          DHM_AWS_SECRET_ID={{ dhm_aws_secret_id }}
+          DHM_AWS_REGION={{ dhm_aws_region }}
+          .venv/bin/python scripts/run_collector.py
+          >> /var/log/dhm/collector.log 2>&1
+```
+
+Because `settings.yaml` now holds no endpoints and no credentials, it is safe to
+template from the repo's `config/settings.example.yaml` and commit the Jinja
+template alongside the playbook. Set `collector.browser_channel: msedge` and
+`collector.registry_source: api` for production.
 
 ---
 
@@ -321,9 +490,20 @@ into the new stream before deleting.
   needed us to follow `aria-labelledby` for titles and add a DOM-order fallback,
   both included.
 - **`no Elasticsearch API key`** — pass `--es-api-key`, set `DHM_ES_API_KEY`, or set
-  `elasticsearch.aws_secret_id` (+ AWS credentials).
+  `aws_secret_id` / `elasticsearch.aws_secret_id` (+ AWS credentials).
+- **`no Kibana URL` / `no Elasticsearch URL`** — pass `--kibana-url` / `--es-url`,
+  set `DHM_KIBANA_URL` / `DHM_ES_URL`, add `kibana_url` / `es_url` to the AWS
+  bundle, or set them in `settings.yaml`. The provenance line printed at the top of
+  every run says which source each value actually came from.
+- **`is not a JSON object`** — the secret named by `aws_secret_id` holds a bare
+  string. The bundle must be a JSON object (`{"kibana_url": ..., "api_key": ...}`).
+  For a secret that holds only a key, use `elasticsearch.aws_secret_id` instead.
+- **Values show `<-settings` when they should come from AWS** — the field is missing
+  from the secret, or named differently; check it against `aws_secret_keys`.
 - **`boto3 is not installed`** — the AWS path needs boto3 (`pip install -r
-  requirements.txt` includes it), or pass the key on the command line instead.
+  requirements.txt` includes it), or pass the values on the command line instead.
+- **`both ... 404 on _bulk`** — the warning means Kibana's and Elasticsearch's URLs
+  resolved to the same host. Fix `es_url` in the secret (`...es...`, not `...kb...`).
 - **Navigation/auth failures (`load_error`)** — check the browser can reach Kibana
   and the key/space is correct.
 - **Selenium `WebDriverException`** — install `msedgedriver`/`chromedriver` on PATH
