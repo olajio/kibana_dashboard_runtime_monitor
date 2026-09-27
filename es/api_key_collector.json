@@ -10,11 +10,13 @@
       "indices": [
         {
           "names": [
-            "dashboard-health-monitor"
+            "dashboard-health-monitor*"
           ],
           "privileges": [
             "create_doc",
             "auto_configure",
+            "create_index",
+            "read",
             "view_index_metadata"
           ]
         },
@@ -29,26 +31,11 @@
           ]
         }
       ],
-      "remote_indices": [
-        {
-          "clusters": [
-            "agency-dashboard*"
-          ],
-          "names": [
-            "cdm_*"
-          ],
-          "privileges": [
-            "read",
-            "read_cross_cluster",
-            "view_index_metadata"
-          ]
-        }
-      ],
       "applications": [
         {
           "application": "kibana-.kibana",
           "privileges": [
-            "feature_dashboard.read"
+            "read"
           ],
           "resources": [
             "space:fed2"
