@@ -202,15 +202,27 @@ browser.
   environment / Secrets Manager, never the repo. `config/settings.yaml` is
   git-ignored; every secret has an environment-variable override. We define a
   rotation cadence up front.
-- **Key resolution**: API keys resolve by precedence — an explicit command-line
-  argument (`--es-api-key` / `--kibana-api-key`), then an environment variable, then
-  **AWS Secrets Manager**. In test we pass the key on the command line; in
-  production we omit it and it is read from AWS Secrets Manager. The Kibana
-  browser-auth key falls back to the Elasticsearch key when not separately set. The
-  same code path runs in both environments.
+- **Connection resolution**: the Kibana URL, the Elasticsearch URL and the API keys
+  all resolve by one precedence — an explicit command-line argument
+  (`--kibana-url` / `--es-url` / `--es-api-key` / `--kibana-api-key`), then an
+  environment variable, then the **AWS Secrets Manager connection bundle**
+  (`aws_secret_id`: one JSON secret holding `kibana_url`, `es_url`, `api_key`), then
+  a value-specific AWS secret, then `settings.yaml`. In test we keep the URLs in
+  `settings.yaml` and pass the key on the command line; in production we set only
+  `aws_secret_id` (region defaults to `us-east-1`) and pass nothing, so no endpoint
+  and no credential lives on the server. Rotation is a secret update — no redeploy.
+  The Kibana browser-auth key falls back to the Elasticsearch key when not
+  separately set. The same code path runs in both environments, and each run logs
+  which source supplied each value — never the value itself.
 
 ## 8. Scheduling & deployment
 
+- **Deployment**: the code lives in GitHub and **Ansible** installs it onto an
+  existing server — we do not provision a dedicated host. The playbook checks out
+  the repo, builds a virtualenv from `requirements.txt`, templates
+  `config/settings.yaml`, and installs the schedule. Because both endpoints and the
+  credential come from AWS Secrets Manager, the only environment-specific values the
+  playbook sets are `DHM_AWS_SECRET_ID` and `DHM_AWS_REGION`. See `HOWTO.md` §3B.4.
 - Cron or an AWX job runs one collection cycle on a fixed cadence. Recommended
   cadence: every 15–30 min (far finer-grained than the once-daily manual check).
 - **Browser**: the collector drives the runner's already-installed browser via a

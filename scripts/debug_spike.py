@@ -24,7 +24,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from dhm.collect_core import dashboard_url  # noqa: E402
 from dhm.config import load_settings  # noqa: E402
-from dhm.secrets import resolve_es_api_key, resolve_kibana_api_key  # noqa: E402
+from dhm.secrets import resolve_connection  # noqa: E402
 
 # JS we run in the page: walk multiple candidate panel-container selectors and
 # report every identity/state attribute Kibana currently exposes. We do NOT
@@ -138,19 +138,20 @@ def main() -> int:
     ap.add_argument("--out", default="debug.json")
     ap.add_argument("--es-api-key", default=None)
     ap.add_argument("--kibana-api-key", default=None)
+    ap.add_argument("--kibana-url", default=None)
+    ap.add_argument("--aws-secret-id", default=None,
+                    help="AWS secret holding the connection bundle (kibana_url, api_key).")
     args = ap.parse_args()
 
     settings = load_settings(args.settings)
-    settings.elasticsearch.api_key = resolve_es_api_key(
-        settings, cli_value=args.es_api_key, env_value=os.environ.get("DHM_ES_API_KEY")
+    if args.aws_secret_id:
+        settings.aws_secret_id = args.aws_secret_id
+    resolve_connection(
+        settings,
+        cli_es_api_key=args.es_api_key,
+        cli_kibana_api_key=args.kibana_api_key,
+        cli_kibana_url=args.kibana_url,
     )
-    if settings.kibana.auth.method == "api_key":
-        settings.kibana.auth.api_key = resolve_kibana_api_key(
-            settings,
-            cli_value=args.kibana_api_key,
-            env_value=os.environ.get("DHM_KIBANA_API_KEY"),
-            fallback=settings.elasticsearch.api_key,
-        )
 
     dash_id, expected_panels = _resolve_dashboard_id(settings, args.dashboard_title)
     url = dashboard_url(settings, dash_id)

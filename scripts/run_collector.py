@@ -1,20 +1,27 @@
 #!/usr/bin/env python3
 """Run one collection cycle: load every dashboard, write results to ES.
 
-API keys are resolved by precedence:
-    --es-api-key      >  $DHM_ES_API_KEY      >  AWS Secrets Manager (elasticsearch.aws_secret_id)
-    --kibana-api-key  >  $DHM_KIBANA_API_KEY  >  AWS Secrets Manager (kibana.auth.aws_secret_id)
+The Kibana URL, the Elasticsearch URL and the API key(s) each resolve by the
+same precedence, most explicit first:
+
+    1. command-line flag         --kibana-url / --es-url / --es-api-key / --kibana-api-key
+    2. environment variable      DHM_KIBANA_URL / DHM_ES_URL / DHM_ES_API_KEY / DHM_KIBANA_API_KEY
+    3. AWS connection bundle     one JSON secret named by `aws_secret_id`
+    4. value-specific AWS secret elasticsearch.aws_secret_id / kibana.auth.aws_secret_id
+    5. config/settings.yaml
+
 The Kibana key falls back to the Elasticsearch key when not separately set
 (common when one Elastic API key authorizes both).
 
-So in test we pass the key(s) on the command line; in production we omit them and
-they are read from AWS Secrets Manager.
+So in test we pass the key on the command line and keep the URLs in
+settings.yaml; in production we set only `aws_secret_id` (plus `aws_region`,
+default us-east-1) and pass nothing at all.
 
 Usage:
     # test env (Chrome, key on the command line)
     python scripts/run_collector.py --es-api-key "<id:key>" --dry-run --out run.json
 
-    # production (Edge, key from AWS Secrets Manager)
+    # production (Edge; URLs and key all from AWS Secrets Manager)
     python scripts/run_collector.py
 """
 from __future__ import annotations
@@ -28,7 +35,11 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from dhm.config import load_settings  # noqa: E402
 from dhm.es_writer import bulk_index  # noqa: E402
-from dhm.secrets import resolve_es_api_key, resolve_kibana_api_key  # noqa: E402
+from dhm.secrets import (  # noqa: E402
+    connection_warnings,
+    describe_sources,
+    resolve_connection,
+)
 
 
 def _select_backend(backend: str):
@@ -72,26 +83,49 @@ def main() -> int:
                     help="Elasticsearch API key (id:key). Overrides env/AWS.")
     ap.add_argument("--kibana-api-key", default=None,
                     help="Kibana API key. Overrides env/AWS. Defaults to the ES key.")
+    ap.add_argument("--kibana-url", default=None,
+                    help="Kibana base URL. Overrides env/AWS/settings.")
+    ap.add_argument("--es-url", default=None,
+                    help="Elasticsearch base URL. Overrides env/AWS/settings.")
+    ap.add_argument("--aws-secret-id", default=None,
+                    help="AWS Secrets Manager secret holding the connection bundle "
+                         "(JSON: kibana_url, es_url, api_key).")
+    ap.add_argument("--aws-region", default=None,
+                    help="AWS region for Secrets Manager (default us-east-1).")
     args = ap.parse_args()
 
     settings = load_settings(args.settings)
+    if args.aws_secret_id:
+        settings.aws_secret_id = args.aws_secret_id
+    if args.aws_region:
+        settings.aws_region = args.aws_region
 
-    # Resolve the ES key (needed unless it's a pure dry run).
-    settings.elasticsearch.api_key = resolve_es_api_key(
-        settings, cli_value=args.es_api_key, env_value=os.environ.get("DHM_ES_API_KEY")
+    # Resolve URLs and keys together: the browser and Saved Objects discovery both
+    # need kibana.base_url before we can build the registry below.
+    sources = resolve_connection(
+        settings,
+        cli_es_api_key=args.es_api_key,
+        cli_kibana_api_key=args.kibana_api_key,
+        cli_kibana_url=args.kibana_url,
+        cli_es_url=args.es_url,
     )
-    # Resolve the Kibana browser-auth key, falling back to the ES key.
-    if settings.kibana.auth.method == "api_key":
-        settings.kibana.auth.api_key = resolve_kibana_api_key(
-            settings,
-            cli_value=args.kibana_api_key,
-            env_value=os.environ.get("DHM_KIBANA_API_KEY"),
-            fallback=settings.elasticsearch.api_key,
-        )
+    print(f"Connection: {describe_sources(sources)}")
+    for warning in connection_warnings(settings):
+        print(f"WARNING: {warning}", file=sys.stderr)
 
+    if not settings.kibana.base_url:
+        print("ERROR: no Kibana URL (pass --kibana-url, set DHM_KIBANA_URL, put "
+              "kibana_url in the AWS secret named by aws_secret_id, or set "
+              "kibana.base_url in settings.yaml).", file=sys.stderr)
+        return 2
+    if not args.dry_run and not settings.elasticsearch.base_url:
+        print("ERROR: no Elasticsearch URL (pass --es-url, set DHM_ES_URL, put "
+              "es_url in the AWS secret named by aws_secret_id, or set "
+              "elasticsearch.base_url in settings.yaml).", file=sys.stderr)
+        return 2
     if not args.dry_run and not settings.elasticsearch.api_key:
         print("ERROR: no Elasticsearch API key (pass --es-api-key, set DHM_ES_API_KEY, "
-              "or configure elasticsearch.aws_secret_id).", file=sys.stderr)
+              "or configure aws_secret_id / elasticsearch.aws_secret_id).", file=sys.stderr)
         return 2
 
     registry = _load_registry(settings)
