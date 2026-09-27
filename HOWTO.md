@@ -44,9 +44,54 @@ pip install -r requirements.txt
 ### 0.1 API key privileges
 
 The collector authenticates to **both** Elasticsearch and Kibana with the same API
-key, so the key needs three distinct kinds of privilege. A ready-to-post request is
-in [`es/api_key_collector.json`](es/api_key_collector.json) — paste it into Dev Tools
-after `POST /_security/api_key`.
+key, so the key needs three distinct kinds of privilege. Two ready-to-post requests
+are in the repo — paste the body into Dev Tools after `POST /_security/api_key`:
+
+| File | Use it when |
+|---|---|
+| [`es/api_key_collector.json`](es/api_key_collector.json) | **Start here.** Local indices + Kibana. Uses only privilege names present in every 8.x release, so the POST will not be rejected. |
+| [`es/api_key_collector_ccs.json`](es/api_key_collector_ccs.json) | The same, plus a `remote_indices` block for the cross-cluster data views. Needs ES 8.14+ and the API-key-based remote-cluster model. |
+
+Start with the first, run the collector, and only move to the CCS variant if the
+cross-cluster panels come back `empty` (see *Which one do I need?* below).
+
+Both create a key named `dashboard_health_monitor` whose inline role grants:
+
+```
+cluster      manage_index_templates, manage_ilm     -> PUT _index_template, PUT _ilm/policy
+indices      dashboard-health-monitor*              -> create_doc, auto_configure, create_index,
+                                                        read, view_index_metadata
+             cdm_*, data_dictionary                 -> read, view_index_metadata
+applications kibana-.kibana on space:fed2            -> read
+```
+
+**Which one do I need?** It depends on how this deployment trusts its remote
+clusters, which we cannot tell from the dashboards alone:
+
+- **API-key-based remote clusters (ES 8.14+)** — the `remote_indices` block in the
+  CCS file is how you grant cross-cluster reads, and it belongs in this key.
+- **Certificate-based (legacy) trust** — remote reads are authorized on the *remote*
+  cluster, so the equivalent role must exist there with `read` +
+  `read_cross_cluster` on those indices. `remote_indices` here will not help, and
+  older versions reject the field outright, failing the whole POST. This is why the
+  default file omits it.
+
+Confirm with whoever owns the remote-cluster configuration. If `POST` of the CCS
+variant fails with an unknown-field error, that answers it — use the default file
+and have the remote cluster's role updated instead.
+
+**The shortcut that avoids all of this:** the analysts who review these dashboards
+by hand already have exactly the read access the collector needs. Dump the role that
+grants it and copy its `indices` / `remote_indices` / `applications` blocks
+verbatim, rather than re-deriving them:
+
+```
+GET  _security/role/<the analysts' role name>
+GET  _security/user/<an analyst>          # to find the role name
+```
+
+Then keep only the write grant we add on top: `create_doc` + `auto_configure` on
+`dashboard-health-monitor*`.
 
 | What the collector does | Privilege it needs |
 |---|---|
@@ -88,16 +133,63 @@ admin credential and drop `"cluster"` to `[]` on the long-lived collector key, s
 the key that sits in Secrets Manager and runs every 30 minutes can create no
 templates and no policies.
 
-**Validating a new key** — swap it in and compare against a known-good run:
+**Validating a new key.** Check the three privilege kinds directly before running
+anything, so a failure points at the cause instead of looking like a broken
+dashboard. `$APIKEY` is the `encoded` value from the create-key response:
+
+```bash
+# 1. The key authenticates at all
+curl -s "$DHM_ES_URL/_security/_authenticate" -H "Authorization: ApiKey $APIKEY"
+
+# 2. ES cluster + index privileges (every "has_all_requested" should be true)
+curl -s "$DHM_ES_URL/_security/user/_has_privileges" \
+  -H "Authorization: ApiKey $APIKEY" -H 'Content-Type: application/json' -d '{
+  "cluster": ["manage_index_templates", "manage_ilm"],
+  "index": [
+    {"names": ["dashboard-health-monitor"], "privileges": ["create_doc", "auto_configure"]},
+    {"names": ["cdm_cyhy_vuln"], "privileges": ["read"]}
+  ],
+  "application": [
+    {"application": "kibana-.kibana", "privileges": ["read"], "resources": ["space:fed2"]}
+  ]
+}'
+
+# 3. Kibana accepts it for the space (should return the dashboards, not a 403)
+curl -s -H "Authorization: ApiKey $APIKEY" -H 'kbn-xsrf: dhm' \
+  "$DHM_KIBANA_URL/s/fed2/api/saved_objects/_find?type=dashboard&type=links&per_page=1"
+
+# 4. Cross-cluster reads actually resolve (empty hits + no error = privileges fine
+#    but no data; a security_exception = the CCS grant is missing)
+curl -s -H "Authorization: ApiKey $APIKEY" \
+  "$DHM_ES_URL/agency-dashboard*:cdm_vuln_current/_search?size=0"
+```
+
+Then swap it in and compare against a known-good run:
 
 ```bash
 python scripts/run_collector.py --es-api-key "<new id:key>" --dry-run --out newkey.json
 ```
 
-A privilege gap shows up as a *sharp* change in shape, not a subtle one: a Kibana
-application-privilege gap makes every dashboard `failed` with a `load_error`, and a
-missing ES `read` makes panels `empty` en masse while load times stay fast. Compare
-the per-status counts to the previous run before trusting the new key.
+A privilege gap shows up as a *sharp* change in shape, not a subtle one:
+
+| Symptom | Missing privilege |
+|---|---|
+| Every dashboard `failed` with a `load_error` | Kibana application privilege on `space:fed2` |
+| Discovery returns 0 dashboards (`registry_source: api`) | Kibana application privilege, or the `links` saved object type |
+| Panels `empty` en masse, load times stay fast | ES `read` on the source indices |
+| Only the cross-cluster panels `empty` | `read_cross_cluster` on the remote indices |
+| `_bulk` 403 `action [indices:data/write/bulk] is unauthorized` | `create_doc` on `dashboard-health-monitor` |
+| Run 1 writes nothing, `_bulk` complains the data stream is missing | `auto_configure` (or run `setup_elasticsearch.py` first) |
+
+Compare the per-status counts to the previous run before trusting the new key.
+
+> **Why space-level `read` and not `feature_dashboard.read`?** Both are read-only and
+> scoped to `space:fed2`. Space-level `read` also covers the `links` saved object
+> type that the navigation graph is built from, and the data views the panels
+> resolve. Kibana returns 403 for the *whole* `_find` request if the key lacks access
+> to any requested type, so a too-narrow feature privilege makes discovery return
+> nothing at all rather than degrading. Tighten to `feature_dashboard.read` later if
+> it tests clean.
 
 > **Note on `expiration`.** A key created with `"expiration": "365d"` stops working
 > on day 365 with no warning — the collector simply starts 403ing. Put the rotation
