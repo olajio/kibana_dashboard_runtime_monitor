@@ -1,0 +1,25 @@
+POST /_security/api_key
+{
+  "name": "awx_manage_security",
+  "expiration": "365d",
+  "role_descriptors": {
+    "superuser": {
+      "cluster": [
+        "manage",
+        "manage_security"
+      ],
+      "indices": [
+        {
+          "names": ["*"],
+          "privileges": ["manage"]
+        }
+      ],
+      "applications": [],
+      "run_as": [],
+      "metadata": {},
+      "transient_metadata": {
+        "enabled": true
+      }
+    }
+  }
+}
