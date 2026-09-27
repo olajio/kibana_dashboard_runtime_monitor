@@ -31,6 +31,21 @@
           ]
         }
       ],
+      "remote_indices": [
+        {
+          "clusters": [
+            "agency-dashboard*"
+          ],
+          "names": [
+            "cdm_*"
+          ],
+          "privileges": [
+            "read",
+            "read_cross_cluster",
+            "view_index_metadata"
+          ]
+        }
+      ],
       "applications": [
         {
           "application": "kibana-.kibana",
