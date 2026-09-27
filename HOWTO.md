@@ -24,7 +24,9 @@ both:
   is downloaded.
 - Network access from the machine to Kibana and Elasticsearch.
 - An Elasticsearch API key with: **read** on the monitored Kibana space, and
-  **write** to `dashboard-health-monitor`.
+  **write** to `dashboard-health-monitor`. See
+  [§0.1 API key privileges](#01-api-key-privileges) for the exact set — getting this
+  wrong is the most common cause of a fleet-wide false failure.
 
 ```bash
 git clone <this repo> && cd kibana_dashboard_runtime_monitor
@@ -36,6 +38,71 @@ pip install -r requirements.txt
 
 > If the `playwright` pip package is blocked in the boundary, use the Selenium
 > backend instead — see [Appendix A](#appendix-a--selenium-fallback).
+
+---
+
+### 0.1 API key privileges
+
+The collector authenticates to **both** Elasticsearch and Kibana with the same API
+key, so the key needs three distinct kinds of privilege. A ready-to-post request is
+in [`es/api_key_collector.json`](es/api_key_collector.json) — paste it into Dev Tools
+after `POST /_security/api_key`.
+
+| What the collector does | Privilege it needs |
+|---|---|
+| `PUT /_ilm/policy/dashboard-health-monitor` (setup only) | cluster `manage_ilm` |
+| `PUT /_index_template/dashboard-health-monitor` (setup only) | cluster `manage_index_templates` |
+| `POST /_bulk` with `create` into the data stream | index `create_doc`, `auto_configure` on `dashboard-health-monitor` |
+| `GET /s/fed2/api/saved_objects/_find` (live discovery) | Kibana application `feature_dashboard.read` on `space:fed2` |
+| Browser opens each dashboard and every panel runs its own searches | Kibana `feature_dashboard.read` on `space:fed2` **plus** ES `read` + `view_index_metadata` on every index those panels query |
+
+Three things are easy to get wrong:
+
+- **Kibana access is *not* an index privilege.** Kibana authorizes through
+  *application* privileges under the application name `kibana-.kibana`. A key with
+  `"applications": []` has no Kibana access at all, however broad its cluster and
+  index privileges are — the Saved Objects call and the browser's dashboard loads
+  both 403.
+- **The `manage` index privilege cannot read or write documents.** It covers index
+  *administration* (settings, mappings, aliases, refresh, open/close) plus all
+  `monitor` privileges. Writing needs `create_doc` (or `write`); reading needs
+  `read`. A key holding only `manage` fails `_bulk` with
+  `action [indices:data/write/bulk] is unauthorized`.
+- **Roughly half the data views are cross-cluster.** 13 of the 31 data views behind
+  these dashboards are CCS patterns (`agency-dashboard*:cdm_…`). Local `read` does
+  not cover them — they need `read_cross_cluster` on the remote side. The exact
+  syntax depends on which remote-cluster trust model this deployment uses: the
+  `remote_indices` block in `api_key_collector.json` is the API-key-based model
+  (ES 8.14+); a certificate-based trust instead requires the role to exist with
+  `read` + `read_cross_cluster` on the **remote** cluster. Confirm with whoever owns
+  the remote cluster configuration.
+
+**The reliable shortcut:** the analysts who review these dashboards by hand already
+have exactly the read access the collector needs. Mirror their role's read
+privileges and add only `create_doc` + `auto_configure` on
+`dashboard-health-monitor`. That sidesteps having to re-derive the CCS setup.
+
+**Tightening after setup:** the two cluster privileges are only used by
+`scripts/setup_elasticsearch.py`, which runs once per cluster. Run that step with an
+admin credential and drop `"cluster"` to `[]` on the long-lived collector key, so
+the key that sits in Secrets Manager and runs every 30 minutes can create no
+templates and no policies.
+
+**Validating a new key** — swap it in and compare against a known-good run:
+
+```bash
+python scripts/run_collector.py --es-api-key "<new id:key>" --dry-run --out newkey.json
+```
+
+A privilege gap shows up as a *sharp* change in shape, not a subtle one: a Kibana
+application-privilege gap makes every dashboard `failed` with a `load_error`, and a
+missing ES `read` makes panels `empty` en masse while load times stay fast. Compare
+the per-status counts to the previous run before trusting the new key.
+
+> **Note on `expiration`.** A key created with `"expiration": "365d"` stops working
+> on day 365 with no warning — the collector simply starts 403ing. Put the rotation
+> in the calendar ahead of that date. Because the key is read from Secrets Manager,
+> rotation is a secret update with no redeploy and no file edit on the server.
 
 ---
 
@@ -78,10 +145,11 @@ Edit `config/settings.yaml`:
 
 - `kibana.base_url` — the Kibana URL.
 - `elasticsearch.base_url` — the Elasticsearch URL.
-- `kibana_space` — the space **ID** the dashboards live in. The space is displayed
-  as "Federal"; its ID (the `/s/<id>` URL slug) is almost certainly `federal`.
-  Confirm by opening the Federal Overview dashboard and reading the segment right
-  after `/s/` in the URL.
+- `kibana_space` — the space **ID** the dashboards live in. This is **`fed2`**, which
+  is also the built-in default in code, so it normally needs no change. It is the
+  `/s/<id>` URL slug, not the display name — confirm by opening the Federal Overview
+  dashboard and reading the segment right after `/s/` in the URL. Override per
+  environment with `DHM_SPACE`.
 - Leave `elasticsearch.api_key` **empty** — we supply it per-run (test) or via AWS
   (prod).
 

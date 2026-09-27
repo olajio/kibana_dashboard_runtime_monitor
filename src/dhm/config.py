@@ -123,7 +123,9 @@ class AWSSecretKeys:
 class Settings:
     app: str = "federal_overview"
     cluster: str = "fed2"
-    kibana_space: str = "default"
+    # The Kibana space ID (the /s/<id> URL slug), not the display name. Our
+    # dashboards live in fed2; "default" is the one space with no /s/ prefix.
+    kibana_space: str = "fed2"
     # AWS region for Secrets Manager. us-east-1 is our default; override per
     # environment with DHM_AWS_REGION (or the standard AWS_REGION).
     aws_region: str = "us-east-1"
@@ -161,7 +163,7 @@ def load_settings(path: str = "config/settings.yaml") -> Settings:
     s = Settings(
         app=raw.get("app", "federal_overview"),
         cluster=_env("DHM_CLUSTER", raw.get("cluster", "fed2")),
-        kibana_space=_env("DHM_SPACE", raw.get("kibana_space", "default")),
+        kibana_space=_env("DHM_SPACE", raw.get("kibana_space", "") or "fed2"),
         aws_region=_env(
             "DHM_AWS_REGION", _env("AWS_REGION", raw.get("aws_region", "") or "us-east-1")
         ),

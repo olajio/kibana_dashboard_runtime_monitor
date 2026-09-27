@@ -14,8 +14,37 @@ def _write(tmp_path, body):
 
 
 def _clean(monkeypatch):
-    for v in ("DHM_SELECTION", "DHM_HUB_TITLE", "DHM_INCLUDE_TITLES"):
+    for v in ("DHM_SELECTION", "DHM_HUB_TITLE", "DHM_INCLUDE_TITLES", "DHM_SPACE"):
         monkeypatch.delenv(v, raising=False)
+
+
+# --- Kibana space ------------------------------------------------------------
+
+def test_kibana_space_defaults_to_fed2(monkeypatch):
+    # Our dashboards live in the fed2 space, so that is the built-in default.
+    _clean(monkeypatch)
+    assert load_settings("does_not_exist.yaml").kibana_space == "fed2"
+
+
+def test_kibana_space_default_survives_empty_yaml_value(monkeypatch, tmp_path):
+    _clean(monkeypatch)
+    assert load_settings(_write(tmp_path, 'kibana_space: ""\n')).kibana_space == "fed2"
+
+
+def test_kibana_space_from_yaml_and_env(monkeypatch, tmp_path):
+    _clean(monkeypatch)
+    path = _write(tmp_path, "kibana_space: other\n")
+    assert load_settings(path).kibana_space == "other"
+    monkeypatch.setenv("DHM_SPACE", "fed3")
+    assert load_settings(path).kibana_space == "fed3"
+
+
+def test_space_default_can_still_be_selected(monkeypatch):
+    # "default" is the one space that carries no /s/<id> URL prefix; it must stay
+    # reachable now that it is no longer the built-in default.
+    _clean(monkeypatch)
+    monkeypatch.setenv("DHM_SPACE", "default")
+    assert load_settings("does_not_exist.yaml").kibana_space == "default"
 
 
 def test_defaults_are_linked_federal_overview(monkeypatch):

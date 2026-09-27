@@ -14,9 +14,10 @@ app: federal_overview          # logical label for this dashboard family (also u
                                 # auto-detect the "Federal Overview" hub); not the space
 cluster: fed2                   # [DHM_CLUSTER] the single cluster we monitor
 # The Kibana space ID (the URL slug in /s/<id>/...), NOT the display name.
-# Set per environment: 'fed2' in test; override for production with DHM_SPACE
-# (or a production settings.yaml). Confirm by reading the /s/<id> segment in the
-# dashboard URL.
+# fed2 is the built-in default in code — the space our dashboards live in — so
+# this only needs changing if a cluster puts them elsewhere. Override per
+# environment with DHM_SPACE. Confirm by reading the /s/<id> segment in the
+# dashboard URL. ("default" is the one space Kibana serves with no /s/ prefix.)
 kibana_space: fed2              # [DHM_SPACE] space ID the dashboards live in
 
 # --- AWS Secrets Manager ----------------------------------------------------
