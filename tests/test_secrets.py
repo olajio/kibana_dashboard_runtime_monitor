@@ -188,6 +188,26 @@ def test_bundle_supplies_urls_and_key(monkeypatch):
     assert src["kibana.auth.api_key"] == "elasticsearch.api_key"
 
 
+def test_shared_secret_reads_only_its_own_fields(monkeypatch):
+    """Production's secret (federal_store) is shared: it holds one entry per
+    consumer. We must read exactly our three fields and ignore the rest, including
+    other consumers' API keys and any nested values we never look at."""
+    s = _bundled(monkeypatch, """{
+      "kibana_url": "https://fed.kb.prod:9243",
+      "elastic_url": "https://fed.es.prod:9243",
+      "ans_dashboard_health_monitor": "OUR-KEY",
+      "ans_some_other_app": "NOT-OURS",
+      "awx_manage_security": "ALSO-NOT-OURS",
+      "db_password": "UNRELATED",
+      "some_nested": {"a": 1}
+    }""")
+    sec.resolve_connection(s, env={})
+    assert s.kibana.base_url == "https://fed.kb.prod:9243"
+    assert s.elasticsearch.base_url == "https://fed.es.prod:9243"
+    assert s.elasticsearch.api_key == "OUR-KEY"
+    assert s.kibana.auth.api_key == "OUR-KEY"
+
+
 def test_bundle_kibana_api_key_is_used_when_present(monkeypatch):
     s = _bundled(monkeypatch,
                  '{"ans_dashboard_health_monitor": "es-key", "kibana_api_key": "kb-key"}')

@@ -29,7 +29,7 @@
 
     # --- environment-specific ---
     dhm_aws_region: us-east-1
-    dhm_aws_secret_id: elastic/dhm/connection
+    dhm_aws_secret_id: federal_store
     dhm_cluster: fed2
     dhm_space: fed2
     dhm_hub_title: Federal Overview

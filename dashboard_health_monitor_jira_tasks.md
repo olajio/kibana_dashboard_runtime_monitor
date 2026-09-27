@@ -94,7 +94,7 @@ blocked by DHM-F.**
   one secret, so nothing environment-specific or sensitive lands on the server.
 - **Steps:**
   - Create the secret (default region `us-east-1`), e.g.
-    `elastic/dhm/connection`, with a JSON payload:
+    `federal_store`, with a JSON payload:
     `{"kibana_url": "https://<host>.kb.<domain>:9243", "es_url":
     "https://<host>.es.<domain>:9243", "api_key": "<base64 id:key>"}`.
     Add `kibana_api_key` only if Kibana needs a different key.

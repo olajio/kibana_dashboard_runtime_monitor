@@ -53,7 +53,7 @@ playbook sets both in the cron entry for us — there is nothing to export by ha
 
 | On the server | Value | Why |
 |---|---|---|
-| `DHM_AWS_SECRET_ID` | e.g. `elastic/dhm/connection` | which secret to read |
+| `DHM_AWS_SECRET_ID` | e.g. `federal_store` | which secret to read |
 | `DHM_AWS_REGION` | `us-east-1` | optional — this is already the default |
 
 Plus AWS credentials, which are not an environment variable: an instance or task role
@@ -434,7 +434,7 @@ object:
 
 ```bash
 aws secretsmanager create-secret \
-  --name elastic/dhm/connection \
+  --name federal_store \
   --region us-east-1 \
   --description "Dashboard Health Monitor: Kibana/ES endpoints + API key" \
   --secret-string '{
@@ -466,7 +466,7 @@ Two values tie the deployment to the secret, and both can come from the environm
 
 ```yaml
 aws_region: us-east-1                # [DHM_AWS_REGION] the default; AWS_REGION also works
-aws_secret_id: elastic/dhm/connection # [DHM_AWS_SECRET_ID] the secret name or ARN
+aws_secret_id: federal_store # [DHM_AWS_SECRET_ID] the secret name or ARN
 ```
 
 A `settings.yaml` is still needed, though — **`collector.registry_source` defaults to
@@ -501,7 +501,7 @@ AWS access):
   "Statement": [{
     "Effect": "Allow",
     "Action": "secretsmanager:GetSecretValue",
-    "Resource": "arn:aws:secretsmanager:us-east-1:<account-id>:secret:elastic/dhm/connection-*"
+    "Resource": "arn:aws:secretsmanager:us-east-1:<account-id>:secret:federal_store-*"
   }]
 }
 ```
@@ -558,7 +558,7 @@ Set these in your inventory or with `-e`; the defaults in the playbook match our
 pre-staging values:
 
 ```yaml
-dhm_aws_secret_id: elastic/dhm/connection   # the secret from §3B.1
+dhm_aws_secret_id: federal_store   # the secret from §3B.1
 dhm_aws_region: us-east-1
 dhm_cluster: fed2
 dhm_space: fed2                             # the /s/<id> slug in production
@@ -588,7 +588,7 @@ alongside the playbook and to leave the rendered file world-readable.
 
 ```bash
 sudo -u dhm bash -c 'cd /opt/dashboard-health-monitor && \
-  DHM_AWS_SECRET_ID=elastic/dhm/connection DHM_AWS_REGION=us-east-1 \
+  DHM_AWS_SECRET_ID=federal_store DHM_AWS_REGION=us-east-1 \
   .venv/bin/python scripts/run_collector.py --dry-run'
 ```
 
@@ -628,7 +628,7 @@ Run one cycle every 15–30 minutes. Example cron for **production** (key from A
 so nothing secret is on the command line):
 
 ```cron
-*/20 * * * * cd /opt/dashboard-health-monitor && DHM_AWS_SECRET_ID=elastic/dhm/connection /opt/dashboard-health-monitor/.venv/bin/python scripts/run_collector.py >> /var/log/dhm/collector.log 2>&1
+*/20 * * * * cd /opt/dashboard-health-monitor && DHM_AWS_SECRET_ID=federal_store /opt/dashboard-health-monitor/.venv/bin/python scripts/run_collector.py >> /var/log/dhm/collector.log 2>&1
 ```
 
 Set the dead-man's-switch rule's window to 2× this interval (e.g. 40m).
