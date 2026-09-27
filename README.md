@@ -278,16 +278,22 @@ Both backends honour `browser_channel` and produce identical documents.
 
 ### Shell variables for the validation commands
 
-The `curl` checks below refer to these. They are for our own verification only — the
-collector reads `settings.yaml` / the AWS secret and ignores them (the two URLs are
-not environment-settable at all; see the precedence table above).
+The `curl` checks below refer to these. **They are not settings** — they exist only to
+keep the commands readable.
 
 ```bash
+# No "DHM_" prefix: these change nothing about a run, they are just curl shorthand.
 # Kibana and Elasticsearch are DIFFERENT hosts — check ...kb... vs ...es...
-export DHM_KIBANA_URL="https://<host>.kb.<domain>:9243"
-export DHM_ES_URL="https://<host>.es.<domain>:9243"
+export KB_URL="https://<host>.kb.<domain>:9243"
+export ES_URL="https://<host>.es.<domain>:9243"
+
 export DHM_ES_API_KEY="<base64 id:key>"        # this one IS read by the collector
 ```
+
+Every environment variable the collector reads is prefixed `DHM_`. There is **no
+`DHM_KIBANA_URL` or `DHM_ES_URL`** — the endpoints resolve from the AWS secret (or
+`settings.yaml`, or a `--kibana-url` / `--es-url` flag), so no stray export can
+redirect a run.
 
 ### Set up the index (once per cluster)
 
@@ -307,8 +313,8 @@ nothing; that is expected.
 **Validate:**
 
 ```bash
-curl -s "$DHM_ES_URL/_index_template/dashboard-health-monitor" -H "Authorization: ApiKey $DHM_ES_API_KEY" | head
-curl -s "$DHM_ES_URL/_ilm/policy/dashboard-health-monitor"     -H "Authorization: ApiKey $DHM_ES_API_KEY" | head
+curl -s "$ES_URL/_index_template/dashboard-health-monitor" -H "Authorization: ApiKey $DHM_ES_API_KEY" | head
+curl -s "$ES_URL/_ilm/policy/dashboard-health-monitor"     -H "Authorization: ApiKey $DHM_ES_API_KEY" | head
 ```
 
 ---
@@ -367,7 +373,7 @@ python scripts/run_collector.py                            # production (key fro
 **Validate:**
 
 ```bash
-curl -s "$DHM_ES_URL/dashboard-health-monitor/_search?size=1" \
+curl -s "$ES_URL/dashboard-health-monitor/_search?size=1" \
   -H "Authorization: ApiKey <id:key>" | python -m json.tool
 ```
 
@@ -407,7 +413,7 @@ in Kibana:
 
 ```bash
 for rule in es/alerting/*.json; do
-  curl -sS -X POST "$DHM_KIBANA_URL/api/alerting/rule" \
+  curl -sS -X POST "$KB_URL/api/alerting/rule" \
     -H "Authorization: ApiKey $DHM_KIBANA_API_KEY" \
     -H "kbn-xsrf: true" -H "Content-Type: application/json" \
     -d @"$rule"
