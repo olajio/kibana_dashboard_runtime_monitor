@@ -426,13 +426,17 @@ To rotate, update this one secret — no redeploy, no file edit on the server.
 
 ### 3B.2 Point the deployment at the secret
 
-Only two values, and both can come from the environment, so Ansible does not have
-to template a settings file at all:
+Two values tie the deployment to the secret, and both can come from the environment:
 
 ```yaml
 aws_region: us-east-1                # [DHM_AWS_REGION] the default; AWS_REGION also works
 aws_secret_id: elastic/dhm/connection # [DHM_AWS_SECRET_ID] the secret name or ARN
 ```
+
+A `settings.yaml` is still needed, though — **`collector.registry_source` defaults to
+`export`**, which reads `config/dashboards.generated.json`, a file we deliberately do
+not deploy. Production must set it to `api`. `deploy/settings.prod.yaml.j2` does that
+(see §3B.4), or set `DHM_REGISTRY_SOURCE=api` in the cron entry.
 
 Leave `kibana.base_url`, `elasticsearch.base_url` and every `api_key` field empty
 — the bundle supplies them. (If `settings.yaml` does carry URLs, the bundle wins:
@@ -488,52 +492,62 @@ from AWS means the field is missing from the secret (check the field names again
 
 ### 3B.4 Deploying with Ansible
 
-The repo is the deployment artifact — clone it to the existing server, install the
-requirements into a virtualenv, drop in a `settings.yaml` (or just the two AWS env
-vars), and schedule it with cron/systemd. A minimal sketch:
+The repo is the deployment artifact, and the playbook is in it:
 
-```yaml
-- name: Deploy the Dashboard Health Monitor
-  hosts: dhm_runners
-  vars:
-    dhm_root: /opt/dashboard-health-monitor
-    dhm_aws_secret_id: elastic/dhm/connection
-    dhm_aws_region: us-east-1
-  tasks:
-    - name: Check out the repository
-      ansible.builtin.git:
-        repo: https://github.com/olajio/kibana_dashboard_runtime_monitor.git
-        dest: "{{ dhm_root }}"
-        version: main
+| File | What it is |
+|---|---|
+| `deploy/dhm-deploy.yml` | the playbook — checkout, virtualenv, settings, log dir, logrotate, cron |
+| `deploy/settings.prod.yaml.j2` | the rendered `config/settings.yaml`: no endpoints, no credentials |
 
-    - name: Install Python requirements
-      ansible.builtin.pip:
-        requirements: "{{ dhm_root }}/requirements.txt"
-        virtualenv: "{{ dhm_root }}/.venv"
-        virtualenv_command: python3 -m venv
+```bash
+# first time on a host — also applies the ILM policy + index template
+ansible-playbook -i inventory deploy/dhm-deploy.yml --tags all,setup
 
-    - name: Install settings (no secrets; endpoints come from AWS)
-      ansible.builtin.template:
-        src: settings.yaml.j2
-        dest: "{{ dhm_root }}/config/settings.yaml"
-        mode: "0644"
-
-    - name: Schedule the collection cycle
-      ansible.builtin.cron:
-        name: dashboard-health-monitor
-        minute: "*/30"
-        job: >-
-          cd {{ dhm_root }} &&
-          DHM_AWS_SECRET_ID={{ dhm_aws_secret_id }}
-          DHM_AWS_REGION={{ dhm_aws_region }}
-          .venv/bin/python scripts/run_collector.py
-          >> /var/log/dhm/collector.log 2>&1
+# routine redeploy: idempotent, and leaves the cluster assets alone
+ansible-playbook -i inventory deploy/dhm-deploy.yml
 ```
 
-Because `settings.yaml` now holds no endpoints and no credentials, it is safe to
-template from the repo's `config/settings.example.yaml` and commit the Jinja
-template alongside the playbook. Set `collector.browser_channel: msedge` and
-`collector.registry_source: api` for production.
+Set these in your inventory or with `-e`; the defaults in the playbook match our
+pre-staging values:
+
+```yaml
+dhm_aws_secret_id: elastic/dhm/connection   # the secret from §3B.1
+dhm_aws_region: us-east-1
+dhm_cluster: fed2
+dhm_space: fed2                             # the /s/<id> slug in production
+dhm_cron_minute: "*/30"
+```
+
+What the playbook does, beyond the obvious:
+
+- **Preflight.** Fails early and explicitly if Python is older than 3.10 or if
+  **Edge is not on `PATH`** — the collector drives the system browser and downloads
+  nothing, so a missing browser is a deploy-time error, not a runtime mystery.
+- **Sets `registry_source: api`** in the rendered settings. This is the one setting
+  production *must* override; the default `export` mode would look for an `.ndjson`
+  manifest that is not deployed.
+- **Runs `setup_elasticsearch.py` only under `--tags setup`.** That step needs the
+  `manage_ilm` / `manage_index_templates` cluster privileges, which the long-lived
+  collector key should not keep (§0.1). A routine redeploy skips it.
+- **Creates `/var/log/dhm` and a logrotate rule** (weekly, 8 kept, compressed).
+  Without the directory, cron output goes nowhere.
+- **Runs as a dedicated `dhm` system account**, not root.
+
+The rendered `config/settings.yaml` holds no endpoints and no credentials — verified
+by rendering it and loading it back — so it is safe to commit the Jinja template
+alongside the playbook and to leave the rendered file world-readable.
+
+**Verify after the first deploy:**
+
+```bash
+sudo -u dhm bash -c 'cd /opt/dashboard-health-monitor && \
+  DHM_AWS_SECRET_ID=elastic/dhm/connection DHM_AWS_REGION=us-east-1 \
+  .venv/bin/python scripts/run_collector.py --dry-run'
+```
+
+`--dry-run` needs no Elasticsearch write access, so this exercises the secret, the
+browser and Kibana discovery without touching the cluster. Check the `Connection:`
+line shows `<-aws-bundle` for both URLs and the key.
 
 ---
 
@@ -669,7 +683,8 @@ into the new stream before deleting.
   a one-off. There is no env-var route for these. The provenance line printed at the
   top of every run says which source each value actually came from.
 - **`is not a JSON object`** — the secret named by `aws_secret_id` holds a bare
-  string. The bundle must be a JSON object (`{"kibana_url": ..., "api_key": ...}`).
+  string. The bundle must be a JSON object
+  (`{"kibana_url": ..., "elastic_url": ..., "ans_dashboard_health_monitor": ...}`).
   For a secret that holds only a key, use `elasticsearch.aws_secret_id` instead.
 - **Values show `<-settings` when they should come from AWS** — the field is missing
   from the secret, or named differently; check it against `aws_secret_keys`.
