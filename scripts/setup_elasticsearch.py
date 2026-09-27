@@ -4,8 +4,10 @@
 Run once per cluster before the first collection cycle.
 
 The Elasticsearch URL and API key are resolved by precedence:
-    --es-url      >  $DHM_ES_URL      >  AWS connection bundle  >  settings.yaml
+    --es-url      >  AWS connection bundle (elastic_url)  >  settings.yaml
+                     (no env step: the endpoint belongs to the secret)
     --es-api-key  >  $DHM_ES_API_KEY  >  AWS connection bundle
+                     (ans_dashboard_health_monitor)
                   >  elasticsearch.aws_secret_id  >  settings.yaml
 
 So in test we pass --es-api-key; in production we set only `aws_secret_id` and
@@ -56,9 +58,9 @@ def main() -> int:
         print(f"WARNING: {warning}", file=sys.stderr)
 
     if not settings.elasticsearch.base_url:
-        print("ERROR: no Elasticsearch URL (pass --es-url, set DHM_ES_URL, put es_url "
-              "in the AWS secret named by aws_secret_id, or set "
-              "elasticsearch.base_url in settings.yaml).", file=sys.stderr)
+        print("ERROR: no Elasticsearch URL. Put 'elastic_url' in the AWS secret named "
+              "by aws_secret_id, set elasticsearch.base_url in settings.yaml, or pass "
+              "--es-url.", file=sys.stderr)
         return 2
     if not settings.elasticsearch.api_key:
         print("ERROR: no Elasticsearch API key (pass --es-api-key, set DHM_ES_API_KEY, "

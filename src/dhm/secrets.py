@@ -7,21 +7,34 @@ and the API key all come from one AWS Secrets Manager secret — the *connection
 bundle*. One secret means one IAM grant, one rotation, and one Ansible variable
 (`aws_secret_id`).
 
-The bundle is a JSON object; by default we read these fields:
+The bundle is a JSON object; by default we read the field names our production
+secret uses:
 
     {
-      "kibana_url":     "https://kibana.example.gov:9243",
-      "es_url":         "https://es.example.gov:9243",
-      "api_key":        "<base64 id:key>",
-      "kibana_api_key": "<base64 id:key>"    # optional; defaults to api_key
+      "kibana_url":                   "https://kibana.example.gov:9243",
+      "elastic_url":                  "https://es.example.gov:9243",
+      "ans_dashboard_health_monitor": "<base64 id:key>",
+      "kibana_api_key":               "<base64 id:key>"   # optional; defaults to the above
     }
 
-Every value resolves by the same precedence, most explicit first:
+The two **URLs** resolve as:
 
-    1. command-line flag        (--kibana-url, --es-api-key, ...)
-    2. environment variable     (DHM_KIBANA_URL, DHM_ES_API_KEY, ...)
+    1. command-line flag        (--kibana-url / --es-url) — for debugging
+    2. AWS connection bundle    (top-level `aws_secret_id`)
+    3. config/settings.yaml
+
+There is deliberately **no environment-variable step for the URLs**: the endpoints
+belong to the AWS secret, and an env var that silently outranked it would be a
+foot-gun (a stale export in a shell or crontab would quietly redirect the whole
+run).
+
+The **API keys** keep an env step, because passing the key by hand is how the test
+environment works:
+
+    1. command-line flag        (--es-api-key / --kibana-api-key)
+    2. environment variable     (DHM_ES_API_KEY / DHM_KIBANA_API_KEY)
     3. AWS connection bundle    (top-level `aws_secret_id`)
-    4. value-specific AWS secret (API keys only: elasticsearch.aws_secret_id,
+    4. value-specific AWS secret (elasticsearch.aws_secret_id,
                                   kibana.auth.aws_secret_id) — for split-secret setups
     5. config/settings.yaml
 
@@ -47,12 +60,14 @@ from .config import Settings
 _bundle_cache: Dict[str, Dict[str, str]] = {}
 
 # Field names we accept in the bundle in addition to the configured ones, so a
-# secret written by hand with a reasonable-looking key still works. Matched
-# case-insensitively.
+# secret written by hand with a reasonable-looking key still works. The first entry
+# in each tuple is our production field name; the rest are accepted fallbacks.
+# Matched case-insensitively.
 _BUNDLE_ALIASES: Dict[str, Tuple[str, ...]] = {
     "kibana_url": ("kibana_url", "kibana_base_url", "kibanaurl", "kbn_url"),
-    "es_url": ("es_url", "elasticsearch_url", "elasticsearch_base_url", "esurl"),
-    "api_key": ("api_key", "apikey", "es_api_key", "elasticsearch_api_key"),
+    "es_url": ("elastic_url", "es_url", "elasticsearch_url", "elasticsearch_base_url", "esurl"),
+    "api_key": ("ans_dashboard_health_monitor", "api_key", "apikey", "es_api_key",
+                "elasticsearch_api_key"),
     "kibana_api_key": ("kibana_api_key", "kibanaapikey", "kbn_api_key"),
 }
 
@@ -229,14 +244,14 @@ def resolve_connection(
     auth = settings.kibana.auth
     src: Dict[str, str] = {}
 
-    # Note: load_settings() has already folded DHM_*_URL / DHM_*_API_KEY into
-    # settings, so the "settings" source below is effectively the YAML value —
-    # the explicit env lookups here are what give env its place in the order.
+    # Note: load_settings() has already folded DHM_*_API_KEY into settings, so the
+    # "settings" source for a key is effectively the YAML value — the explicit env
+    # lookups below are what give env its place in the order. The two URLs have no
+    # env step at all, by design: they belong to the AWS secret.
 
     # --- Kibana URL (needed by the browser and by Saved Objects discovery) ---
     value, src["kibana.base_url"] = _resolve(
         ("cli", cli_kibana_url),
-        ("env", env.get("DHM_KIBANA_URL")),
         ("aws-bundle", lambda: bundle_get(bundle, "kibana_url", keys.kibana_url)),
         ("settings", settings.kibana.base_url),
     )
@@ -245,7 +260,6 @@ def resolve_connection(
     # --- Elasticsearch URL (where results are written) ---
     value, src["elasticsearch.base_url"] = _resolve(
         ("cli", cli_es_url),
-        ("env", env.get("DHM_ES_URL")),
         ("aws-bundle", lambda: bundle_get(bundle, "es_url", keys.es_url)),
         ("settings", es.base_url),
     )

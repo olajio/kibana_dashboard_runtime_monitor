@@ -64,11 +64,10 @@ curl -s -o /dev/null -w '%{http_code}\n' "$DHM_KIBANA_URL/api/status" \
   -H "Authorization: ApiKey $APIKEY"          # expect 200
 ```
 
-> These exports are for interactive use. `DHM_KIBANA_URL` and `DHM_ES_URL` are also
-> real settings overrides that outrank the AWS secret, so do **not** leave them set
-> in a production shell or a crontab — that would silently bypass Secrets Manager.
-> The `Connection:` line each run prints would show `<-env` instead of
-> `<-aws-bundle`, which is how to catch it.
+> These exports are **only** for the `curl` commands in this runbook. The collector
+> ignores them: the two URLs are not environment-overridable by design, so a stale
+> export in a shell or crontab cannot redirect a run. `DHM_ES_API_KEY` *is* honoured
+> by the collector, so keep that one out of production shells.
 
 ---
 
@@ -403,20 +402,25 @@ aws secretsmanager create-secret \
   --region us-east-1 \
   --description "Dashboard Health Monitor: Kibana/ES endpoints + API key" \
   --secret-string '{
-    "kibana_url": "https://<host>.kb.<domain>:9243",
-    "es_url":     "https://<host>.es.<domain>:9243",
-    "api_key":    "<base64 id:key>"
+    "kibana_url":                   "https://<host>.kb.<domain>:9243",
+    "elastic_url":                  "https://<host>.es.<domain>:9243",
+    "ans_dashboard_health_monitor": "<base64 id:key>"
   }'
 ```
 
+Those three field names are the defaults the code looks for, so nothing else needs
+configuring. (A few alternate spellings — `es_url`, `api_key`, `elasticsearch_url` —
+are also accepted, case-insensitively, so a pre-existing secret keeps working. To use
+entirely different names, set `aws_secret_keys` in `settings.yaml`.)
+
 Two things to get right:
 
-- **`kibana_url` and `es_url` are different hosts** (typically `...kb...` vs
+- **`kibana_url` and `elastic_url` are different hosts** (typically `...kb...` vs
   `...es...`). Pointing both at Kibana makes every `_bulk` write 404 — we hit this
-  in pre-staging. The collector now warns when the two resolve to the same host.
-- **`api_key`** is the base64 `id:key` value, the same string we pass to
-  `--es-api-key` in test. Add `"kibana_api_key"` only if Kibana needs a *different*
-  key; otherwise `api_key` is used for both.
+  in pre-staging. The collector warns when the two resolve to the same host.
+- **`ans_dashboard_health_monitor`** is the base64 `id:key` value, the same string we
+  pass to `--es-api-key` in test. Add `"kibana_api_key"` only if Kibana needs a
+  *different* key; otherwise this one is used for both.
 
 To rotate, update this one secret — no redeploy, no file edit on the server.
 
@@ -432,7 +436,9 @@ aws_secret_id: elastic/dhm/connection # [DHM_AWS_SECRET_ID] the secret name or A
 
 Leave `kibana.base_url`, `elasticsearch.base_url` and every `api_key` field empty
 — the bundle supplies them. (If `settings.yaml` does carry URLs, the bundle wins:
-the file holds defaults, the secret is the source of truth.)
+the file holds defaults, the secret is the source of truth.) There are no
+`DHM_KIBANA_URL` / `DHM_ES_URL` overrides to worry about — the URLs are not
+environment-settable, so the secret cannot be bypassed by a stray export.
 
 The runner needs AWS credentials with `secretsmanager:GetSecretValue` on that
 secret (instance role / task role / `AWS_PROFILE` — however this host normally gets
@@ -457,9 +463,8 @@ python scripts/run_collector.py                # Edge; creates the data stream o
 ```
 
 As in §3A.1, the first command creates only the ILM policy and index template; the
-data stream appears on the first write. Make sure `DHM_KIBANA_URL` / `DHM_ES_URL` are
-**not** set in this shell — they outrank the AWS secret, and the `Connection:` line
-below is how to confirm they are not interfering.
+data stream appears on the first write. The `Connection:` line below confirms both
+endpoints came from AWS.
 
 Each run opens with a secret-free provenance line, so we can confirm the values
 really came from AWS:
@@ -475,9 +480,10 @@ from AWS means the field is missing from the secret (check the field names again
 
 **Verify:** same search query as 3A.3 returns fresh documents.
 
-> **Precedence recap:** CLI flag > env var > AWS bundle > value-specific AWS
-> secret > `settings.yaml`. Passing `--es-api-key` or `--kibana-url` in prod would
-> override AWS, which is why we omit them. A one-off override is still available
+> **Precedence recap:** URLs are `--kibana-url`/`--es-url` > AWS bundle >
+> `settings.yaml` (no env step). API keys are CLI flag > env var > AWS bundle >
+> value-specific AWS secret > `settings.yaml`. Passing `--es-api-key` or
+> `--kibana-url` in prod would override AWS, which is why we omit them. A one-off override is still available
 > for debugging: `python scripts/run_collector.py --kibana-url https://... --dry-run`.
 
 ### 3B.4 Deploying with Ansible
@@ -658,10 +664,10 @@ into the new stream before deleting.
   both included.
 - **`no Elasticsearch API key`** — pass `--es-api-key`, set `DHM_ES_API_KEY`, or set
   `aws_secret_id` / `elasticsearch.aws_secret_id` (+ AWS credentials).
-- **`no Kibana URL` / `no Elasticsearch URL`** — pass `--kibana-url` / `--es-url`,
-  set `DHM_KIBANA_URL` / `DHM_ES_URL`, add `kibana_url` / `es_url` to the AWS
-  bundle, or set them in `settings.yaml`. The provenance line printed at the top of
-  every run says which source each value actually came from.
+- **`no Kibana URL` / `no Elasticsearch URL`** — add `kibana_url` / `elastic_url` to
+  the AWS secret, set them in `settings.yaml`, or pass `--kibana-url` / `--es-url` for
+  a one-off. There is no env-var route for these. The provenance line printed at the
+  top of every run says which source each value actually came from.
 - **`is not a JSON object`** — the secret named by `aws_secret_id` holds a bare
   string. The bundle must be a JSON object (`{"kibana_url": ..., "api_key": ...}`).
   For a secret that holds only a key, use `elasticsearch.aws_secret_id` instead.

@@ -110,12 +110,12 @@ class CollectorConfig:
 class AWSSecretKeys:
     """Field names to read out of the AWS connection-bundle secret's JSON.
 
-    Defaults match the documented bundle shape; override them to fit a secret
-    that already exists with different field names.
+    Defaults match the field names in our production secret; override them to fit
+    a secret that exists with different names.
     """
     kibana_url: str = "kibana_url"
-    es_url: str = "es_url"
-    api_key: str = "api_key"
+    es_url: str = "elastic_url"
+    api_key: str = "ans_dashboard_health_monitor"
     kibana_api_key: str = "kibana_api_key"
 
 
@@ -170,12 +170,14 @@ def load_settings(path: str = "config/settings.yaml") -> Settings:
         aws_secret_id=_env("DHM_AWS_SECRET_ID", raw.get("aws_secret_id", "")),
         aws_secret_keys=AWSSecretKeys(
             kibana_url=ask.get("kibana_url", "kibana_url"),
-            es_url=ask.get("es_url", "es_url"),
-            api_key=ask.get("api_key", "api_key"),
+            es_url=ask.get("es_url", "elastic_url"),
+            api_key=ask.get("api_key", "ans_dashboard_health_monitor"),
             kibana_api_key=ask.get("kibana_api_key", "kibana_api_key"),
         ),
         kibana=KibanaConfig(
-            base_url=_env("DHM_KIBANA_URL", k.get("base_url", "")).rstrip("/"),
+            # Not env-overridable by design: the URL comes from the AWS secret
+            # (or this file, or an explicit --kibana-url flag).
+            base_url=(k.get("base_url", "") or "").rstrip("/"),
             auth=KibanaAuth(
                 method=ka.get("method", "api_key"),
                 api_key=_env("DHM_KIBANA_API_KEY", ka.get("api_key", "")),
@@ -190,7 +192,8 @@ def load_settings(path: str = "config/settings.yaml") -> Settings:
             not in ("false", "0", "no"),
         ),
         elasticsearch=ESConfig(
-            base_url=_env("DHM_ES_URL", es.get("base_url", "")).rstrip("/"),
+            # Not env-overridable by design — see kibana.base_url above.
+            base_url=(es.get("base_url", "") or "").rstrip("/"),
             api_key=_env("DHM_ES_API_KEY", es.get("api_key", "")),
             index=es.get("index", "dashboard-health-monitor"),
             verify_tls=str(_env("DHM_ES_VERIFY_TLS", es.get("verify_tls", True))).lower()
