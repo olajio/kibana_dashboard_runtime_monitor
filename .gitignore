@@ -8,5 +8,15 @@ __pycache__/
 venv/
 .pytest_cache/
 
-# Collector output
+# Collector / diagnostic output. The runbook tells us to write these into the repo
+# root (--out run.json, --out spike.json, --out debug.json), so ignore them rather
+# than let a stray one get committed. Note they can contain dashboard titles and
+# panel names from the live cluster.
 run*.json
+spike*.json
+debug*.json
+newkey*.json
+
+# Scratch: pasted command output, logs
+error.txt
+*.log
