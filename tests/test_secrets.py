@@ -107,9 +107,17 @@ def test_bundle_get_configured_key_wins():
     assert sec.bundle_get(bundle, "kibana_url", "kbn") == "https://right"
 
 
+def test_bundle_get_prefers_the_production_field_names():
+    assert sec.bundle_get({"elastic_url": "https://es"}, "es_url") == "https://es"
+    assert sec.bundle_get({"ans_dashboard_health_monitor": "k"}, "api_key") == "k"
+
+
 def test_bundle_get_falls_back_to_aliases():
+    # Older/alternate spellings still resolve, so a pre-existing secret keeps working.
     assert sec.bundle_get({"kibana_base_url": "https://kb"}, "kibana_url") == "https://kb"
+    assert sec.bundle_get({"es_url": "https://es"}, "es_url") == "https://es"
     assert sec.bundle_get({"elasticsearch_url": "https://es"}, "es_url") == "https://es"
+    assert sec.bundle_get({"api_key": "k"}, "api_key") == "k"
     assert sec.bundle_get({"es_api_key": "k"}, "api_key") == "k"
 
 
@@ -161,8 +169,9 @@ def _bundled(monkeypatch, payload, region_seen=None):
     return s
 
 
-_FULL = ('{"kibana_url": "https://kb.aws:9243", "es_url": "https://es.aws:9243", '
-         '"api_key": "aws-key"}')
+# The field names our production secret actually uses.
+_FULL = ('{"kibana_url": "https://kb.aws:9243", "elastic_url": "https://es.aws:9243", '
+         '"ans_dashboard_health_monitor": "aws-key"}')
 
 
 def test_bundle_supplies_urls_and_key(monkeypatch):
@@ -180,7 +189,8 @@ def test_bundle_supplies_urls_and_key(monkeypatch):
 
 
 def test_bundle_kibana_api_key_is_used_when_present(monkeypatch):
-    s = _bundled(monkeypatch, '{"api_key": "es-key", "kibana_api_key": "kb-key"}')
+    s = _bundled(monkeypatch,
+                 '{"ans_dashboard_health_monitor": "es-key", "kibana_api_key": "kb-key"}')
     src = sec.resolve_connection(s, env={})
     assert s.elasticsearch.api_key == "es-key"
     assert s.kibana.auth.api_key == "kb-key"
@@ -204,15 +214,25 @@ def test_bundle_beats_settings_yaml(monkeypatch):
     assert s.elasticsearch.base_url == "https://es.aws:9243"
 
 
-def test_env_beats_bundle(monkeypatch):
+def test_env_beats_bundle_for_keys_only(monkeypatch):
     s = _bundled(monkeypatch, _FULL)
-    src = sec.resolve_connection(s, env={"DHM_KIBANA_URL": "https://kb.env",
-                                         "DHM_ES_API_KEY": "env-key"})
-    assert s.kibana.base_url == "https://kb.env"
+    src = sec.resolve_connection(s, env={"DHM_ES_API_KEY": "env-key"})
     assert s.elasticsearch.api_key == "env-key"
-    assert src["kibana.base_url"] == "env"
+    assert src["elasticsearch.api_key"] == "env"
     # unaffected fields still come from the bundle
     assert s.elasticsearch.base_url == "https://es.aws:9243"
+
+
+def test_url_env_vars_are_ignored(monkeypatch):
+    """The endpoints belong to the AWS secret. A stale DHM_*_URL export in a shell
+    or crontab must not be able to redirect the run."""
+    s = _bundled(monkeypatch, _FULL)
+    src = sec.resolve_connection(s, env={"DHM_KIBANA_URL": "https://kb.env",
+                                         "DHM_ES_URL": "https://es.env"})
+    assert s.kibana.base_url == "https://kb.aws:9243"
+    assert s.elasticsearch.base_url == "https://es.aws:9243"
+    assert src["kibana.base_url"] == "aws-bundle"
+    assert src["elasticsearch.base_url"] == "aws-bundle"
 
 
 def test_cli_beats_everything(monkeypatch):
@@ -222,7 +242,7 @@ def test_cli_beats_everything(monkeypatch):
         cli_kibana_url="https://kb.cli",
         cli_es_url="https://es.cli",
         cli_es_api_key="cli-key",
-        env={"DHM_KIBANA_URL": "https://kb.env", "DHM_ES_API_KEY": "env-key"},
+        env={"DHM_ES_API_KEY": "env-key"},
     )
     assert s.kibana.base_url == "https://kb.cli"
     assert s.elasticsearch.base_url == "https://es.cli"
@@ -231,7 +251,8 @@ def test_cli_beats_everything(monkeypatch):
 
 
 def test_trailing_slash_is_stripped(monkeypatch):
-    s = _bundled(monkeypatch, '{"kibana_url": "https://kb.aws:9243/", "es_url": "https://es/"}')
+    s = _bundled(monkeypatch,
+                 '{"kibana_url": "https://kb.aws:9243/", "elastic_url": "https://es/"}')
     sec.resolve_connection(s, env={})
     assert s.kibana.base_url == "https://kb.aws:9243"
     assert s.elasticsearch.base_url == "https://es"

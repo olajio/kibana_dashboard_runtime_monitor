@@ -164,16 +164,21 @@ cp config/settings.example.yaml config/settings.yaml
 # edit config/settings.yaml — or supply secrets via environment variables
 ```
 
-`config/settings.yaml` is git-ignored. Every value has an environment-variable
+`config/settings.yaml` is git-ignored. Most values have an environment-variable
 override (shown in the example file), so on cron/CI we can keep secrets out of the
 file entirely, e.g.:
 
 ```bash
-export DHM_KIBANA_URL="https://kibana.example.gov"
-export DHM_KIBANA_API_KEY="<base64 id:key>"
-export DHM_ES_URL="https://es.example.gov:9200"
 export DHM_ES_API_KEY="<base64 id:key>"
+export DHM_KIBANA_API_KEY="<base64 id:key>"    # optional; defaults to the ES key
+export DHM_SPACE="fed2"
 ```
+
+The two **endpoint URLs are the exception — they have no environment-variable
+override.** They come from the AWS secret, `settings.yaml`, or an explicit
+`--kibana-url` / `--es-url` flag. An env var that outranked the secret would let a
+stale export in a shell or crontab quietly redirect a whole run, which is a failure
+mode worth designing out.
 
 ### Authentication
 
@@ -199,10 +204,15 @@ CLI flag  >  env var  >  AWS connection bundle  >  value-specific AWS secret  > 
 
 | Value | CLI flag | Env var | Bundle field |
 |---|---|---|---|
-| Kibana URL | `--kibana-url` | `DHM_KIBANA_URL` | `kibana_url` |
-| Elasticsearch URL | `--es-url` | `DHM_ES_URL` | `es_url` |
-| Elasticsearch API key | `--es-api-key` | `DHM_ES_API_KEY` | `api_key` |
+| Kibana URL | `--kibana-url` | — *(none by design)* | `kibana_url` |
+| Elasticsearch URL | `--es-url` | — *(none by design)* | `elastic_url` |
+| Elasticsearch API key | `--es-api-key` | `DHM_ES_API_KEY` | `ans_dashboard_health_monitor` |
 | Kibana API key | `--kibana-api-key` | `DHM_KIBANA_API_KEY` | `kibana_api_key` |
+
+The two **URLs have no environment-variable route**: the endpoints belong to the AWS
+secret, and an env var that outranked it would let a stale export in a shell or a
+crontab quietly redirect a whole run. The **API keys** keep theirs, because passing
+the key by hand is how the test environment works.
 
 - **Test:** keep the URLs in `settings.yaml` and pass `--es-api-key "<id:key>"` on
   each command (below).
@@ -211,9 +221,9 @@ CLI flag  >  env var  >  AWS connection bundle  >  value-specific AWS secret  > 
 
   ```json
   {
-    "kibana_url": "https://kibana.example.gov:9243",
-    "es_url":     "https://es.example.gov:9243",
-    "api_key":    "<base64 id:key>"
+    "kibana_url":                   "https://kibana.example.gov:9243",
+    "elastic_url":                  "https://es.example.gov:9243",
+    "ans_dashboard_health_monitor": "<base64 id:key>"
   }
   ```
 
@@ -221,9 +231,11 @@ CLI flag  >  env var  >  AWS connection bundle  >  value-specific AWS secret  > 
   and one Ansible variable. We fetch it once per run. `aws_region` defaults to
   `us-east-1` (override with `DHM_AWS_REGION` or the standard `AWS_REGION`).
 
-The Kibana API key falls back to the Elasticsearch key when not separately set,
-so a single Elastic API key that authorizes both needs only `api_key` in the
-bundle. `elasticsearch.aws_secret_id` / `kibana.auth.aws_secret_id` remain for
+The Kibana API key falls back to the Elasticsearch key when not separately set, so a
+single Elastic API key that authorizes both needs only
+`ans_dashboard_health_monitor` in the bundle. A few alternate field spellings
+(`es_url`, `api_key`, `elasticsearch_url`, ...) are accepted case-insensitively, and
+`aws_secret_keys` in `settings.yaml` overrides the names outright. `elasticsearch.aws_secret_id` / `kibana.auth.aws_secret_id` remain for
 split-secret setups where each value lives in its own secret.
 
 Note the bundle deliberately outranks `settings.yaml`: the file carries

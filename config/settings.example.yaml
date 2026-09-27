@@ -26,18 +26,26 @@ kibana_space: fed2              # [DHM_SPACE] space ID the dashboards live in
 # nothing sensitive needs to live on the server.
 #
 # `aws_secret_id` names ONE secret whose payload is a JSON object holding the
-# connection settings:
+# connection settings. These are the field names our production secret uses:
 #
 #     {
-#       "kibana_url":     "https://kibana.example.gov:9243",
-#       "es_url":         "https://es.example.gov:9243",
-#       "api_key":        "<base64 id:key>",
-#       "kibana_api_key": "<base64 id:key>"    # optional; defaults to api_key
+#       "kibana_url":                   "https://kibana.example.gov:9243",
+#       "elastic_url":                  "https://es.example.gov:9243",
+#       "ans_dashboard_health_monitor": "<base64 id:key>",
+#       "kibana_api_key":               "<base64 id:key>"   # optional; defaults to the above
 #     }
 #
-# Precedence for each value, most explicit first:
-#   CLI flag  >  env var  >  this bundle  >  value-specific secret (keys only)
-#           >  the literal values in this file
+# Precedence for the two URLs, most explicit first:
+#   --kibana-url / --es-url  >  this bundle  >  the literal values in this file
+# There is deliberately NO environment variable for the URLs: the endpoints
+# belong to the secret, and an env var that outranked it would let a stale
+# export in a shell or crontab quietly redirect the whole run.
+#
+# Precedence for the API keys (these DO keep an env step, because passing the
+# key by hand is how the test environment runs):
+#   CLI flag  >  env var  >  this bundle  >  value-specific secret
+#           >  the literal value in this file
+#
 # The bundle deliberately outranks this file: the file carries per-environment
 # defaults, the secret is the source of truth. Configure either the bundle or
 # the value-specific secrets below, not both.
@@ -45,17 +53,20 @@ kibana_space: fed2              # [DHM_SPACE] space ID the dashboards live in
 # Leave aws_secret_id empty (the test default) and AWS is never contacted.
 aws_region: us-east-1           # [DHM_AWS_REGION] our default; AWS_REGION also honoured
 aws_secret_id: ""               # [DHM_AWS_SECRET_ID] e.g. elastic/dhm/connection
-# Field names inside the bundle, if the secret already exists with other names.
+# Field names inside the bundle. Change these only if the secret uses other names;
+# a few common spellings (es_url, api_key, elasticsearch_url, ...) are also
+# accepted automatically, case-insensitively.
 aws_secret_keys:
   kibana_url: kibana_url
-  es_url: es_url
-  api_key: api_key
+  es_url: elastic_url
+  api_key: ans_dashboard_health_monitor
   kibana_api_key: kibana_api_key
 
 # --- Kibana (the browser target) --------------------------------------------
 kibana:
   # Test: set it here. Production: leave it and let the AWS bundle supply it.
-  base_url: https://kibana.example.gov      # [DHM_KIBANA_URL] no trailing slash
+  # No env-var override by design — see the aws_secret_keys note above.
+  base_url: https://kibana.example.gov      # no trailing slash
   # Authentication for the headless browser. Choose ONE method.
   #   api_key : injected as an "Authorization: ApiKey <key>" header
   #   cookie  : a pre-obtained Kibana session cookie (name + value)
@@ -83,7 +94,8 @@ elasticsearch:
   # ...kb...). Pointing both at Kibana makes every _bulk write 404 — the
   # collector warns when it sees them match.
   # Test: set it here. Production: leave it and let the AWS bundle supply it.
-  base_url: https://es.example.gov:9200      # [DHM_ES_URL]
+  # No env-var override by design — see the aws_secret_keys note above.
+  base_url: https://es.example.gov:9200
   # Resolution order: --es-api-key > DHM_ES_API_KEY > the top-level AWS bundle
   # > the value-specific secret below > this literal value.
   api_key: ""                                # [DHM_ES_API_KEY] base64 id:key
