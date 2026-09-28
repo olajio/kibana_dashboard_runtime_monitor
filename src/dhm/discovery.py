@@ -16,7 +16,7 @@ from typing import Any, Dict, List
 
 import requests
 
-from .config import Settings
+from .config import Settings, tls_verify
 from .registry import Registry, registry_from_objects
 
 _RETRYABLE = {429, 502, 503, 504}
@@ -47,7 +47,7 @@ def _get_with_retries(session: requests.Session, settings: Settings, url: str, p
                 url,
                 headers=_kibana_headers(settings),
                 params=params,
-                verify=settings.kibana.verify_tls,
+                verify=tls_verify(settings, settings.kibana.verify_tls),
                 timeout=es.request_timeout_s,
             )
         except (requests.ConnectionError, requests.Timeout):

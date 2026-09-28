@@ -35,6 +35,7 @@
     dhm_hub_title: Federal Overview
 
     # --- tuning ---
+    dhm_ca_bundle: ""              # e.g. /etc/pki/tls/certs/ca-bundle.crt
     dhm_time_from: now-30d
     dhm_verify_tls: "true"
     dhm_dashboard_timeout_ms: 180000

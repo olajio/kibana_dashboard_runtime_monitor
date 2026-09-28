@@ -126,6 +126,14 @@ class Settings:
     # The Kibana space ID (the /s/<id> URL slug), not the display name. Our
     # dashboards live in fed2; "default" is the one space with no /s/ prefix.
     kibana_space: str = "fed2"
+    # Path to a PEM CA bundle to verify Kibana/Elasticsearch TLS against. Needed
+    # where a TLS-inspecting proxy re-signs traffic with an internal CA: the cert
+    # chain is then "self signed" as far as certifi's default bundle is concerned.
+    # Empty = use certifi's defaults. This is the correct fix for that case;
+    # verify_tls: false is the blunt alternative and disables verification.
+    # NOTE: this governs the REST calls (requests). The browser uses the operating
+    # system trust store instead, so the CA also belongs there for the page loads.
+    ca_bundle: str = ""
     # AWS region for Secrets Manager. us-east-1 is our default; override per
     # environment with DHM_AWS_REGION (or the standard AWS_REGION).
     aws_region: str = "us-east-1"
@@ -164,6 +172,7 @@ def load_settings(path: str = "config/settings.yaml") -> Settings:
         app=raw.get("app", "federal_overview"),
         cluster=_env("DHM_CLUSTER", raw.get("cluster", "fed2")),
         kibana_space=_env("DHM_SPACE", raw.get("kibana_space", "") or "fed2"),
+        ca_bundle=_env("DHM_CA_BUNDLE", raw.get("ca_bundle", "")),
         aws_region=_env(
             "DHM_AWS_REGION", _env("AWS_REGION", raw.get("aws_region", "") or "us-east-1")
         ),
@@ -226,3 +235,15 @@ def load_settings(path: str = "config/settings.yaml") -> Settings:
         ),
     )
     return s
+
+
+
+def tls_verify(settings: Settings, verify_tls: bool):
+    """The value to hand `requests` as `verify=`.
+
+    False skips verification entirely; a string is a CA bundle path; True uses
+    certifi's defaults. Kept in one place so the REST call sites cannot drift.
+    """
+    if not verify_tls:
+        return False
+    return settings.ca_bundle or True

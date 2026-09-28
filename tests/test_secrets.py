@@ -367,3 +367,57 @@ def test_warns_on_url_without_scheme():
 
 def test_no_warnings_when_urls_unset():
     assert sec.connection_warnings(Settings()) == []
+
+
+# --------------------------------------------------------------------------- #
+# TLS: CA bundle and verification warnings
+# --------------------------------------------------------------------------- #
+
+def test_tls_verify_defaults_to_certifi():
+    from dhm.config import tls_verify
+    assert tls_verify(Settings(), True) is True
+
+
+def test_tls_verify_false_when_disabled():
+    from dhm.config import tls_verify
+    s = Settings()
+    s.ca_bundle = "/etc/pki/corp-ca.pem"      # ignored when verification is off
+    assert tls_verify(s, False) is False
+
+
+def test_tls_verify_returns_ca_bundle_path():
+    # requests accepts a path for verify=, which is how we trust a TLS-inspecting
+    # proxy's CA without turning verification off.
+    from dhm.config import tls_verify
+    s = Settings()
+    s.ca_bundle = "/etc/pki/corp-ca.pem"
+    assert tls_verify(s, True) == "/etc/pki/corp-ca.pem"
+
+
+def test_warns_when_ca_bundle_path_is_missing():
+    s = Settings()
+    s.kibana.base_url = "https://kb.example"
+    s.elasticsearch.base_url = "https://es.example"
+    s.ca_bundle = "/no/such/ca.pem"
+    assert any("not a file" in w for w in sec.connection_warnings(s))
+
+
+def test_no_ca_bundle_warning_when_path_exists(tmp_path):
+    ca = tmp_path / "ca.pem"
+    ca.write_text("-----BEGIN CERTIFICATE-----\n")
+    s = Settings()
+    s.kibana.base_url = "https://kb.example"
+    s.elasticsearch.base_url = "https://es.example"
+    s.ca_bundle = str(ca)
+    assert not any("not a file" in w for w in sec.connection_warnings(s))
+
+
+def test_warns_when_tls_verification_is_disabled():
+    s = Settings()
+    s.kibana.base_url = "https://kb.example"
+    s.elasticsearch.base_url = "https://es.example"
+    s.kibana.verify_tls = False
+    warnings = sec.connection_warnings(s)
+    assert any("DISABLED for kibana" in w for w in warnings)
+    s.elasticsearch.verify_tls = False
+    assert any("kibana, elasticsearch" in w for w in sec.connection_warnings(s))
