@@ -72,6 +72,10 @@ def _build_driver(settings: Settings):
         opts.add_argument("--headless=new")
     if not settings.kibana.verify_tls:
         opts.add_argument("--ignore-certificate-errors")
+    executable = (settings.collector.browser_executable or "").strip()
+    if executable:
+        # Selenium's equivalent of executable_path: point the driver at the binary.
+        opts.binary_location = executable
     opts.add_argument("--no-sandbox")
     opts.add_argument("--disable-dev-shm-usage")
 
