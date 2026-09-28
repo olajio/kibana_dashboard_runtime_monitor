@@ -61,7 +61,10 @@ collector:
   headless: true
   backend: playwright
   # msedge: drive the system Microsoft Edge; nothing is downloaded.
-  browser_channel: msedge
+  browser_channel: {{ dhm_browser_channel }}
+  # Set dhm_browser_executable for a browser Playwright has no channel for, e.g. a
+  # distro chromium at /usr/bin/chromium. When set it wins over browser_channel.
+  browser_executable: "{{ dhm_browser_executable }}"
   dashboard_timeout_ms: {{ dhm_dashboard_timeout_ms }}
   poll_interval_ms: 250
   concurrency: 1

@@ -777,6 +777,43 @@ into the new stream before deleting.
   `DHM_BROWSER_CHANNEL=` to switch to. The Ansible playbook fails preflight on this
   rather than at the first cron run.
 
+  **If nothing is installed and the boundary restricts what you can fetch**, work out
+  what is reachable before choosing:
+
+  ```bash
+  dnf repolist                                        # which repos this host has
+  dnf list available 2>/dev/null | grep -Ei 'chromium|microsoft-edge|google-chrome'
+  ```
+
+  In preference order:
+
+  | Option | Setting | Notes |
+  |---|---|---|
+  | Edge from Microsoft's repo | `DHM_BROWSER_CHANNEL=msedge` | matches production intent; needs `packages.microsoft.com` |
+  | Chrome | `DHM_BROWSER_CHANNEL=chrome` | identical render behaviour (both Chromium) |
+  | distro `chromium` package | `DHM_BROWSER_EXECUTABLE=/usr/bin/chromium` | usually in an internal mirror already; see the warning below |
+  | `playwright install chromium` | `DHM_BROWSER_CHANNEL=chromium` | last resort — a download, which we set out to avoid |
+
+  A distro chromium needs **`browser_executable`, not `browser_channel: chromium`** —
+  the latter means Playwright's own downloaded build, a different browser entirely.
+  That distinction has bitten us; the setting exists to make it explicit.
+
+  **The next wall after installing a browser: shared libraries.** On a minimal server
+  a browser package can install yet fail to start, because headless Chromium needs
+  graphics and accessibility libraries that a server image omits. The symptom is a
+  launch failure mentioning a missing `.so`. Check before blaming the collector:
+
+  ```bash
+  ldd /opt/microsoft/msedge/msedge | grep -i "not found"   # or your browser's path
+  ```
+
+  Playwright can install the set for you (`python -m playwright install-deps
+  chromium`), which uses the system package manager rather than downloading a browser
+  — so it stays within the no-downloaded-browser rule. Failing that, the usual
+  suspects on RHEL-family hosts are `nss`, `nspr`, `atk`, `at-spi2-atk`, `cups-libs`,
+  `libdrm`, `libxkbcommon`, `libXcomposite`, `libXdamage`, `libXrandr`, `mesa-libgbm`,
+  `alsa-lib`, `pango`.
+
 - **`SSLCertVerificationError: ... self signed certificate in certificate chain`** —
   almost always a TLS-inspecting proxy between the runner and the endpoint, re-signing
   traffic with an internal CA. Against a public endpoint (e.g. Elastic Cloud, whose
