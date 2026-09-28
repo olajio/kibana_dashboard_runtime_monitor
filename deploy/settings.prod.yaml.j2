@@ -15,6 +15,12 @@ app: federal_overview
 cluster: {{ dhm_cluster }}
 kibana_space: {{ dhm_space }}
 
+# --- TLS ---------------------------------------------------------------------
+# Set dhm_ca_bundle where a TLS-inspecting proxy re-signs traffic; empty uses
+# certifi's defaults. The browser reads the OS trust store, so the CA belongs there
+# as well as here.
+ca_bundle: "{{ dhm_ca_bundle }}"
+
 # --- AWS Secrets Manager ----------------------------------------------------
 # One secret supplies kibana_url, elastic_url and ans_dashboard_health_monitor.
 # The runner needs secretsmanager:GetSecretValue on it (instance/task role).

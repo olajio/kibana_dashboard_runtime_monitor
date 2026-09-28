@@ -170,3 +170,12 @@ def test_api_key_env_vars_still_work(monkeypatch):
     s = load_settings("does_not_exist.yaml")
     assert s.elasticsearch.api_key == "env-es-key"
     assert s.kibana.auth.api_key == "env-kb-key"
+
+
+def test_ca_bundle_default_empty_and_configurable(monkeypatch, tmp_path):
+    monkeypatch.delenv("DHM_CA_BUNDLE", raising=False)
+    assert load_settings("does_not_exist.yaml").ca_bundle == ""
+    path = _write(tmp_path, "ca_bundle: /etc/pki/corp-ca.pem\n")
+    assert load_settings(path).ca_bundle == "/etc/pki/corp-ca.pem"
+    monkeypatch.setenv("DHM_CA_BUNDLE", "/etc/pki/other.pem")
+    assert load_settings(path).ca_bundle == "/etc/pki/other.pem"

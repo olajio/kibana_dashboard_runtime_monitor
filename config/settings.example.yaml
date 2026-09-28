@@ -20,6 +20,15 @@ cluster: fed2                   # [DHM_CLUSTER] the single cluster we monitor
 # dashboard URL. ("default" is the one space Kibana serves with no /s/ prefix.)
 kibana_space: fed2              # [DHM_SPACE] space ID the dashboards live in
 
+# --- TLS ---------------------------------------------------------------------
+# Path to a PEM CA bundle for verifying Kibana/Elasticsearch certificates. Set this
+# where a TLS-inspecting proxy re-signs traffic with an internal CA — the chain then
+# looks "self signed" to certifi's default bundle and every REST call fails with
+# CERTIFICATE_VERIFY_FAILED. This is the correct fix; the verify_tls flags below are
+# the blunt alternative and switch verification off altogether.
+# The browser uses the OS trust store instead, so the same CA belongs there too.
+ca_bundle: ""                   # [DHM_CA_BUNDLE] e.g. /etc/pki/tls/certs/ca-bundle.crt
+
 # --- AWS Secrets Manager ----------------------------------------------------
 # How production is configured. Ansible deploys this repo to the server and sets
 # `aws_secret_id` (or DHM_AWS_SECRET_ID); nothing else environment-specific and

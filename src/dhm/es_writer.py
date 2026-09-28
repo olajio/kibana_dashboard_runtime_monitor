@@ -17,7 +17,7 @@ from typing import Any, Dict, List
 
 import requests
 
-from .config import Settings
+from .config import Settings, tls_verify
 
 _ASSET_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "es")
 
@@ -50,7 +50,7 @@ def _request_with_retries(
                 url,
                 headers=_headers(settings),
                 data=data,
-                verify=es.verify_tls,
+                verify=tls_verify(settings, es.verify_tls),
                 timeout=es.request_timeout_s,
             )
         except (requests.ConnectionError, requests.Timeout) as exc:

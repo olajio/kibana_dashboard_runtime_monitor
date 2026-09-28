@@ -316,6 +316,24 @@ def connection_warnings(settings: Settings) -> List[str]:
     for label, url in (("kibana.base_url", kb), ("elasticsearch.base_url", es)):
         if url and not url.lower().startswith(("http://", "https://")):
             out.append(f"{label} is {url!r} — it should start with https://")
+
+    bundle = (getattr(settings, "ca_bundle", "") or "").strip()
+    if bundle and not os.path.isfile(bundle):
+        out.append(
+            f"ca_bundle points at {bundle!r}, which is not a file. TLS verification "
+            f"will fail with a confusing certificate error rather than a missing-file "
+            f"one, so check the path."
+        )
+    if not settings.kibana.verify_tls or not settings.elasticsearch.verify_tls:
+        which = ", ".join(
+            n for n, v in (("kibana", settings.kibana.verify_tls),
+                           ("elasticsearch", settings.elasticsearch.verify_tls)) if not v
+        )
+        out.append(
+            f"TLS verification is DISABLED for {which}. Acceptable to prove a "
+            f"connection works; for anything ongoing, set ca_bundle to the CA that "
+            f"signs the endpoint instead."
+        )
     return out
 
 
