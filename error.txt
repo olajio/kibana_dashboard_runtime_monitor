@@ -1,0 +1,6 @@
+(.venv) [root@ip-10-34-44-18 kibana_dashboard_runtime_monitor]# python -c "import yaml; print('yaml', yaml.__version__)"
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import yaml; print('yaml', yaml.__version__)
+    ^^^^^^^^^^^
+ModuleNotFoundError: No module named 'yaml'
