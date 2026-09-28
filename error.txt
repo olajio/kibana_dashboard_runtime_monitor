@@ -1,107 +1,38 @@
 (.venv) [root@ip-10-34-44-18 kibana_dashboard_runtime_monitor]# python scripts/run_collector.py --dry-run --out run.json
 Connection: elasticsearch.api_key<-aws-bundle, elasticsearch.base_url<-aws-bundle, kibana.auth.api_key<-elasticsearch.api_key, kibana.base_url<-aws-bundle
-Traceback (most recent call last):
-  File "/usr/local/python-3.14/lib/python3.14/site-packages/urllib3/connectionpool.py", line 464, in _make_request
-    self._validate_conn(conn)
-    ~~~~~~~~~~~~~~~~~~~^^^^^^
-  File "/usr/local/python-3.14/lib/python3.14/site-packages/urllib3/connectionpool.py", line 1106, in _validate_conn
-    conn.connect()
-    ~~~~~~~~~~~~^^
-  File "/usr/local/python-3.14/lib/python3.14/site-packages/urllib3/connection.py", line 796, in connect
-    sock_and_verified = _ssl_wrap_socket_and_match_hostname(
-        sock=sock,
-    ...<14 lines>...
-        assert_fingerprint=self.assert_fingerprint,
-    )
-  File "/usr/local/python-3.14/lib/python3.14/site-packages/urllib3/connection.py", line 975, in _ssl_wrap_socket_and_match_hostname
-    ssl_sock = ssl_wrap_socket(
-        sock=sock,
-    ...<8 lines>...
-        tls_in_tls=tls_in_tls,
-    )
-  File "/usr/local/python-3.14/lib/python3.14/site-packages/urllib3/util/ssl_.py", line 433, in ssl_wrap_socket
-    ssl_sock = _ssl_wrap_socket_impl(sock, context, tls_in_tls, server_hostname)
-  File "/usr/local/python-3.14/lib/python3.14/site-packages/urllib3/util/ssl_.py", line 477, in _ssl_wrap_socket_impl
-    return ssl_context.wrap_socket(sock, server_hostname=server_hostname)
-           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/local/python-3.14/lib/python3.14/ssl.py", line 455, in wrap_socket
-    return self.sslsocket_class._create(
-           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
-        sock=sock,
-        ^^^^^^^^^^
-    ...<5 lines>...
-        session=session
-        ^^^^^^^^^^^^^^^
-    )
-    ^
-  File "/usr/local/python-3.14/lib/python3.14/ssl.py", line 1076, in _create
-    self.do_handshake()
-    ~~~~~~~~~~~~~~~~~^^
-  File "/usr/local/python-3.14/lib/python3.14/ssl.py", line 1372, in do_handshake
-    self._sslobj.do_handshake()
-    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
-ssl.SSLCertVerificationError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: self signed certificate in certificate chain (_ssl.c:1082)
-
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
-  File "/usr/local/python-3.14/lib/python3.14/site-packages/urllib3/connectionpool.py", line 788, in urlopen
-    response = self._make_request(
-        conn,
-    ...<10 lines>...
-        **response_kw,
-    )
-  File "/usr/local/python-3.14/lib/python3.14/site-packages/urllib3/connectionpool.py", line 488, in _make_request
-    raise new_e
-urllib3.exceptions.SSLError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: self signed certificate in certificate chain (_ssl.c:1082)
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "/usr/local/python-3.14/lib/python3.14/site-packages/requests/adapters.py", line 667, in send
-    resp = conn.urlopen(
-        method=request.method,
-    ...<9 lines>...
-        chunked=chunked,
-    )
-  File "/usr/local/python-3.14/lib/python3.14/site-packages/urllib3/connectionpool.py", line 842, in urlopen
-    retries = retries.increment(
-        method, url, error=new_e, _pool=self, _stacktrace=sys.exc_info()[2]
-    )
-  File "/usr/local/python-3.14/lib/python3.14/site-packages/urllib3/util/retry.py", line 543, in increment
-    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='fdb-es-federal.kb.us-gov-east-1.aws.elastic-cloud.com', port=443): Max retries exceeded with url: /s/fed2/api/saved_objects/_find?type=dashboard&type=links&per_page=1000&page=1 (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: self signed certificate in certificate chain (_ssl.c:1082)')))
-
-During handling of the above exception, another exception occurred:
-
+Collecting 22 dashboards for app 'federal_overview' (cluster=fed2, space=fed2) [backend=playwright, browser=msedge, registry=api, selection=linked (hub='Federal Overview' + reachable)]
 Traceback (most recent call last):
   File "/opt/kibana_dashboard_runtime_monitor/scripts/run_collector.py", line 175, in <module>
     raise SystemExit(main())
                      ~~~~^^
-  File "/opt/kibana_dashboard_runtime_monitor/scripts/run_collector.py", line 141, in main
-    registry = _load_registry(settings)
-  File "/opt/kibana_dashboard_runtime_monitor/scripts/run_collector.py", line 74, in _load_registry
-    reg = registry_to_dict(build_registry_from_api(settings))
-                           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
-  File "/opt/kibana_dashboard_runtime_monitor/scripts/../src/dhm/discovery.py", line 93, in build_registry_from_api
-    objs = fetch_saved_objects(settings)
-  File "/opt/kibana_dashboard_runtime_monitor/scripts/../src/dhm/discovery.py", line 79, in fetch_saved_objects
-    data = _get_with_retries(session, settings, url, params).json()
-           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/kibana_dashboard_runtime_monitor/scripts/../src/dhm/discovery.py", line 46, in _get_with_retries
-    resp = session.get(
-        url,
-    ...<3 lines>...
-        timeout=es.request_timeout_s,
+  File "/opt/kibana_dashboard_runtime_monitor/scripts/run_collector.py", line 158, in main
+    docs = run(settings, registry)
+  File "/opt/kibana_dashboard_runtime_monitor/scripts/../src/dhm/collector.py", line 76, in run
+    browser = pw.chromium.launch(**launch_kwargs)
+  File "/usr/local/python-3.14/lib/python3.14/site-packages/playwright/sync_api/_generated.py", line 16702, in launch
+    self._sync(
+    ~~~~~~~~~~^
+        self._impl_obj.launch(
+        ^^^^^^^^^^^^^^^^^^^^^^
+    ...<17 lines>...
+        )
+        ^
     )
-  File "/usr/local/python-3.14/lib/python3.14/site-packages/requests/sessions.py", line 602, in get
-    return self.request("GET", url, **kwargs)
-           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/local/python-3.14/lib/python3.14/site-packages/requests/sessions.py", line 589, in request
-    resp = self.send(prep, **send_kwargs)
-  File "/usr/local/python-3.14/lib/python3.14/site-packages/requests/sessions.py", line 703, in send
-    r = adapter.send(request, **kwargs)
-  File "/usr/local/python-3.14/lib/python3.14/site-packages/requests/adapters.py", line 698, in send
-    raise SSLError(e, request=request)
-requests.exceptions.SSLError: HTTPSConnectionPool(host='fdb-es-federal.kb.us-gov-east-1.aws.elastic-cloud.com', port=443): Max retries exceeded with url: /s/fed2/api/saved_objects/_find?type=dashboard&type=links&per_page=1000&page=1 (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: self signed certificate in certificate chain (_ssl.c:1082)')))
+    ^
+  File "/usr/local/python-3.14/lib/python3.14/site-packages/playwright/_impl/_sync_base.py", line 115, in _sync
+    return task.result()
+           ~~~~~~~~~~~^^
+  File "/usr/local/python-3.14/lib/python3.14/site-packages/playwright/_impl/_browser_type.py", line 97, in launch
+    await self._channel.send(
+        "launch", TimeoutSettings.launch_timeout, params
+    )
+  File "/usr/local/python-3.14/lib/python3.14/site-packages/playwright/_impl/_connection.py", line 76, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/usr/local/python-3.14/lib/python3.14/site-packages/playwright/_impl/_connection.py", line 632, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+playwright._impl._errors.Error: BrowserType.launch: Chromium distribution 'msedge' is not found at /opt/microsoft/msedge/msedge
+Run "playwright install msedge"
