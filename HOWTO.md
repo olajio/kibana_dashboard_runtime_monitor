@@ -735,6 +735,46 @@ into the new stream before deleting.
   For a secret that holds only a key, use `elasticsearch.aws_secret_id` instead.
 - **Values show `<-settings` when they should come from AWS** — the field is missing
   from the secret, or named differently; check it against `aws_secret_keys`.
+- **`SSLCertVerificationError: ... self signed certificate in certificate chain`** —
+  almost always a TLS-inspecting proxy between the runner and the endpoint, re-signing
+  traffic with an internal CA. Against a public endpoint (e.g. Elastic Cloud, whose
+  certificate is publicly valid) that is the only likely explanation. `requests`
+  verifies against **certifi's** bundle, which has no reason to trust a corporate CA,
+  so every REST call fails while a browser on the same host is often fine — the
+  browser reads the OS trust store.
+
+  The fix is to trust that CA, not to stop verifying. Find the bundle, then set
+  `ca_bundle`:
+
+  ```bash
+  # common locations for the system bundle the proxy's CA is usually added to
+  ls -l /etc/pki/tls/certs/ca-bundle.crt /etc/ssl/certs/ca-certificates.crt 2>/dev/null
+
+  # confirm it actually validates the endpoint before wiring it in
+  curl -sS --cacert /etc/pki/tls/certs/ca-bundle.crt "$KB_URL/api/status" -o /dev/null \
+       -w 'HTTP %{http_code}\n'
+  ```
+
+  ```yaml
+  ca_bundle: /etc/pki/tls/certs/ca-bundle.crt   # [DHM_CA_BUNDLE]
+  ```
+
+  If the CA is not in the system bundle yet, get the PEM from whoever runs the proxy
+  and point `ca_bundle` at it directly. Also add it to the OS trust store, because the
+  **browser** needs it too — otherwise discovery succeeds and every dashboard then
+  fails to load.
+
+  To prove the rest of the chain works before the CA is sorted, verification can be
+  switched off temporarily. Every run then prints a warning saying so:
+
+  ```bash
+  DHM_KIBANA_VERIFY_TLS=false DHM_ES_VERIFY_TLS=false \
+    python scripts/run_collector.py --dry-run --out run.json
+  ```
+
+  That is a diagnostic, not a configuration. In a government boundary especially, do
+  not leave it set.
+
 - **`ModuleNotFoundError: No module named 'yaml'`** (or `requests`, `boto3`) when
   running pytest or a script — a dependency did not install. Almost always a wheel
   problem rather than a missing step: a C-extension package pinned below the Python
