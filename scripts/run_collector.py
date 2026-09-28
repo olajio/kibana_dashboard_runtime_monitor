@@ -138,6 +138,16 @@ def main() -> int:
               "or configure aws_secret_id / elasticsearch.aws_secret_id).", file=sys.stderr)
         return 2
 
+    # Check the browser BEFORE discovery: a missing browser used to surface only
+    # after a full Saved Objects crawl had already run.
+    from dhm.browsers import find_channel, describe_availability
+    channel = (settings.collector.browser_channel or "").strip().lower()
+    if channel and channel not in ("chromium", "bundled") and not find_channel(channel):
+        print(f"WARNING: no '{channel}' browser found on this host. Visible browsers:\n"
+              f"{describe_availability()}\n"
+              f"         Attempting the launch anyway — Playwright may still find it.",
+              file=sys.stderr)
+
     registry = _load_registry(settings)
 
     sel = settings.collector.selection

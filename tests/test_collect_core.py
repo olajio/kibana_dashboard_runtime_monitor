@@ -298,3 +298,42 @@ def test_collect_all_returns_one_doc_per_dashboard():
     docs = collect_all(driver, s, dashboards, "run1")
     assert len(docs) == 2
     assert {d["dashboard_id"] for d in docs} == {"d1", "d2"}
+
+
+# --- browser discovery / missing-browser guidance ---------------------------
+
+def test_find_channel_locates_a_browser(monkeypatch):
+    from dhm import browsers
+    monkeypatch.setattr(browsers.os.path, "exists",
+                        lambda p: p == "/opt/microsoft/msedge/msedge")
+    monkeypatch.setattr(browsers.shutil, "which", lambda c: None)
+    assert browsers.find_channel("msedge") == "/opt/microsoft/msedge/msedge"
+    assert browsers.find_channel("chrome") is None
+
+
+def test_find_channel_falls_back_to_path(monkeypatch):
+    from dhm import browsers
+    monkeypatch.setattr(browsers.os.path, "exists", lambda p: False)
+    monkeypatch.setattr(browsers.shutil, "which",
+                        lambda c: "/usr/local/bin/google-chrome" if c == "google-chrome" else None)
+    assert browsers.find_channel("chrome") == "/usr/local/bin/google-chrome"
+
+
+def test_launch_help_points_at_the_installed_alternative(monkeypatch):
+    # The real situation on the prod host: Edge requested, Chrome available.
+    from dhm import browsers
+    monkeypatch.setattr(browsers, "probe",
+                        lambda: {"msedge": None, "chrome": "/opt/google/chrome/chrome",
+                                 "chromium": None})
+    msg = browsers.launch_help("msedge")
+    assert "DHM_BROWSER_CHANNEL=chrome" in msg
+    assert "provisioning" in msg
+
+
+def test_launch_help_suggests_install_when_nothing_present(monkeypatch):
+    from dhm import browsers
+    monkeypatch.setattr(browsers, "probe",
+                        lambda: {"msedge": None, "chrome": None, "chromium": None})
+    msg = browsers.launch_help("msedge")
+    assert "dnf install" in msg
+    assert "DHM_BROWSER_CHANNEL=" not in msg   # nothing to switch to

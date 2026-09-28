@@ -73,7 +73,13 @@ def run(settings: Settings, registry: Dict[str, Any]) -> List[Dict[str, Any]]:
             # Drive an already-installed browser (e.g. msedge, chrome) via a
             # Playwright channel — no downloaded Chromium required.
             launch_kwargs["channel"] = channel
-        browser = pw.chromium.launch(**launch_kwargs)
+        try:
+            browser = pw.chromium.launch(**launch_kwargs)
+        except Exception as exc:
+            # Playwright's own message suggests downloading a browser, which is the
+            # opposite of this project's approach. Say what is actually installed.
+            from .browsers import launch_help
+            raise RuntimeError(f"{launch_help(channel or 'chromium')}\n\n  Playwright said: {exc}") from exc
         context = _new_context(browser, settings)
         page = context.new_page()
         page.set_default_timeout(settings.collector.dashboard_timeout_ms)
