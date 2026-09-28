@@ -1,0 +1,10 @@
+[root@ip-10-34-44-18 kibana_dashboard_runtime_monitor]# pwd
+/opt/kibana_dashboard_runtime_monitor
+[root@ip-10-34-44-18 kibana_dashboard_runtime_monitor]# python scripts/run_collector.py --es-api-key "$APIKEY" --dry-run --out newkey.json
+Traceback (most recent call last):
+  File "/opt/kibana_dashboard_runtime_monitor/scripts/run_collector.py", line 46, in <module>
+    from dhm.config import load_settings  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/kibana_dashboard_runtime_monitor/scripts/../src/dhm/config.py", line 13, in <module>
+    import yaml
+ModuleNotFoundError: No module named 'yaml'
