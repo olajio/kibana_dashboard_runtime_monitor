@@ -735,6 +735,48 @@ into the new stream before deleting.
   For a secret that holds only a key, use `elasticsearch.aws_secret_id` instead.
 - **Values show `<-settings` when they should come from AWS** — the field is missing
   from the secret, or named differently; check it against `aws_secret_keys`.
+- **`Chromium distribution 'msedge' is not found at /opt/microsoft/msedge/msedge`** —
+  no Microsoft Edge on the host. The collector drives an already-installed browser, so
+  this is host provisioning, not a code or config problem. First see what *is* there:
+
+  ```bash
+  ls -l /opt/microsoft/msedge/msedge /opt/google/chrome/chrome 2>/dev/null
+  which microsoft-edge google-chrome chromium 2>/dev/null
+  ```
+
+  If Chrome is installed, just use it — Edge and Chrome are both Chromium, so the
+  render detection is identical:
+
+  ```bash
+  export DHM_BROWSER_CHANNEL=chrome
+  ```
+
+  If nothing is installed, install a browser with the system package manager. On
+  RHEL-family hosts, Edge:
+
+  ```bash
+  sudo tee /etc/yum.repos.d/microsoft-edge.repo >/dev/null <<'REPO'
+  [microsoft-edge]
+  name=microsoft-edge
+  baseurl=https://packages.microsoft.com/yumrepos/edge
+  enabled=1
+  gpgcheck=1
+  gpgkey=https://packages.microsoft.com/keys/microsoft.asc
+  REPO
+  sudo dnf install -y microsoft-edge-stable
+  ```
+
+  Playwright will also offer `playwright install msedge`. That works, but it downloads
+  a browser — the thing we set out to avoid — and may be blocked in a restricted
+  boundary, so prefer the package manager. `browser_channel: chromium` is worse still:
+  it needs `playwright install chromium`, a download with no upside over the system
+  browser.
+
+  The collector warns about a missing browser **before** the discovery crawl, and on a
+  failed launch prints which browsers it can see plus the exact
+  `DHM_BROWSER_CHANNEL=` to switch to. The Ansible playbook fails preflight on this
+  rather than at the first cron run.
+
 - **`SSLCertVerificationError: ... self signed certificate in certificate chain`** —
   almost always a TLS-inspecting proxy between the runner and the endpoint, re-signing
   traffic with an internal CA. Against a public endpoint (e.g. Elastic Cloud, whose

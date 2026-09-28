@@ -78,7 +78,18 @@ def _build_driver(settings: Settings):
     # If a driver binary path is configured, use it; otherwise rely on PATH /
     # Selenium Manager to locate msedgedriver/chromedriver.
     service = Service(executable_path=webdriver_path) if webdriver_path else Service()
-    return make(service=service, options=opts)
+    try:
+        return make(service=service, options=opts)
+    except Exception as exc:
+        # Same courtesy as the Playwright path: name what is installed rather than
+        # leaving a raw WebDriverException.
+        from .browsers import launch_help
+        raise RuntimeError(
+            f"{launch_help(channel or 'chrome')}\n\n"
+            f"  Selenium also needs a matching driver binary (msedgedriver /\n"
+            f"  chromedriver) on PATH or at collector.webdriver_path.\n\n"
+            f"  Selenium said: {exc}"
+        ) from exc
 
 
 def _apply_auth(driver, settings: Settings) -> None:
