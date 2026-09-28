@@ -69,7 +69,13 @@ def run(settings: Settings, registry: Dict[str, Any]) -> List[Dict[str, Any]]:
     with sync_playwright() as pw:
         launch_kwargs = {"headless": settings.collector.headless}
         channel = (settings.collector.browser_channel or "").strip().lower()
-        if channel and channel not in ("chromium", "bundled"):
+        executable = (settings.collector.browser_executable or "").strip()
+        if executable:
+            # An explicit binary wins: it is unambiguous, and it is the only way to
+            # drive a browser Playwright has no channel for (e.g. a distro chromium).
+            # channel and executable_path are mutually exclusive in Playwright.
+            launch_kwargs["executable_path"] = executable
+        elif channel and channel not in ("chromium", "bundled"):
             # Drive an already-installed browser (e.g. msedge, chrome) via a
             # Playwright channel — no downloaded Chromium required.
             launch_kwargs["channel"] = channel

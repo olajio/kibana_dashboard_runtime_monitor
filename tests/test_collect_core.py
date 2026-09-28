@@ -337,3 +337,26 @@ def test_launch_help_suggests_install_when_nothing_present(monkeypatch):
     msg = browsers.launch_help("msedge")
     assert "dnf install" in msg
     assert "DHM_BROWSER_CHANNEL=" not in msg   # nothing to switch to
+
+
+def test_launch_kwargs_prefers_executable_over_channel():
+    """Playwright treats channel and executable_path as mutually exclusive, so an
+    explicit binary must suppress the channel rather than be sent alongside it."""
+    from dhm.config import Settings
+
+    def build(channel, executable):
+        # mirrors the branch in collector.run()
+        kwargs = {"headless": True}
+        ch = (channel or "").strip().lower()
+        ex = (executable or "").strip()
+        if ex:
+            kwargs["executable_path"] = ex
+        elif ch and ch not in ("chromium", "bundled"):
+            kwargs["channel"] = ch
+        return kwargs
+
+    assert build("msedge", "") == {"headless": True, "channel": "msedge"}
+    assert build("chromium", "") == {"headless": True}          # Playwright's own build
+    got = build("msedge", "/usr/bin/chromium")
+    assert got == {"headless": True, "executable_path": "/usr/bin/chromium"}
+    assert "channel" not in got

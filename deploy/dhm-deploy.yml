@@ -35,6 +35,8 @@
     dhm_hub_title: Federal Overview
 
     # --- tuning ---
+    dhm_browser_channel: msedge    # msedge | chrome | chromium
+    dhm_browser_executable: ""     # e.g. /usr/bin/chromium (wins over the channel)
     dhm_ca_bundle: ""              # e.g. /etc/pki/tls/certs/ca-bundle.crt
     dhm_time_from: now-30d
     dhm_verify_tls: "true"
@@ -57,10 +59,16 @@
       ansible.builtin.fail:
         msg: >-
           Microsoft Edge was not found on PATH. The collector drives the system
-          browser and downloads nothing, so Edge must be installed. Install it, or
-          set browser_channel to an installed browser in
-          deploy/settings.prod.yaml.j2.
-      when: dhm_edge.rc != 0
+          browser and downloads nothing, so a browser must be installed. Either
+          install Edge, or point this deploy at one that exists:
+          -e dhm_browser_channel=chrome, or
+          -e dhm_browser_executable=/usr/bin/chromium for a distro chromium.
+          See HOWTO §Troubleshooting for the install options and the shared-library
+          packages a minimal server image is missing.
+      when:
+        - dhm_browser_channel == "msedge"
+        - dhm_browser_executable == ""
+        - dhm_edge.rc != 0
 
     # ------------------------------------------------------------------- deploy
     - name: Create the service account

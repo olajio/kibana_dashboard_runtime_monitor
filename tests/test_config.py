@@ -179,3 +179,13 @@ def test_ca_bundle_default_empty_and_configurable(monkeypatch, tmp_path):
     assert load_settings(path).ca_bundle == "/etc/pki/corp-ca.pem"
     monkeypatch.setenv("DHM_CA_BUNDLE", "/etc/pki/other.pem")
     assert load_settings(path).ca_bundle == "/etc/pki/other.pem"
+
+
+def test_browser_executable_default_empty_and_configurable(monkeypatch, tmp_path):
+    monkeypatch.delenv("DHM_BROWSER_EXECUTABLE", raising=False)
+    assert load_settings("does_not_exist.yaml").collector.browser_executable == ""
+    path = _write(tmp_path, "collector:\n  browser_executable: /usr/bin/chromium\n")
+    assert load_settings(path).collector.browser_executable == "/usr/bin/chromium"
+    monkeypatch.setenv("DHM_BROWSER_EXECUTABLE", "/usr/lib64/chromium-browser/headless_shell")
+    assert load_settings(path).collector.browser_executable == \
+        "/usr/lib64/chromium-browser/headless_shell"

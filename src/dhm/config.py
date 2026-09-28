@@ -86,6 +86,12 @@ class CollectorConfig:
     # branded browser (Playwright channel, or Edge/Chrome WebDriver under
     # Selenium). "chromium" (or "bundled"/empty) uses Playwright's own Chromium.
     browser_channel: str = "msedge"
+    # Absolute path to a browser binary, for a browser Playwright cannot find by
+    # channel — most often a distro chromium package (/usr/bin/chromium). When set
+    # this WINS over browser_channel, because it is unambiguous. Note that
+    # browser_channel: chromium means Playwright's own downloaded build, which is a
+    # different thing from a system chromium.
+    browser_executable: str = ""
     # Selenium only: path to msedgedriver/chromedriver. Empty -> PATH / Selenium Manager.
     webdriver_path: str = ""
     # Per-dashboard hard timeout. Sized for prod with time_from=now-30d and
@@ -223,6 +229,8 @@ def load_settings(path: str = "config/settings.yaml") -> Settings:
             headless=bool(col.get("headless", True)),
             backend=_env("DHM_BACKEND", col.get("backend", "playwright")),
             browser_channel=_env("DHM_BROWSER_CHANNEL", col.get("browser_channel", "msedge")),
+            browser_executable=_env("DHM_BROWSER_EXECUTABLE",
+                                    col.get("browser_executable", "")),
             webdriver_path=_env("DHM_WEBDRIVER_PATH", col.get("webdriver_path", "")),
             dashboard_timeout_ms=int(col.get("dashboard_timeout_ms", 180000)),
             poll_interval_ms=int(col.get("poll_interval_ms", 250)),

@@ -157,6 +157,12 @@ collector:
   #   chromium - Playwright's own downloaded Chromium (playwright backend only;
   #              needs `playwright install`)
   browser_channel: msedge          # [DHM_BROWSER_CHANNEL]
+  # Absolute path to a browser binary, for one Playwright cannot find by channel —
+  # most often a distro chromium package. When set, this WINS over browser_channel.
+  # Careful: browser_channel: chromium means Playwright's OWN downloaded build,
+  # which is NOT the same as a system chromium at /usr/bin/chromium. For the latter,
+  # use this setting.
+  browser_executable: ""           # [DHM_BROWSER_EXECUTABLE] e.g. /usr/bin/chromium
   # Selenium backend only: path to msedgedriver/chromedriver.
   # Empty -> found on PATH or via Selenium Manager.
   webdriver_path: ""               # [DHM_WEBDRIVER_PATH]
