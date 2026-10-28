@@ -1,12 +1,59 @@
-sh-4.4$ sudo su
-[root@ip-10-34-44-18 bin]# cd /opt/kibana_dashboard_runtime_monitor && source .venv/bin/activate
-(.venv) [root@ip-10-34-44-18 kibana_dashboard_runtime_monitor]# 
 (.venv) [root@ip-10-34-44-18 kibana_dashboard_runtime_monitor]# python scripts/summarize_run.py /var/lib/dhm/run.json
-/usr/local/python-3.14/bin/python3.14: can't open file '/opt/kibana_dashboard_runtime_monitor/scripts/summarize_run.py': [Errno 2] No such file or directory
+== per dashboard: status of the panels that are NOT ok ==
+Federal Overview                   degraded  {'empty': 1}
+Agency Details                     failed    {'empty': 7}
+AIM Score Overview                 ok        -
+CyHy Overview                      failed    {'empty': 6}
+Federal Landing Page               ok        -
+Hardware Overview                  degraded  {'empty': 3}
+HVA Devices                        degraded  {'empty': 2}
+HVA Misconfigurations              ok        -
+HVA Software                       ok        -
+HVA System Boundaries              degraded  {'empty': 1}
+HVA Vulnerabilities                failed    {'empty': 4}
+Misconfiguration Overview          degraded  {'empty': 2}
+Misconfiguration Records           ok        -
+Priority Risks                     ok        -
+Remediated Vulnerabilities         degraded  {'empty': 4}
+Remote Cluster Connectivity Status ok        -
+SCuBA Overview                     degraded  {'empty': 3}
+SCuBA Overview - All               degraded  {'empty': 4}
+Software Overview                  degraded  {'empty': 2}
+SSVC Overview                      degraded  {'empty': 6}
+Vulnerability Overview             degraded  {'empty': 2}
+Vulnerability Records              ok        -
+
+== panel titles that are not ok on MORE THAN ONE dashboard ==
+ 11x  CDM-Nav-LCKUP
+  2x  SCuBA - Banner - Entra ID Information
 (.venv) [root@ip-10-34-44-18 kibana_dashboard_runtime_monitor]# python scripts/summarize_run.py run.json
-/usr/local/python-3.14/bin/python3.14: can't open file '/opt/kibana_dashboard_runtime_monitor/scripts/summarize_run.py': [Errno 2] No such file or directory
-(.venv) [root@ip-10-34-44-18 kibana_dashboard_runtime_monitor]# sudo python scripts/summarize_run.py /var/lib/dhm/run.json
-sudo: python: command not found
-(.venv) [root@ip-10-34-44-18 kibana_dashboard_runtime_monitor]# sudo python3 scripts/summarize_run.py /var/lib/dhm/run.json
-python3: can't open file 'scripts/summarize_run.py': [Errno 2] No such file or directory
+== per dashboard: status of the panels that are NOT ok ==
+Federal Overview                   degraded  {'empty': 1}
+Agency Details                     failed    {'empty': 7}
+AIM Score Overview                 ok        -
+CyHy Overview                      failed    {'empty': 6}
+Federal Landing Page               ok        -
+Hardware Overview                  degraded  {'empty': 3}
+HVA Devices                        degraded  {'empty': 2}
+HVA Misconfigurations              ok        -
+HVA Software                       ok        -
+HVA System Boundaries              degraded  {'empty': 1}
+HVA Vulnerabilities                failed    {'empty': 4}
+Misconfiguration Overview          degraded  {'empty': 2}
+Misconfiguration Records           ok        -
+Priority Risks                     degraded  {'empty': 15}
+Remediated Vulnerabilities         degraded  {'empty': 4}
+Remote Cluster Connectivity Status ok        -
+SCuBA Overview                     degraded  {'empty': 3}
+SCuBA Overview - All               degraded  {'empty': 4}
+Software Overview                  degraded  {'empty': 2}
+SSVC Overview                      degraded  {'empty': 6}
+Vulnerability Overview             degraded  {'empty': 2}
+Vulnerability Records              ok        -
+
+== panel titles that are not ok on MORE THAN ONE dashboard ==
+ 11x  CDM-Nav-LCKUP
+  2x  Open Findings for Agency Vulnerability Counts
+  2x  Average CVE Exploitation
+  2x  SCuBA - Banner - Entra ID Information
 (.venv) [root@ip-10-34-44-18 kibana_dashboard_runtime_monitor]# 
