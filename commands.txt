@@ -9,6 +9,14 @@
 
 cd /opt/kibana_dashboard_runtime_monitor && source .venv/bin/activate
 
+# bring the checkout up to date FIRST. scripts/summarize_run.py is new; on a checkout
+# that has not been pulled, python reports "can't open file ... No such file".
+git pull origin main
+ls scripts/summarize_run.py
+
+# no sudo needed: you are already root, and sudo would not find the venv's python
+# anyway (it resets PATH).
+#
 # the dry run made as the 'dhm' account
 python scripts/summarize_run.py /var/lib/dhm/run.json
 
