@@ -1,0 +1,305 @@
+sh-4.4$ sudo su
+[root@ip-10-34-44-18 bin]# uname -m                                   # x86_64 or aarch64
+x86_64
+[root@ip-10-34-44-18 bin]# cat /etc/os-release | head -3
+NAME="Red Hat Enterprise Linux"
+VERSION="8.10 (Ootpa)"
+ID="rhel"
+[root@ip-10-34-44-18 bin]# env | grep -i proxy                        # does dnf/curl go through a proxy?
+[root@ip-10-34-44-18 bin]# dnf repolist
+Updating Subscription Management repositories.
+Unable to read consumer identity
+
+This system is not registered with an entitlement server. You can use subscription-manager to register.
+
+repo id                                                   repo name
+ansible-2-for-rhel-8-rhui-rpms                            Red Hat Ansible Engine 2 for RHEL 8 (RPMs) from RHUI
+docker-ce-stable                                          Docker CE Stable - x86_64
+hashicorp                                                 Hashicorp Stable - x86_64
+rhel-8-appstream-rhui-rpms                                Red Hat Enterprise Linux 8 for x86_64 - AppStream from RHUI (RPMs)
+rhel-8-baseos-rhui-rpms                                   Red Hat Enterprise Linux 8 for x86_64 - BaseOS from RHUI (RPMs)
+rhui-client-config-server-8                               RHUI Client Configuration Server 8
+wiz                                                       Wiz, Inc.
+[root@ip-10-34-44-18 bin]# curl -sS --cacert /etc/pki/tls/certs/ca-bundle.crt -o /dev/null -w 'Microsoft: HTTP %{http_code}\n' \
+>   https://packages.microsoft.com/yumrepos/edge/repodata/repomd.xml
+Microsoft: HTTP 200
+[root@ip-10-34-44-18 bin]# curl -sS --cacert /etc/pki/tls/certs/ca-bundle.crt -o /dev/null -w 'Google:    HTTP %{http_code}\n' \
+>   https://dl.google.com/linux/chrome/rpm/stable/x86_64/repodata/repomd.xml
+Google:    HTTP 200
+
+[root@ip-10-34-44-18 bin]# sudo tee /etc/yum.repos.d/microsoft-edge.repo >/dev/null <<'REPO'
+> [microsoft-edge]
+> name=microsoft-edge
+> baseurl=https://packages.microsoft.com/yumrepos/edge
+> enabled=1
+> gpgcheck=1
+> gpgkey=https://packages.microsoft.com/keys/microsoft.asc
+> REPO
+[root@ip-10-34-44-18 bin]# sudo dnf install -y microsoft-edge-stable
+Updating Subscription Management repositories.
+Unable to read consumer identity
+
+This system is not registered with an entitlement server. You can use subscription-manager to register.
+
+microsoft-edge                                                                                                          1.2 MB/s | 352 kB     00:00    
+Last metadata expiration check: 0:00:01 ago on Wed 28 Oct 2026 05:15:31 PM UTC.
+Dependencies resolved.
+========================================================================================================================================================
+ Package                              Architecture      Version                                             Repository                             Size
+========================================================================================================================================================
+Installing:
+ microsoft-edge-stable                x86_64            156.0.4314.50-1                                     microsoft-edge                        193 M
+Installing dependencies:
+ adwaita-cursor-theme                 noarch            3.28.0-3.el8                                        rhel-8-appstream-rhui-rpms            647 k
+ adwaita-icon-theme                   noarch            3.28.0-3.el8                                        rhel-8-appstream-rhui-rpms             11 M
+ alsa-lib                             x86_64            1.2.10-2.el8                                        rhel-8-appstream-rhui-rpms            501 k
+ at-spi2-atk                          x86_64            2.26.2-1.el8                                        rhel-8-appstream-rhui-rpms             89 k
+ at-spi2-core                         x86_64            2.28.0-1.el8                                        rhel-8-appstream-rhui-rpms            169 k
+ cairo-gobject                        x86_64            1.15.12-6.el8                                       rhel-8-appstream-rhui-rpms             33 k
+ colord-libs                          x86_64            1.4.2-1.el8                                         rhel-8-appstream-rhui-rpms            236 k
+ dejavu-fonts-common                  noarch            2.35-7.el8                                          rhel-8-baseos-rhui-rpms                74 k
+ desktop-file-utils                   x86_64            0.26-1.el8                                          rhel-8-appstream-rhui-rpms             80 k
+ glib-networking                      x86_64            2.56.1-1.1.el8                                      rhel-8-baseos-rhui-rpms               155 k
+ gsettings-desktop-schemas            x86_64            3.32.0-6.el8                                        rhel-8-baseos-rhui-rpms               633 k
+ gtk3                                 x86_64            3.22.30-13.el8_10                                   rhel-8-appstream-rhui-rpms            4.5 M
+ libX11-xcb                           x86_64            1.6.8-10.el8_10                                     rhel-8-appstream-rhui-rpms             14 k
+ libXtst                              x86_64            1.2.3-8.el8_10                                      rhel-8-appstream-rhui-rpms             21 k
+ libepoxy                             x86_64            1.5.8-1.el8                                         rhel-8-appstream-rhui-rpms            225 k
+ liberation-fonts                     noarch            1:2.00.3-7.el8                                      rhel-8-baseos-rhui-rpms                20 k
+ liberation-fonts-common              noarch            1:2.00.3-7.el8                                      rhel-8-baseos-rhui-rpms                25 k
+ liberation-mono-fonts                noarch            1:2.00.3-7.el8                                      rhel-8-baseos-rhui-rpms               505 k
+ liberation-sans-fonts                noarch            1:2.00.3-7.el8                                      rhel-8-baseos-rhui-rpms               610 k
+ liberation-serif-fonts               noarch            1:2.00.3-7.el8                                      rhel-8-baseos-rhui-rpms               609 k
+ libmodman                            x86_64            2.0.1-17.el8                                        rhel-8-baseos-rhui-rpms                36 k
+ libproxy                             x86_64            0.4.15-5.5.el8_10                                   rhel-8-baseos-rhui-rpms                73 k
+ libsoup                              x86_64            2.62.3-19.el8_10                                    rhel-8-baseos-rhui-rpms               427 k
+ libwayland-client                    x86_64            1.21.0-1.el8                                        rhel-8-appstream-rhui-rpms             41 k
+ libwayland-cursor                    x86_64            1.21.0-1.el8                                        rhel-8-appstream-rhui-rpms             26 k
+ libwayland-egl                       x86_64            1.21.0-1.el8                                        rhel-8-appstream-rhui-rpms             20 k
+ libwayland-server                    x86_64            1.21.0-1.el8                                        rhel-8-appstream-rhui-rpms             49 k
+ libxshmfence                         x86_64            1.3-2.el8                                           rhel-8-appstream-rhui-rpms             13 k
+ llvm-compat-libs                     x86_64            17.0.6-3.module+el8.10.0+22218+ed012fd4             rhel-8-appstream-rhui-rpms             55 M
+ mesa-libgbm                          x86_64            23.1.4-4.el8_10                                     rhel-8-appstream-rhui-rpms             61 k
+ mesa-vulkan-drivers                  x86_64            23.1.4-4.el8_10                                     rhel-8-appstream-rhui-rpms            9.8 M
+ rest                                 x86_64            0.8.1-3.el8_10                                      rhel-8-appstream-rhui-rpms             69 k
+ vulkan-loader                        x86_64            1.3.283.0-1.el8_10                                  rhel-8-appstream-rhui-rpms            148 k
+ xdg-utils                            noarch            1.1.2-5.el8                                         rhel-8-appstream-rhui-rpms             84 k
+Installing weak dependencies:
+ abattis-cantarell-fonts              noarch            0.0.25-6.el8                                        rhel-8-appstream-rhui-rpms            156 k
+ dconf                                x86_64            0.28.0-4.el8                                        rhel-8-appstream-rhui-rpms            108 k
+ dejavu-sans-mono-fonts               noarch            2.35-7.el8                                          rhel-8-baseos-rhui-rpms               447 k
+Enabling module streams:
+ llvm-toolset                                           rhel8                                                                                          
+
+Transaction Summary
+========================================================================================================================================================
+Install  38 Packages
+
+Total download size: 281 M
+Installed size: 993 M
+Downloading Packages:
+(1/38): xdg-utils-1.1.2-5.el8.noarch.rpm                                                                                1.1 MB/s |  84 kB     00:00    
+(2/38): at-spi2-atk-2.26.2-1.el8.x86_64.rpm                                                                             1.0 MB/s |  89 kB     00:00    
+(3/38): at-spi2-core-2.28.0-1.el8.x86_64.rpm                                                                             10 MB/s | 169 kB     00:00    
+(4/38): libxshmfence-1.3-2.el8.x86_64.rpm                                                                               1.3 MB/s |  13 kB     00:00    
+(5/38): colord-libs-1.4.2-1.el8.x86_64.rpm                                                                              8.8 MB/s | 236 kB     00:00    
+(6/38): abattis-cantarell-fonts-0.0.25-6.el8.noarch.rpm                                                                 9.7 MB/s | 156 kB     00:00    
+(7/38): dconf-0.28.0-4.el8.x86_64.rpm                                                                                   5.2 MB/s | 108 kB     00:00    
+(8/38): libepoxy-1.5.8-1.el8.x86_64.rpm                                                                                  11 MB/s | 225 kB     00:00    
+(9/38): adwaita-cursor-theme-3.28.0-3.el8.noarch.rpm                                                                     15 MB/s | 647 kB     00:00    
+(10/38): cairo-gobject-1.15.12-6.el8.x86_64.rpm                                                                         2.5 MB/s |  33 kB     00:00    
+(11/38): desktop-file-utils-0.26-1.el8.x86_64.rpm                                                                       4.1 MB/s |  80 kB     00:00    
+(12/38): libwayland-client-1.21.0-1.el8.x86_64.rpm                                                                      3.1 MB/s |  41 kB     00:00    
+(13/38): libwayland-cursor-1.21.0-1.el8.x86_64.rpm                                                                      1.8 MB/s |  26 kB     00:00    
+(14/38): libwayland-egl-1.21.0-1.el8.x86_64.rpm                                                                         1.5 MB/s |  20 kB     00:00    
+(15/38): libwayland-server-1.21.0-1.el8.x86_64.rpm                                                                      4.0 MB/s |  49 kB     00:00    
+(16/38): adwaita-icon-theme-3.28.0-3.el8.noarch.rpm                                                                      56 MB/s |  11 MB     00:00    
+(17/38): alsa-lib-1.2.10-2.el8.x86_64.rpm                                                                               5.7 MB/s | 501 kB     00:00    
+(18/38): vulkan-loader-1.3.283.0-1.el8_10.x86_64.rpm                                                                    9.0 MB/s | 148 kB     00:00    
+(19/38): mesa-libgbm-23.1.4-4.el8_10.x86_64.rpm                                                                         5.4 MB/s |  61 kB     00:00    
+(20/38): mesa-vulkan-drivers-23.1.4-4.el8_10.x86_64.rpm                                                                  55 MB/s | 9.8 MB     00:00    
+(21/38): rest-0.8.1-3.el8_10.x86_64.rpm                                                                                 5.8 MB/s |  69 kB     00:00    
+(22/38): gtk3-3.22.30-13.el8_10.x86_64.rpm                                                                               43 MB/s | 4.5 MB     00:00    
+(23/38): libX11-xcb-1.6.8-10.el8_10.x86_64.rpm                                                                          1.1 MB/s |  14 kB     00:00    
+(24/38): libXtst-1.2.3-8.el8_10.x86_64.rpm                                                                              2.0 MB/s |  21 kB     00:00    
+(25/38): libmodman-2.0.1-17.el8.x86_64.rpm                                                                              3.8 MB/s |  36 kB     00:00    
+(26/38): glib-networking-2.56.1-1.1.el8.x86_64.rpm                                                                       12 MB/s | 155 kB     00:00    
+(27/38): liberation-mono-fonts-2.00.3-7.el8.noarch.rpm                                                                   26 MB/s | 505 kB     00:00    
+(28/38): liberation-serif-fonts-2.00.3-7.el8.noarch.rpm                                                                  25 MB/s | 609 kB     00:00    
+(29/38): liberation-fonts-2.00.3-7.el8.noarch.rpm                                                                       1.6 MB/s |  20 kB     00:00    
+(30/38): liberation-fonts-common-2.00.3-7.el8.noarch.rpm                                                                2.6 MB/s |  25 kB     00:00    
+(31/38): liberation-sans-fonts-2.00.3-7.el8.noarch.rpm                                                                   28 MB/s | 610 kB     00:00    
+(32/38): dejavu-fonts-common-2.35-7.el8.noarch.rpm                                                                      6.1 MB/s |  74 kB     00:00    
+(33/38): dejavu-sans-mono-fonts-2.35-7.el8.noarch.rpm                                                                    27 MB/s | 447 kB     00:00    
+(34/38): gsettings-desktop-schemas-3.32.0-6.el8.x86_64.rpm                                                               26 MB/s | 633 kB     00:00    
+(35/38): libproxy-0.4.15-5.5.el8_10.x86_64.rpm                                                                          6.6 MB/s |  73 kB     00:00    
+(36/38): libsoup-2.62.3-19.el8_10.x86_64.rpm                                                                             23 MB/s | 427 kB     00:00    
+(37/38): llvm-compat-libs-17.0.6-3.module+el8.10.0+22218+ed012fd4.x86_64.rpm                                             62 MB/s |  55 MB     00:00    
+(38/38): microsoft-edge-stable-156.0.4314.50-1.x86_64.rpm                                                                35 MB/s | 193 MB     00:05    
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+Total                                                                                                                    50 MB/s | 281 MB     00:05     
+microsoft-edge                                                                                                           16 kB/s | 975  B     00:00    
+Importing GPG key 0xBE1229CF:
+ Userid     : "Microsoft (Release signing) <gpgsecurity@microsoft.com>"
+ Fingerprint: BC52 8686 B50D 79E3 39D3 721C EB3E 94AD BE12 29CF
+ From       : https://packages.microsoft.com/keys/microsoft.asc
+Key imported successfully
+Running transaction check
+Transaction check succeeded.
+Running transaction test
+Transaction test succeeded.
+Running transaction
+  Preparing        :                                                                                                                                1/1 
+  Installing       : liberation-fonts-common-1:2.00.3-7.el8.noarch                                                                                 1/38 
+  Installing       : libwayland-client-1.21.0-1.el8.x86_64                                                                                         2/38 
+  Installing       : libwayland-cursor-1.21.0-1.el8.x86_64                                                                                         3/38 
+  Installing       : liberation-mono-fonts-1:2.00.3-7.el8.noarch                                                                                   4/38 
+  Installing       : liberation-serif-fonts-1:2.00.3-7.el8.noarch                                                                                  5/38 
+  Installing       : liberation-sans-fonts-1:2.00.3-7.el8.noarch                                                                                   6/38 
+  Installing       : liberation-fonts-1:2.00.3-7.el8.noarch                                                                                        7/38 
+  Installing       : dejavu-fonts-common-2.35-7.el8.noarch                                                                                         8/38 
+  Installing       : dejavu-sans-mono-fonts-2.35-7.el8.noarch                                                                                      9/38 
+  Installing       : libmodman-2.0.1-17.el8.x86_64                                                                                                10/38 
+  Running scriptlet: libmodman-2.0.1-17.el8.x86_64                                                                                                10/38 
+  Installing       : libproxy-0.4.15-5.5.el8_10.x86_64                                                                                            11/38 
+  Running scriptlet: libproxy-0.4.15-5.5.el8_10.x86_64                                                                                            11/38 
+  Installing       : libXtst-1.2.3-8.el8_10.x86_64                                                                                                12/38 
+  Installing       : at-spi2-core-2.28.0-1.el8.x86_64                                                                                             13/38 
+  Running scriptlet: at-spi2-core-2.28.0-1.el8.x86_64                                                                                             13/38 
+  Installing       : at-spi2-atk-2.26.2-1.el8.x86_64                                                                                              14/38 
+  Running scriptlet: at-spi2-atk-2.26.2-1.el8.x86_64                                                                                              14/38 
+  Installing       : libX11-xcb-1.6.8-10.el8_10.x86_64                                                                                            15/38 
+  Installing       : llvm-compat-libs-17.0.6-3.module+el8.10.0+22218+ed012fd4.x86_64                                                              16/38 
+  Running scriptlet: llvm-compat-libs-17.0.6-3.module+el8.10.0+22218+ed012fd4.x86_64                                                              16/38 
+  Installing       : alsa-lib-1.2.10-2.el8.x86_64                                                                                                 17/38 
+  Running scriptlet: alsa-lib-1.2.10-2.el8.x86_64                                                                                                 17/38 
+  Installing       : libwayland-server-1.21.0-1.el8.x86_64                                                                                        18/38 
+  Installing       : mesa-libgbm-23.1.4-4.el8_10.x86_64                                                                                           19/38 
+  Running scriptlet: mesa-libgbm-23.1.4-4.el8_10.x86_64                                                                                           19/38 
+  Installing       : libwayland-egl-1.21.0-1.el8.x86_64                                                                                           20/38 
+  Installing       : desktop-file-utils-0.26-1.el8.x86_64                                                                                         21/38 
+  Installing       : xdg-utils-1.1.2-5.el8.noarch                                                                                                 22/38 
+  Installing       : cairo-gobject-1.15.12-6.el8.x86_64                                                                                           23/38 
+  Installing       : adwaita-cursor-theme-3.28.0-3.el8.noarch                                                                                     24/38 
+  Installing       : adwaita-icon-theme-3.28.0-3.el8.noarch                                                                                       25/38 
+  Installing       : libepoxy-1.5.8-1.el8.x86_64                                                                                                  26/38 
+  Installing       : dconf-0.28.0-4.el8.x86_64                                                                                                    27/38 
+  Installing       : abattis-cantarell-fonts-0.0.25-6.el8.noarch                                                                                  28/38 
+  Installing       : gsettings-desktop-schemas-3.32.0-6.el8.x86_64                                                                                29/38 
+  Installing       : glib-networking-2.56.1-1.1.el8.x86_64                                                                                        30/38 
+  Installing       : libsoup-2.62.3-19.el8_10.x86_64                                                                                              31/38 
+  Installing       : rest-0.8.1-3.el8_10.x86_64                                                                                                   32/38 
+  Running scriptlet: rest-0.8.1-3.el8_10.x86_64                                                                                                   32/38 
+  Installing       : libxshmfence-1.3-2.el8.x86_64                                                                                                33/38 
+  Installing       : vulkan-loader-1.3.283.0-1.el8_10.x86_64                                                                                      34/38 
+  Installing       : mesa-vulkan-drivers-23.1.4-4.el8_10.x86_64                                                                                   35/38 
+  Installing       : colord-libs-1.4.2-1.el8.x86_64                                                                                               36/38 
+  Installing       : gtk3-3.22.30-13.el8_10.x86_64                                                                                                37/38 
+  Running scriptlet: microsoft-edge-stable-156.0.4314.50-1.x86_64                                                                                 38/38 
+  Installing       : microsoft-edge-stable-156.0.4314.50-1.x86_64                                                                                 38/38 
+  Running scriptlet: microsoft-edge-stable-156.0.4314.50-1.x86_64                                                                                 38/38 
+  Running scriptlet: dconf-0.28.0-4.el8.x86_64                                                                                                    38/38 
+  Running scriptlet: microsoft-edge-stable-156.0.4314.50-1.x86_64                                                                                 38/38 
+  Running scriptlet: desktop-file-utils-0.26-1.el8.x86_64                                                                                         38/38 
+  Running scriptlet: adwaita-icon-theme-3.28.0-3.el8.noarch                                                                                       38/38 
+  Verifying        : microsoft-edge-stable-156.0.4314.50-1.x86_64                                                                                  1/38 
+  Verifying        : xdg-utils-1.1.2-5.el8.noarch                                                                                                  2/38 
+  Verifying        : at-spi2-atk-2.26.2-1.el8.x86_64                                                                                               3/38 
+  Verifying        : at-spi2-core-2.28.0-1.el8.x86_64                                                                                              4/38 
+  Verifying        : colord-libs-1.4.2-1.el8.x86_64                                                                                                5/38 
+  Verifying        : libxshmfence-1.3-2.el8.x86_64                                                                                                 6/38 
+  Verifying        : abattis-cantarell-fonts-0.0.25-6.el8.noarch                                                                                   7/38 
+  Verifying        : dconf-0.28.0-4.el8.x86_64                                                                                                     8/38 
+  Verifying        : libepoxy-1.5.8-1.el8.x86_64                                                                                                   9/38 
+  Verifying        : adwaita-cursor-theme-3.28.0-3.el8.noarch                                                                                     10/38 
+  Verifying        : adwaita-icon-theme-3.28.0-3.el8.noarch                                                                                       11/38 
+  Verifying        : cairo-gobject-1.15.12-6.el8.x86_64                                                                                           12/38 
+  Verifying        : desktop-file-utils-0.26-1.el8.x86_64                                                                                         13/38 
+  Verifying        : libwayland-client-1.21.0-1.el8.x86_64                                                                                        14/38 
+  Verifying        : libwayland-cursor-1.21.0-1.el8.x86_64                                                                                        15/38 
+  Verifying        : libwayland-egl-1.21.0-1.el8.x86_64                                                                                           16/38 
+  Verifying        : libwayland-server-1.21.0-1.el8.x86_64                                                                                        17/38 
+  Verifying        : alsa-lib-1.2.10-2.el8.x86_64                                                                                                 18/38 
+  Verifying        : vulkan-loader-1.3.283.0-1.el8_10.x86_64                                                                                      19/38 
+  Verifying        : llvm-compat-libs-17.0.6-3.module+el8.10.0+22218+ed012fd4.x86_64                                                              20/38 
+  Verifying        : mesa-libgbm-23.1.4-4.el8_10.x86_64                                                                                           21/38 
+  Verifying        : mesa-vulkan-drivers-23.1.4-4.el8_10.x86_64                                                                                   22/38 
+  Verifying        : rest-0.8.1-3.el8_10.x86_64                                                                                                   23/38 
+  Verifying        : gtk3-3.22.30-13.el8_10.x86_64                                                                                                24/38 
+  Verifying        : libX11-xcb-1.6.8-10.el8_10.x86_64                                                                                            25/38 
+  Verifying        : libXtst-1.2.3-8.el8_10.x86_64                                                                                                26/38 
+  Verifying        : libmodman-2.0.1-17.el8.x86_64                                                                                                27/38 
+  Verifying        : glib-networking-2.56.1-1.1.el8.x86_64                                                                                        28/38 
+  Verifying        : liberation-mono-fonts-1:2.00.3-7.el8.noarch                                                                                  29/38 
+  Verifying        : liberation-serif-fonts-1:2.00.3-7.el8.noarch                                                                                 30/38 
+  Verifying        : liberation-fonts-1:2.00.3-7.el8.noarch                                                                                       31/38 
+  Verifying        : liberation-fonts-common-1:2.00.3-7.el8.noarch                                                                                32/38 
+  Verifying        : liberation-sans-fonts-1:2.00.3-7.el8.noarch                                                                                  33/38 
+  Verifying        : dejavu-fonts-common-2.35-7.el8.noarch                                                                                        34/38 
+  Verifying        : dejavu-sans-mono-fonts-2.35-7.el8.noarch                                                                                     35/38 
+  Verifying        : gsettings-desktop-schemas-3.32.0-6.el8.x86_64                                                                                36/38 
+  Verifying        : libproxy-0.4.15-5.5.el8_10.x86_64                                                                                            37/38 
+  Verifying        : libsoup-2.62.3-19.el8_10.x86_64                                                                                              38/38 
+Installed products updated.
+
+Installed:
+  abattis-cantarell-fonts-0.0.25-6.el8.noarch                       adwaita-cursor-theme-3.28.0-3.el8.noarch                                            
+  adwaita-icon-theme-3.28.0-3.el8.noarch                            alsa-lib-1.2.10-2.el8.x86_64                                                        
+  at-spi2-atk-2.26.2-1.el8.x86_64                                   at-spi2-core-2.28.0-1.el8.x86_64                                                    
+  cairo-gobject-1.15.12-6.el8.x86_64                                colord-libs-1.4.2-1.el8.x86_64                                                      
+  dconf-0.28.0-4.el8.x86_64                                         dejavu-fonts-common-2.35-7.el8.noarch                                               
+  dejavu-sans-mono-fonts-2.35-7.el8.noarch                          desktop-file-utils-0.26-1.el8.x86_64                                                
+  glib-networking-2.56.1-1.1.el8.x86_64                             gsettings-desktop-schemas-3.32.0-6.el8.x86_64                                       
+  gtk3-3.22.30-13.el8_10.x86_64                                     libX11-xcb-1.6.8-10.el8_10.x86_64                                                   
+  libXtst-1.2.3-8.el8_10.x86_64                                     libepoxy-1.5.8-1.el8.x86_64                                                         
+  liberation-fonts-1:2.00.3-7.el8.noarch                            liberation-fonts-common-1:2.00.3-7.el8.noarch                                       
+  liberation-mono-fonts-1:2.00.3-7.el8.noarch                       liberation-sans-fonts-1:2.00.3-7.el8.noarch                                         
+  liberation-serif-fonts-1:2.00.3-7.el8.noarch                      libmodman-2.0.1-17.el8.x86_64                                                       
+  libproxy-0.4.15-5.5.el8_10.x86_64                                 libsoup-2.62.3-19.el8_10.x86_64                                                     
+  libwayland-client-1.21.0-1.el8.x86_64                             libwayland-cursor-1.21.0-1.el8.x86_64                                               
+  libwayland-egl-1.21.0-1.el8.x86_64                                libwayland-server-1.21.0-1.el8.x86_64                                               
+  libxshmfence-1.3-2.el8.x86_64                                     llvm-compat-libs-17.0.6-3.module+el8.10.0+22218+ed012fd4.x86_64                     
+  mesa-libgbm-23.1.4-4.el8_10.x86_64                                mesa-vulkan-drivers-23.1.4-4.el8_10.x86_64                                          
+  microsoft-edge-stable-156.0.4314.50-1.x86_64                      rest-0.8.1-3.el8_10.x86_64                                                          
+  vulkan-loader-1.3.283.0-1.el8_10.x86_64                           xdg-utils-1.1.2-5.el8.noarch                                                        
+
+Complete!
+[root@ip-10-34-44-18 bin]# 
+
+[root@ip-10-34-44-18 bin]# dnf list available 2>/dev/null | grep -i chromium
+[root@ip-10-34-44-18 bin]# 
+[root@ip-10-34-44-18 bin]# ls -l /opt/microsoft/msedge/msedge /opt/google/chrome/chrome 2>/dev/null
+-rwxr-xr-x. 1 root root 417844560 Oct 25 16:36 /opt/microsoft/msedge/msedge
+[root@ip-10-34-44-18 bin]# /opt/microsoft/msedge/msedge --version          # or the Chrome path
+Microsoft Edge 156.0.4314.50 unknown
+[root@ip-10-34-44-18 bin]# ldd /opt/microsoft/msedge/msedge | grep -i "not found"
+[root@ip-10-34-44-18 bin]# 
+
+[root@ip-10-34-44-18 bin]# cd /opt/kibana_dashboard_runtime_monitor
+[root@ip-10-34-44-18 kibana_dashboard_runtime_monitor]# source .venv/bin/activate
+(.venv) [root@ip-10-34-44-18 kibana_dashboard_runtime_monitor]# python scripts/run_collector.py --dry-run --out run.json
+Connection: elasticsearch.api_key<-aws-bundle, elasticsearch.base_url<-aws-bundle, kibana.auth.api_key<-elasticsearch.api_key, kibana.base_url<-aws-bundle
+Collecting 22 dashboards for app 'federal_overview' (cluster=fed2, space=fed2) [backend=playwright, browser=msedge, registry=api, selection=linked (hub='Federal Overview' + reachable)]
+  Federal Overview                         degraded   9189ms ok=5 not_ok=1
+  Agency Details                           failed     2389ms ok=5 not_ok=7
+  AIM Score Overview                       ok          944ms ok=7 not_ok=0
+  CyHy Overview                            failed     1372ms ok=3 not_ok=6
+  Federal Landing Page                     ok         1115ms ok=7 not_ok=0
+  Hardware Overview                        degraded   1316ms ok=4 not_ok=3
+  HVA Devices                              degraded    930ms ok=3 not_ok=2
+  HVA Misconfigurations                    ok          372ms ok=3 not_ok=0
+  HVA Software                             ok          350ms ok=3 not_ok=0
+  HVA System Boundaries                    degraded   1354ms ok=8 not_ok=1
+  HVA Vulnerabilities                      failed     1068ms ok=3 not_ok=4
+  Misconfiguration Overview                degraded    833ms ok=3 not_ok=2
+  Misconfiguration Records                 ok          747ms ok=4 not_ok=0
+  Priority Risks                           degraded   3787ms ok=20 not_ok=15
+  Remediated Vulnerabilities               degraded   1329ms ok=9 not_ok=4
+  Remote Cluster Connectivity Status Detai ok          321ms ok=2 not_ok=0
+  SCuBA Overview                           degraded   2460ms ok=22 not_ok=3
+  SCuBA Overview - All                     degraded   2706ms ok=23 not_ok=4
+  Software Overview                        degraded    773ms ok=3 not_ok=2
+  SSVC Overview                            degraded   1184ms ok=7 not_ok=6
+  Vulnerability Overview                   degraded    932ms ok=4 not_ok=2
+  Vulnerability Records                    ok         1080ms ok=5 not_ok=0
+Saved raw documents to run.json
