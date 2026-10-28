@@ -561,7 +561,7 @@ ansible-playbook -i deploy/inventory.local.ini deploy/dhm-deploy.yml -e dhm_cron
 # 3. ILM policy + index template (runs only that task, as the service account)
 ansible-playbook -i deploy/inventory.local.ini deploy/dhm-deploy.yml --tags setup
 
-# 4. run the collector by hand as the service account (LINUX_BROWSER_SETUP.md, step 5d)
+# 4. run the collector by hand as the service account (LINUX_BROWSER_SETUP.md, step 5c)
 
 # 5. only when that is clean, enable the schedule
 ansible-playbook -i deploy/inventory.local.ini deploy/dhm-deploy.yml
@@ -571,8 +571,10 @@ Why not just run step 5 first: it installs a live `*/30` entry, and if the clust
 do not exist yet, the first write auto-creates the data stream with default mappings
 instead of ours. Undoing that means deleting the data stream and its data.
 
-The host-specific preconditions (the Python that `sudo` sees, `crontab`, `/etc/cron.allow`,
-the Ansible version) are in [`LINUX_BROWSER_SETUP.md`](LINUX_BROWSER_SETUP.md), step 5b.
+On Ansible Automation Platform the same order is a series of job template launches; the
+inventory group, credential, project and extra variables are in
+[`LINUX_BROWSER_SETUP.md`](LINUX_BROWSER_SETUP.md), step 9, and the manual
+Elasticsearch write that should come first is step 8.
 
 Set these in your inventory or with `-e`; the defaults in the playbook match our
 pre-staging values:

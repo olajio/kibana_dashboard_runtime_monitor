@@ -5,6 +5,9 @@
 # renders config/settings.yaml (which holds no endpoints and no credentials —
 # those come from AWS Secrets Manager), and installs the schedule.
 #
+# On Ansible Automation Platform: the same order, expressed as job template launches,
+# is in LINUX_BROWSER_SETUP.md step 9 (inventory group, credential, project, extra vars).
+#
 # Running it ON the target host itself (no inventory of your own needed). In order:
 #
 #   1. rehearse: runs the read-only preflight for real, previews every change
@@ -21,7 +24,7 @@
 #        ansible-playbook -i deploy/inventory.local.ini deploy/dhm-deploy.yml --tags setup
 #
 #   4. run the collector by hand as the service account (see LINUX_BROWSER_SETUP.md,
-#      step 5d), and only when that is clean:
+#      step 5c), and only when that is clean:
 #
 #   5. turn the schedule on (re-run without the disabled flag)
 #        ansible-playbook -i deploy/inventory.local.ini deploy/dhm-deploy.yml
