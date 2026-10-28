@@ -187,3 +187,34 @@ STABLE: 4 panel(s) were not ok at the stop moment and stayed that way for the wh
 
 
 
+=== run 2 of 3 ===
+--- trace: AIM Score Overview (collector expects 7 data panels) ---
+collector would have stopped at 857 ms   -> error=9, ok=1
+end of window (30207 ms)                   -> error=9, ok=1
+no panel changed state after the collector would have stopped
+still not ok at the end of the window:
+    (panel #0)                                               error
+    (panel #1)                                               error
+    (panel #2)                                               error
+    (panel #3)                                               error
+    (panel #4)                                               error
+    (panel #5)                                               error
+    Panel: Agency AIM Scores
+Agency AIM Scores               error
+    Calculating the AIM Score                                error
+    (panel #8)                                               error
+STABLE: 9 panel(s) were not ok at the stop moment and stayed that way for the whole window. Timing does not explain them.
+
+=== run 3 of 3 ===
+--- trace: AIM Score Overview (collector expects 7 data panels) ---
+collector would have stopped at 713 ms   -> empty=1, ok=9
+end of window (30077 ms)                   -> empty=1, ok=9
+no panel changed state after the collector would have stopped
+still not ok at the end of the window:
+    Panel: Agency AIM Scores
+Agency AIM Scores               empty
+STABLE: 1 panel(s) were not ok at the stop moment and stayed that way for the whole window. Timing does not explain them.
+
+(.venv) [root@ip-10-34-44-18 kibana_dashboard_runtime_monitor]# 
+(.venv) [root@ip-10-34-44-18 kibana_dashboard_runtime_monitor]# 
+(.venv) [root@ip-10-34-44-18 kibana_dashboard_runtime_monitor]# 
