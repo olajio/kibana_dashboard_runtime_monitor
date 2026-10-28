@@ -9,6 +9,35 @@ and the paths are RHEL's. Do not use them as-is on Debian or Ubuntu.
 
 For the general short path back into the project, see [`RESUME.md`](RESUME.md).
 
+## What happened on this host (28 Oct 2026)
+
+Followed through step 4 and it worked. For the record, so the next person knows what to
+expect:
+
+| Check | Result |
+|---|---|
+| `uname -m` | `x86_64`, so the Edge RPM applies |
+| Proxy environment variables | none set |
+| Microsoft repo, Google repo | both `HTTP 200` through the host's trust store |
+| Install | Option A, Edge `156.0.4314.50` from Microsoft's repo, 38 packages |
+| `ldd` on the browser | no missing libraries (dnf pulled in GTK, Mesa, fonts, ALSA, ...) |
+| `dnf list available \| grep chromium` | nothing, as predicted: Chromium is not in RHEL's repos |
+| Dry run as root | all 22 dashboards collected: 7 ok, 12 degraded, 3 failed |
+| Browser certificate trust | worked with no extra step (panels rendered, so no `ERR_CERT_*`) |
+
+Things the install did that a host owner may want to know:
+
+- About **1 GB** of disk and 38 packages, including GTK, fonts and Mesa drivers.
+- It enabled the **`llvm-toolset`** module stream as a dependency side effect.
+- It left **`/etc/yum.repos.d/microsoft-edge.repo`**, so a routine `dnf update` upgrades
+  Edge. The collector's selectors are tied to browser behaviour, so after any major Edge
+  upgrade, suspect the browser version first if results shift suddenly
+  (`/opt/microsoft/msedge/msedge --version`).
+
+The `degraded` and `failed` counts are the collector reporting on the dashboards, not a
+browser problem. To see why, run `python scripts/summarize_run.py run.json`: it breaks the
+not-ok panels down by status and lists panel titles that fail on several dashboards.
+
 ## What is different about this host
 
 | Fact | Why it matters |
@@ -155,32 +184,109 @@ Success looks like the `Connection:` line with `<-aws-bundle`, then
 Cron will run the collector as `dhm`, not root, and root hides a problem: **the account
 used to be created with no home directory.** Chromium and Edge write a profile, crash
 reports and a certificate store under `HOME`, so a browser that starts for root can fail
-for an account with nowhere to write.
+for an account with nowhere to write. The playbook now creates `dhm` with `/var/lib/dhm`
+as its home.
 
-The playbook now creates `dhm` with `/var/lib/dhm` as its home, and sets `HOME` in the
-cron line. Apply it:
+Testing as `dhm` means running the playbook first, because it creates the account and the
+checkout `dhm` runs from.
 
-```bash
-git pull origin main
-ansible-playbook -i inventory deploy/dhm-deploy.yml
+### 5a. Know what the playbook targets
+
+The playbook says `hosts: dhm_runners`. Ansible only runs it against hosts in a group of
+that name. **If your inventory has no such group, nothing is run, and the command still
+exits 0:**
+
+```
+[WARNING]: Could not match supplied host pattern, ignoring: dhm_runners
+PLAY [Deploy the Dashboard Health Monitor]
+skipping: no hosts matched
+PLAY RECAP
 ```
 
-If the account already exists from an earlier run, the playbook also creates the
-directory, so a re-run repairs it. By hand, the equivalent is:
+That looks like success and did nothing (tested). `deploy/inventory.local.ini` defines the
+group as the machine you are on, for running the playbook on the host itself:
 
-```bash
-sudo usermod -d /var/lib/dhm dhm
-sudo install -d -o dhm -g dhm -m 0750 /var/lib/dhm
+```ini
+[dhm_runners]
+localhost ansible_connection=local
 ```
 
-Then run the collector as that account, from the same checkout the playbook deployed:
+Check it matched before trusting any run: `--list-hosts` must show a host.
+
+```bash
+ansible-playbook -i deploy/inventory.local.ini deploy/dhm-deploy.yml --list-hosts
+```
+
+### 5b. Check the host first
+
+Each of these is something the playbook silently depends on:
+
+```bash
+ansible --version | head -1            # the playbook uses ansible.builtin.* names
+sudo python3 --version                 # the playbook runs under sudo, see below
+which git crontab                      # both must exist (crontab comes from cronie)
+cat /etc/cron.allow 2>/dev/null        # if this file exists, dhm must be listed in it
+git --version
+```
+
+- **`sudo python3 --version` must be 3.10 or newer.** Under sudo, `PATH` is reset to the
+  system default, so `python3` may resolve to RHEL 8's own 3.6 rather than your 3.14 in
+  `/usr/local`. If it does, pass the real interpreter:
+  `-e dhm_python=/usr/local/python-3.14/bin/python3`.
+- **Ansible version.** The playbook uses fully qualified names (`ansible.builtin.git`).
+  It was tested on ansible-core 2.19. The host has the Ansible Engine 2 repo configured,
+  which is the 2.9 line; I have not confirmed 2.9 accepts these names. A
+  `--syntax-check` fails before touching anything, so it is safe to find out:
+  `ansible-playbook -i deploy/inventory.local.ini deploy/dhm-deploy.yml --syntax-check`.
+- **`/etc/cron.allow`.** If it exists and does not list `dhm`, cron silently refuses to
+  run `dhm`'s jobs even though installing the entry succeeds.
+
+### 5c. Rehearse, then deploy without scheduling
+
+```bash
+# 1. read-only rehearsal: runs the preflight for real, previews every change
+ansible-playbook -i deploy/inventory.local.ini deploy/dhm-deploy.yml --check --diff
+
+# 2. deploy for real, but leave the schedule commented out
+ansible-playbook -i deploy/inventory.local.ini deploy/dhm-deploy.yml -e dhm_cron_disabled=true
+```
+
+Add `-e dhm_python=...` to both if 5b said so. The `--check` run can fail on its last
+task (the cron entry) if `dhm` does not exist yet, because check mode never creates the
+account. That is a limit of rehearsing, not a fault; the real run creates the account
+first.
+
+**Why `dhm_cron_disabled=true` first.** Without it the playbook installs a live `*/30`
+entry, which starts writing to Elasticsearch within half an hour. If the ILM policy and
+index template do not exist by then, the first write auto-creates the data stream with
+**default mappings instead of ours**, and fixing that means deleting the data stream and
+its data. Apply the cluster assets first (`--tags setup`, or
+`python scripts/setup_elasticsearch.py` by hand), then remove the flag.
+
+### 5d. Run the collector as `dhm`
+
+From the checkout the playbook deployed (`/opt/dashboard-health-monitor`, a **separate**
+directory from your manual `/opt/kibana_dashboard_runtime_monitor`):
 
 ```bash
 sudo -u dhm env HOME=/var/lib/dhm bash -c \
   'cd /opt/dashboard-health-monitor && .venv/bin/python scripts/run_collector.py --dry-run --out /var/lib/dhm/run.json'
 ```
 
-A result that differs from the root run points at the account, not the collector.
+A result that differs from the root run points at the account, not the collector. The
+likely failures are a browser that cannot create its profile (the home directory), a
+virtualenv `dhm` cannot execute because it cannot traverse the Python install, or a
+settings file `dhm` cannot read.
+
+### Other things to be wary of
+
+| Risk | What happens |
+|---|---|
+| Playbook creates a second checkout | It deploys to `/opt/dashboard-health-monitor`. Your manual `/opt/kibana_dashboard_runtime_monitor` stays as it is; pass `-e dhm_root=...` to reuse it instead. |
+| The playbook writes its own `config/settings.yaml` | It renders from `deploy/settings.prod.yaml.j2` and replaces any hand-written one in its checkout. `ca_bundle` now defaults to the system bundle so the proxy's CA is trusted. |
+| It needs GitHub | The `git` task clones from `github.com` through the host's network and trust store. |
+| It changes the host | Creates the `dhm` account, `/var/lib/dhm`, `/var/log/dhm`, a logrotate rule and (unless disabled) `dhm`'s crontab. |
+| A real run writes to the cluster | The cron entry runs `run_collector.py` without `--dry-run`. |
 
 ## Step 6. Certificates in the browser
 
@@ -237,17 +343,27 @@ the Ansible playbook for the schedule.
 
 ## What has and has not been verified
 
-**Checked against evidence:**
-- The host is RHEL 8.10 on EC2 (`/etc/os-release`, the hostname).
-- Secret resolution, TLS via `ca_bundle` and live discovery of all 22 dashboards work on
-  this host (from your last run).
-- `playwright install-deps` is `apt-get` only, and Playwright adds `--no-sandbox` by
-  default (read from the Playwright 1.62 source).
+**Confirmed on this host (28 Oct 2026):**
+- RHEL 8.10 on EC2, x86_64.
+- Both vendor repos reachable; Edge installs from Microsoft's repo; no missing libraries.
+- A dry run as root collects all 22 dashboards. The browser trusts the proxy's CA.
+- Secret resolution, TLS via `ca_bundle` and live discovery of all 22 dashboards.
+
+**Confirmed from Playwright's source:** `install-deps` is `apt-get` only, and
+`--no-sandbox` is added by default.
+
+**Confirmed in a sandbox with ansible-core 2.19** (not on this host):
+- An inventory with no `dhm_runners` group makes the playbook match nothing and exit 0.
+- The new Edge detection passes when Edge is installed the RPM way and fails when it is
+  absent; the old multi-name `which` failed even with Edge present.
+- Root running git in a repository owned by another user is refused ("dubious
+  ownership"), which is why the playbook no longer chowns the checkout to `dhm`.
+- The playbook passes `--syntax-check`, and `--check` walks through every task.
 
 **Not verified, so confirm as you go:**
-- That either vendor repo is reachable from this host. Step 1 tests it.
-- That an Edge build exists for this host's architecture. `uname -m` in step 1.
-- That the missing home directory is what breaks the browser under `dhm`. It is the
-  likely cause of a root-versus-`dhm` difference, but it has not been reproduced.
-- That the browser trusts the proxy's CA without extra steps (step 6).
-- SELinux behaviour with the installed browser (step 7).
+- That the playbook runs on this host's Ansible version.
+- That `dhm` can run the browser (step 5d). The missing home directory is the likely
+  cause of any root-versus-`dhm` difference, but it has not been reproduced.
+- That `dhm` can traverse the Python install and read the checkout.
+- That the cron entry actually fires as `dhm` (`/etc/cron.allow`, SELinux).
+- SELinux behaviour with the installed browser under cron.

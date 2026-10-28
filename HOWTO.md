@@ -546,13 +546,33 @@ The repo is the deployment artifact, and the playbook is in it:
 | `deploy/dhm-deploy.yml` | the playbook — checkout, virtualenv, settings, log dir, logrotate, cron |
 | `deploy/settings.prod.yaml.j2` | the rendered `config/settings.yaml`: no endpoints, no credentials |
 
-```bash
-# first time on a host — also applies the ILM policy + index template
-ansible-playbook -i inventory deploy/dhm-deploy.yml --tags all,setup
+The playbook says `hosts: dhm_runners`, and Ansible only runs it against hosts in a group
+of that name. **With no such group it prints `skipping: no hosts matched`, does nothing,
+and exits 0**, which looks like success. `deploy/inventory.local.ini` defines the group as
+the machine you are on. In order:
 
-# routine redeploy: idempotent, and leaves the cluster assets alone
-ansible-playbook -i inventory deploy/dhm-deploy.yml
+```bash
+# 1. rehearse: runs the read-only preflight, previews every change
+ansible-playbook -i deploy/inventory.local.ini deploy/dhm-deploy.yml --check --diff
+
+# 2. first deploy, with the schedule left commented out
+ansible-playbook -i deploy/inventory.local.ini deploy/dhm-deploy.yml -e dhm_cron_disabled=true
+
+# 3. ILM policy + index template (runs only that task, as the service account)
+ansible-playbook -i deploy/inventory.local.ini deploy/dhm-deploy.yml --tags setup
+
+# 4. run the collector by hand as the service account (LINUX_BROWSER_SETUP.md, step 5d)
+
+# 5. only when that is clean, enable the schedule
+ansible-playbook -i deploy/inventory.local.ini deploy/dhm-deploy.yml
 ```
+
+Why not just run step 5 first: it installs a live `*/30` entry, and if the cluster assets
+do not exist yet, the first write auto-creates the data stream with default mappings
+instead of ours. Undoing that means deleting the data stream and its data.
+
+The host-specific preconditions (the Python that `sudo` sees, `crontab`, `/etc/cron.allow`,
+the Ansible version) are in [`LINUX_BROWSER_SETUP.md`](LINUX_BROWSER_SETUP.md), step 5b.
 
 Set these in your inventory or with `-e`; the defaults in the playbook match our
 pre-staging values:
@@ -563,6 +583,9 @@ dhm_aws_region: us-east-1
 dhm_cluster: fed2
 dhm_space: fed2                             # the /s/<id> slug in production
 dhm_cron_minute: "*/30"
+dhm_python: python3                         # set to /usr/local/python-3.14/bin/python3 if
+                                            # `sudo python3` is older than 3.10 (RHEL 8: 3.6)
+dhm_cron_disabled: false                    # true = install the schedule commented out
 ```
 
 What the playbook does, beyond the obvious:

@@ -5,15 +5,34 @@
 # renders config/settings.yaml (which holds no endpoints and no credentials —
 # those come from AWS Secrets Manager), and installs the schedule.
 #
-#   # first time on a host: also apply the ILM policy + index template
-#   ansible-playbook -i inventory deploy/dhm-deploy.yml --tags all,setup
+# Running it ON the target host itself (no inventory of your own needed). In order:
 #
-#   # routine redeploy (idempotent; leaves the cluster assets alone)
-#   ansible-playbook -i inventory deploy/dhm-deploy.yml
+#   1. rehearse: runs the read-only preflight for real, previews every change
+#        ansible-playbook -i deploy/inventory.local.ini deploy/dhm-deploy.yml --check --diff
+#
+#   2. first real deploy, WITHOUT scheduling anything yet
+#        ansible-playbook -i deploy/inventory.local.ini deploy/dhm-deploy.yml \
+#            -e dhm_cron_disabled=true
+#
+#   3. apply the ILM policy + index template. `--tags setup` runs ONLY that task, as the
+#      service account, so it needs step 2 to have created the checkout. Do this BEFORE
+#      anything writes, or the first write auto-creates the data stream with default
+#      mappings instead of ours.
+#        ansible-playbook -i deploy/inventory.local.ini deploy/dhm-deploy.yml --tags setup
+#
+#   4. run the collector by hand as the service account (see LINUX_BROWSER_SETUP.md,
+#      step 5d), and only when that is clean:
+#
+#   5. turn the schedule on (re-run without the disabled flag)
+#        ansible-playbook -i deploy/inventory.local.ini deploy/dhm-deploy.yml
+#
+# `hosts: dhm_runners` must match a group in the inventory you pass. If nothing
+# matches, ansible-playbook prints "skipping: no hosts matched" and does NOTHING while
+# reporting success. deploy/inventory.local.ini defines the group as this machine.
 #
 # Prerequisites on the target host, which the preflight tasks check:
-#   - Python 3.10+
-#   - Microsoft Edge on PATH
+#   - Python 3.10+ (set dhm_python if `python3` under sudo is older; RHEL 8's is 3.6)
+#   - Microsoft Edge, or point dhm_browser_channel / dhm_browser_executable elsewhere
 #   - outbound HTTPS to the Kibana and Elasticsearch endpoints
 #   - an instance/task role with secretsmanager:GetSecretValue on dhm_aws_secret_id
 - name: Deploy the Dashboard Health Monitor
@@ -30,6 +49,10 @@
     # a certificate store under HOME, so an account with no home directory can fail
     # to launch a browser even though root (which has one) can.
     dhm_home: /var/lib/dhm
+    # The interpreter used to build the virtualenv. Under sudo, PATH is reset to the
+    # system default, so a custom Python (e.g. /usr/local/python-3.14/bin/python3) may
+    # not be what bare `python3` resolves to. RHEL 8's own python3 is 3.6.
+    dhm_python: python3
 
     # --- environment-specific ---
     dhm_aws_region: us-east-1
@@ -41,23 +64,43 @@
     # --- tuning ---
     dhm_browser_channel: msedge    # msedge | chrome | chromium
     dhm_browser_executable: ""     # e.g. /usr/bin/chromium (wins over the channel)
-    dhm_ca_bundle: ""              # e.g. /etc/pki/tls/certs/ca-bundle.crt
+    # RHEL's system bundle. Behind a TLS-inspecting proxy the proxy's CA lives here, and
+    # without it every REST call fails with CERTIFICATE_VERIFY_FAILED. Harmless where no
+    # proxy is involved (the file also holds the public CAs). Set "" to use certifi's.
+    dhm_ca_bundle: /etc/pki/tls/certs/ca-bundle.crt
     dhm_time_from: now-30d
     dhm_verify_tls: "true"
     dhm_dashboard_timeout_ms: 180000
     dhm_cron_minute: "*/30"
+    # Install the schedule but leave it commented out. Use this for the first deploy so
+    # nothing starts writing to Elasticsearch before the cluster assets exist.
+    dhm_cron_disabled: false
 
   tasks:
     # ---------------------------------------------------------------- preflight
+    # check_mode: false on the read-only preflight tasks, so --check actually runs them.
+    # Otherwise command tasks are skipped in check mode, their results have no `rc`, and
+    # the conditional below errors instead of reporting anything useful.
     - name: Check Python is 3.10 or newer
-      ansible.builtin.command: python3 -c "import sys; assert sys.version_info >= (3, 10)"
+      ansible.builtin.command: "{{ dhm_python }} -c 'import sys; assert sys.version_info >= (3, 10), sys.version'"
       changed_when: false
+      check_mode: false
 
+    # `which a b c` exits non-zero if ANY name is missing, and `msedge` is never on PATH
+    # (the RPM installs /opt/microsoft/msedge/msedge plus microsoft-edge{,-stable} links),
+    # so the old multi-name `which` failed on a host with Edge correctly installed.
     - name: Locate Microsoft Edge
-      ansible.builtin.command: which microsoft-edge microsoft-edge-stable msedge
+      ansible.builtin.shell: |
+        for c in microsoft-edge-stable microsoft-edge msedge; do
+          command -v "$c" && exit 0
+        done
+        test -x /opt/microsoft/msedge/msedge && echo /opt/microsoft/msedge/msedge
+      args:
+        executable: /bin/bash
       register: dhm_edge
       changed_when: false
       failed_when: false
+      check_mode: false
 
     - name: Fail early if Edge is missing
       ansible.builtin.fail:
@@ -104,7 +147,7 @@
       ansible.builtin.pip:
         requirements: "{{ dhm_root }}/requirements.txt"
         virtualenv: "{{ dhm_root }}/.venv"
-        virtualenv_command: python3 -m venv
+        virtualenv_command: "{{ dhm_python }} -m venv"
 
     - name: Render settings (no endpoints, no credentials — those come from AWS)
       ansible.builtin.template:
@@ -120,12 +163,18 @@
         owner: "{{ dhm_user }}"
         mode: "0755"
 
-    - name: Give the service account the checkout
+    # Make the checkout readable by the service account WITHOUT changing its owner.
+    # An earlier version chowned the whole tree to dhm; the next playbook run then failed
+    # at the git task, because git refuses to operate as root in a repository owned by
+    # someone else ("detected dubious ownership"). The collector only reads the tree, so
+    # root ownership with world-readable modes is both sufficient and re-runnable. This
+    # also guards against a hardened root umask (027/077) leaving files unreadable.
+    - name: Make the checkout readable by the service account
       ansible.builtin.file:
         path: "{{ dhm_root }}"
         state: directory
-        owner: "{{ dhm_user }}"
         recurse: true
+        mode: "u=rwX,g=rX,o=rX"
 
     - name: Rotate the collector log
       ansible.builtin.copy:
@@ -165,6 +214,7 @@
         name: dashboard-health-monitor
         user: "{{ dhm_user }}"
         minute: "{{ dhm_cron_minute }}"
+        disabled: "{{ dhm_cron_disabled | bool }}"
         job: >-
           cd {{ dhm_root }} &&
           HOME={{ dhm_home }}
@@ -178,4 +228,4 @@
       ansible.builtin.pip:
         requirements: "{{ dhm_root }}/requirements.txt"
         virtualenv: "{{ dhm_root }}/.venv"
-        virtualenv_command: python3 -m venv
+        virtualenv_command: "{{ dhm_python }} -m venv"
