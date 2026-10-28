@@ -807,12 +807,19 @@ into the new stream before deleting.
   ldd /opt/microsoft/msedge/msedge | grep -i "not found"   # or your browser's path
   ```
 
-  Playwright can install the set for you (`python -m playwright install-deps
-  chromium`), which uses the system package manager rather than downloading a browser
-  — so it stays within the no-downloaded-browser rule. Failing that, the usual
-  suspects on RHEL-family hosts are `nss`, `nspr`, `atk`, `at-spi2-atk`, `cups-libs`,
-  `libdrm`, `libxkbcommon`, `libXcomposite`, `libXdamage`, `libXrandr`, `mesa-libgbm`,
-  `alsa-lib`, `pango`.
+  **Do not use `python -m playwright install-deps` on RHEL-family hosts.** It is
+  hardcoded to `apt-get`: for any distro that is not Ubuntu, Debian or Mint it falls
+  back to an Ubuntu profile and runs `apt-get`, which does not exist here. (Checked in
+  Playwright's own source, not assumed.) On RHEL, installing the browser's RPM with
+  `dnf` pulls in its declared dependencies automatically, which is the reason to
+  prefer the vendor RPM over unpacking a browser by hand. If a library is still
+  reported missing, install it by name; the usual suspects are `nss`, `nspr`, `atk`,
+  `at-spi2-atk`, `cups-libs`, `libdrm`, `libxkbcommon`, `libXcomposite`, `libXdamage`,
+  `libXrandr`, `mesa-libgbm`, `alsa-lib`, `pango`. On Ubuntu/Debian hosts
+  `install-deps` does work.
+
+  For the RHEL 8 EC2 host specifically, see
+  [`LINUX_BROWSER_SETUP.md`](LINUX_BROWSER_SETUP.md).
 
 - **`SSLCertVerificationError: ... self signed certificate in certificate chain`** —
   almost always a TLS-inspecting proxy between the runner and the endpoint, re-signing
