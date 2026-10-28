@@ -1,0 +1,33 @@
+# Commands to compare two collector runs on the production host.
+#
+# Run these ON the server, from the checkout. They only read files; nothing is written
+# to Elasticsearch or the cluster.
+#
+# Why: the 'dhm' dry run matched the earlier root run on 21 of 22 dashboards, but
+# Priority Risks changed from degraded (20 ok, 15 not_ok) to ok (35 ok, 0 not_ok)
+# between two runs. This shows what kind of change that was.
+
+cd /opt/kibana_dashboard_runtime_monitor && source .venv/bin/activate
+
+# the dry run made as the 'dhm' account
+python scripts/summarize_run.py /var/lib/dhm/run.json
+
+# the earlier dry run made as root (only if run.json is still in the checkout)
+python scripts/summarize_run.py run.json
+
+# HOW TO READ EACH OUTPUT
+#
+# 1st table, one line per dashboard: the status of the panels that are NOT ok.
+#     empty    rendered but with no data
+#     missing  the registry expects the panel, the page never showed it
+#     timeout  still loading when the time budget ran out
+#     error    Kibana showed an error state
+#   For Priority Risks, compare the two runs:
+#     'empty' in the first run   -> the queries returned nothing for a moment
+#     'missing' in the first run -> the page had not shown the panels yet
+#
+# 2nd table: panel titles that are not ok on MORE THAN ONE dashboard. A title that
+#   repeats is more likely a false positive (CDM-Nav-LCKUP is the suspect) than a
+#   dozen separate data problems.
+#
+# Paste both outputs into the chat.
