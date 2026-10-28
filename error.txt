@@ -1,0 +1,12 @@
+sh-4.4$ sudo su
+[root@ip-10-34-44-18 bin]# cd /opt/kibana_dashboard_runtime_monitor && source .venv/bin/activate
+(.venv) [root@ip-10-34-44-18 kibana_dashboard_runtime_monitor]# 
+(.venv) [root@ip-10-34-44-18 kibana_dashboard_runtime_monitor]# python scripts/summarize_run.py /var/lib/dhm/run.json
+/usr/local/python-3.14/bin/python3.14: can't open file '/opt/kibana_dashboard_runtime_monitor/scripts/summarize_run.py': [Errno 2] No such file or directory
+(.venv) [root@ip-10-34-44-18 kibana_dashboard_runtime_monitor]# python scripts/summarize_run.py run.json
+/usr/local/python-3.14/bin/python3.14: can't open file '/opt/kibana_dashboard_runtime_monitor/scripts/summarize_run.py': [Errno 2] No such file or directory
+(.venv) [root@ip-10-34-44-18 kibana_dashboard_runtime_monitor]# sudo python scripts/summarize_run.py /var/lib/dhm/run.json
+sudo: python: command not found
+(.venv) [root@ip-10-34-44-18 kibana_dashboard_runtime_monitor]# sudo python3 scripts/summarize_run.py /var/lib/dhm/run.json
+python3: can't open file 'scripts/summarize_run.py': [Errno 2] No such file or directory
+(.venv) [root@ip-10-34-44-18 kibana_dashboard_runtime_monitor]# 
