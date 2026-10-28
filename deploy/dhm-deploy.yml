@@ -26,6 +26,10 @@
     dhm_version: main
     dhm_log_dir: /var/log/dhm
     dhm_user: dhm
+    # Home for the service account. Chromium/Edge write a profile, crash reports and
+    # a certificate store under HOME, so an account with no home directory can fail
+    # to launch a browser even though root (which has one) can.
+    dhm_home: /var/lib/dhm
 
     # --- environment-specific ---
     dhm_aws_region: us-east-1
@@ -75,8 +79,19 @@
       ansible.builtin.user:
         name: "{{ dhm_user }}"
         system: true
-        create_home: false
+        home: "{{ dhm_home }}"
+        create_home: true
         shell: /usr/sbin/nologin
+
+    # Needed separately from the task above: if the account already existed with no
+    # home (an earlier version of this playbook created it that way), the user module
+    # changes the recorded home but does not create the directory.
+    - name: Ensure the service account's home exists and is private
+      ansible.builtin.file:
+        path: "{{ dhm_home }}"
+        state: directory
+        owner: "{{ dhm_user }}"
+        mode: "0750"
 
     - name: Check out the repository
       ansible.builtin.git:
@@ -152,6 +167,7 @@
         minute: "{{ dhm_cron_minute }}"
         job: >-
           cd {{ dhm_root }} &&
+          HOME={{ dhm_home }}
           DHM_AWS_SECRET_ID={{ dhm_aws_secret_id }}
           DHM_AWS_REGION={{ dhm_aws_region }}
           {{ dhm_root }}/.venv/bin/python scripts/run_collector.py
