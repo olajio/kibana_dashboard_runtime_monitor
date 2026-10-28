@@ -1,0 +1,62 @@
+(.venv) [root@ip-10-34-44-18 kibana_dashboard_runtime_monitor]# cd /opt/kibana_dashboard_runtime_monitor && source .venv/bin/activate && git pull origin main
+remote: Enumerating objects: 11, done.
+remote: Counting objects: 100% (11/11), done.
+remote: Compressing objects: 100% (7/7), done.
+remote: Total 8 (delta 3), reused 2 (delta 1), pack-reused 0 (from 0)
+Unpacking objects: 100% (8/8), 6.15 KiB | 286.00 KiB/s, done.
+From https://github.com/olajio/kibana_dashboard_runtime_monitor
+ * branch            main       -> FETCH_HEAD
+   6bfae6c..80b9959  main       -> origin/main
+Updating 6bfae6c..80b9959
+Fast-forward
+ commands.txt | 66 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++---
+ error.txt    | 12 ------------
+ 2 files changed, 63 insertions(+), 15 deletions(-)
+ delete mode 100644 error.txt
+(.venv) [root@ip-10-34-44-18 kibana_dashboard_runtime_monitor]# 
+(.venv) [root@ip-10-34-44-18 kibana_dashboard_runtime_monitor]# 
+(.venv) [root@ip-10-34-44-18 kibana_dashboard_runtime_monitor]# python scripts/debug_spike.py --dashboard-title "Federal Overview" --out debug.json
+
+--- Registry expects for 'Federal Overview' (7a339ff0-09ce-11ed-9940-d955314b400b) ---
+  panel_id='9a28fdb0-3a5a-4182-af28-07b06faab1fe'  title='DIVIDER - Federal Overview'  type=visualization
+  panel_id='55e00ea4-5411-4059-bb92-271a0f12a9a3'  title='Connected Agencies'  type=lens
+  panel_id='66bef5f6-0846-4430-a064-9907f5caf7f2'  title='Disconnected Agencies'  type=lens
+  panel_id='3857b5ea-26c6-4c06-a9b2-c857a89d57e2'  title='Count of Devices by Device Category'  type=lens
+  panel_id='5badf3da-579b-4238-87db-0625d3261147'  title=''  type=lens
+  panel_id='1a174760-6814-4eb4-a429-5e623d01f4f2'  title='CDM-Nav-LCKUP'  type=visualization
+
+Loading https://fdb-es-federal.kb.us-gov-east-1.aws.elastic-cloud.com/s/fed2/app/dashboards#/view/7a339ff0-09ce-11ed-9940-d955314b400b?_g=(time:(from:now-30d,to:now)) for 15000ms...
+
+Wrote debug.json
+Container-selector counts on the page: {'[data-test-subj="embeddablePanel"]': 0, '[data-test-subj="dashboardPanel"]': 9, '[data-shared-item]': 0, '.embPanel': 0, '.dshDashboardGrid__item': 9}
+Total unique panel elements collected: 9
+Expected data panels from registry:   6
+(.venv) [root@ip-10-34-44-18 kibana_dashboard_runtime_monitor]# python - <<'PY'
+> import json
+> for p in json.load(open("debug.json"))["panels"]:
+>     if p.get("emptyText") is not None:
+>         print({k: p.get(k) for k in ("emptyText","titleTestSubjText","anyHeadingText","selfRenderComplete","hasError")})
+> PY
+(.venv) [root@ip-10-34-44-18 kibana_dashboard_runtime_monitor]# 
+(.venv) [root@ip-10-34-44-18 kibana_dashboard_runtime_monitor]# # (b) the title of every panel that is not ok, per dashboard (from the dhm dry run)
+(.venv) [root@ip-10-34-44-18 kibana_dashboard_runtime_monitor]# python - <<'PY'
+> import json
+> for d in json.load(open("/var/lib/dhm/run.json")):
+>     bad = [p["panel_title"] for p in d["panels"] if p["render_status"] != "ok"]
+>     if bad: print(d["dashboard_title"], "->", bad)
+> PY
+Federal Overview -> ['CDM-Nav-LCKUP']
+Agency Details -> ['Agency Drilldown Counts', 'Trending Count of Devices', 'DIVIDER - Vulnerabilities and Misconfigurations', 'System Boundary Software and Device Counts', 'Open Findings for Agency Drilldown Vulnerability and Misconfiguration Counts', 'List of System Boundary Records', 'CDM-Nav-LCKUP']
+CyHy Overview -> ['CyHy Vulnerability Severity Levels', 'CyHy Most Prevalent Vulnerabilities', 'CyHy Average Days to Remediate Vulnerabilities per Agency', 'CyHy Vulnerability Severity Levels per Agency', 'CyHy Most Prevalent Operating Systems', 'CDM-Nav-LCKUP']
+Hardware Overview -> ['Agency Device Counts', 'Trending IP Version Status of Devices', 'CDM-Nav-LCKUP']
+HVA Devices -> ['List of HVA Devices', 'CDM-Nav-LCKUP']
+HVA System Boundaries -> ['CDM-Nav-LCKUP']
+HVA Vulnerabilities -> ['HVA Open Vulnerability Severity Level Counts', 'HVA Remediated Vulnerabilities', 'HVA Unique Open Vulnerability Severity Level Counts', 'CDM-Nav-LCKUP']
+Misconfiguration Overview -> ['Open Findings for Misconfigurations with Highest Count', 'CDM-Nav-LCKUP']
+Remediated Vulnerabilities -> ['MTTR KEVs', 'MTTR Vulnerabilities per Severity', 'List of Remediated Vulnerabilities', 'CDM-Nav-LCKUP']
+SCuBA Overview -> ['SCuBA Security Baseline Reports - Incorrect Results', 'SCuBA - Banner - Entra ID Information', 'Common Control 13.1v1 - Alert Rules']
+SCuBA Overview - All -> ['SCuBA Tests Failed Metric - All', 'SCuBA Security Baseline Reports - Incorrect Results - All', 'SCuBA - Banner - Entra ID Information', 'Tenant Inventory Data']
+Software Overview -> ['Software with Highest Count', 'CDM-Nav-LCKUP']
+SSVC Overview -> ['SSVC Exploitation: Active', 'SSVC Count of CVEs with Exploitation: PoC', 'SSVC Exploitation: PoC with Further Decision Points', 'SSVC Count of CVEs with Exploitation: None', 'SSVC Exploitation: None with Further Decision Points', 'CDM-Nav-LCKUP']
+Vulnerability Overview -> ['Open Findings for Vulnerabilities with Highest Count', 'Open Findings for Agency Vulnerability Counts']
+(.venv) [root@ip-10-34-44-18 kibana_dashboard_runtime_monitor]# 
