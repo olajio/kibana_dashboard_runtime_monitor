@@ -1,7 +1,15 @@
-# Commands to compare two collector runs on the production host.
+# Commands to run on the production host while investigating the collector's results.
 #
-# Run these ON the server, from the checkout. They only read files; nothing is written
-# to Elasticsearch or the cluster.
+# Run these ON the server, from the checkout. Everything here only reads: nothing is
+# written to Elasticsearch or the cluster. (debug_spike.py opens a browser against
+# Kibana, but only to read the page.)
+#
+#   SECTION 1  compare two dry runs                      (what kind of change was it?)
+#   SECTION 2  why are static label panels "empty"?       (CDM-Nav-LCKUP and friends)
+#
+# ======================================================================================
+# SECTION 1. Compare two collector runs
+# ======================================================================================
 #
 # Why: the 'dhm' dry run matched the earlier root run on 21 of 22 dashboards, but
 # Priority Risks changed from degraded (20 ok, 15 not_ok) to ok (35 ok, 0 not_ok)
@@ -37,5 +45,57 @@ python scripts/summarize_run.py run.json
 # 2nd table: panel titles that are not ok on MORE THAN ONE dashboard. A title that
 #   repeats is more likely a false positive (CDM-Nav-LCKUP is the suspect) than a
 #   dozen separate data problems.
+#
+# Paste both outputs into the chat.
+
+
+# ======================================================================================
+# SECTION 2. Why are static label panels reported as "empty"?
+# ======================================================================================
+#
+# What the first two sections found: every not-ok panel in both runs is `empty` (none
+# missing, timed out or errored), and CDM-Nav-LCKUP is `empty` on 11 dashboards. It is a
+# TSVB panel of type markdown whose whole content is the static text
+# "* ES-6 _Federal Dashboard_", so it cannot be a data problem. Why it is empty on 11
+# dashboards and fine on 10 is not known: dashboard filters, panel size and title
+# settings were checked and ruled out.
+#
+# This section does two things:
+#   (a) dumps the raw page state for Federal Overview, which has exactly ONE empty panel,
+#       so the output shows what the page itself says about it;
+#   (b) lists the titles of EVERY not-ok panel, to check the other ~34 against the 32
+#       static-text panels in the export.
+#
+# debug_spike.py writes debug.json into the checkout; it is git-ignored (debug*.json).
+
+cd /opt/kibana_dashboard_runtime_monitor && source .venv/bin/activate && git pull origin main
+
+# (a) raw state of every panel the page shows, then only those flagged empty
+python scripts/debug_spike.py --dashboard-title "Federal Overview" --out debug.json
+python - <<'PY'
+import json
+for p in json.load(open("debug.json"))["panels"]:
+    if p.get("emptyText") is not None:
+        print({k: p.get(k) for k in ("emptyText","titleTestSubjText","anyHeadingText","selfRenderComplete","hasError")})
+PY
+
+# (b) the title of every panel that is not ok, per dashboard (from the dhm dry run)
+python - <<'PY'
+import json
+for d in json.load(open("/var/lib/dhm/run.json")):
+    bad = [p["panel_title"] for p in d["panels"] if p["render_status"] != "ok"]
+    if bad: print(d["dashboard_title"], "->", bad)
+PY
+
+# HOW TO READ IT
+#
+# (a) Each printed line is one panel the page marked empty. emptyText is what the page
+#     itself says; if the line is the nav panel, the text tells us what the detector is
+#     catching. selfRenderComplete 'true' means Kibana finished rendering it, so the
+#     emptiness is Kibana's own answer, not the collector racing the page. hasError
+#     True would be a different problem.
+# (b) Compare the titles with the static-text list. A not-ok panel whose title is a
+#     banner, divider, logo or "Information"/"Disclaimer" text is a false positive.
+#     Panels with real chart/table titles are the ones that deserve a data check.
 #
 # Paste both outputs into the chat.
