@@ -179,7 +179,7 @@ Playwright disables the Chromium sandbox by default, so running as root is not a
 Success looks like the `Connection:` line with `<-aws-bundle`, then
 `Collecting 22 dashboards ...`, then results per dashboard instead of a launch error.
 
-## Step 5. Test as the `dhm` service account
+## Step 5. Test as the `dhm` service account, by hand
 
 Cron will run the collector as `dhm`, not root, and root hides a problem: **the account
 used to be created with no home directory.** Chromium and Edge write a profile, crash
@@ -187,106 +187,51 @@ reports and a certificate store under `HOME`, so a browser that starts for root 
 for an account with nowhere to write. The playbook now creates `dhm` with `/var/lib/dhm`
 as its home.
 
-Testing as `dhm` means running the playbook first, because it creates the account and the
-checkout `dhm` runs from.
+This test does not need Ansible. The account and the checkout you already have are
+enough, and the playbook later converges onto the same account (step 9).
 
-### 5a. Know what the playbook targets
-
-The playbook says `hosts: dhm_runners`. Ansible only runs it against hosts in a group of
-that name. **If your inventory has no such group, nothing is run, and the command still
-exits 0:**
-
-```
-[WARNING]: Could not match supplied host pattern, ignoring: dhm_runners
-PLAY [Deploy the Dashboard Health Monitor]
-skipping: no hosts matched
-PLAY RECAP
-```
-
-That looks like success and did nothing (tested). `deploy/inventory.local.ini` defines the
-group as the machine you are on, for running the playbook on the host itself:
-
-```ini
-[dhm_runners]
-localhost ansible_connection=local
-```
-
-Check it matched before trusting any run: `--list-hosts` must show a host.
+### 5a. Create the account
 
 ```bash
-ansible-playbook -i deploy/inventory.local.ini deploy/dhm-deploy.yml --list-hosts
+id dhm 2>/dev/null || useradd --system --home-dir /var/lib/dhm --create-home --shell /usr/sbin/nologin dhm
+chmod 0750 /var/lib/dhm
 ```
 
-### 5b. Check the host first
+This is what the playbook's `user` task does, so a later AAP run finds it already there.
 
-Each of these is something the playbook silently depends on:
+### 5b. Check `dhm` can reach and read what it needs
 
 ```bash
-ansible --version | head -1            # the playbook uses ansible.builtin.* names
-sudo python3 --version                 # the playbook runs under sudo, see below
-which git crontab                      # both must exist (crontab comes from cronie)
-cat /etc/cron.allow 2>/dev/null        # if this file exists, dhm must be listed in it
-git --version
+umask
+namei -l /opt/kibana_dashboard_runtime_monitor/.venv/bin/python
+sudo -u dhm test -r /opt/kibana_dashboard_runtime_monitor/config/settings.yaml && echo "settings readable"
 ```
 
-- **`sudo python3 --version` must be 3.10 or newer.** Under sudo, `PATH` is reset to the
-  system default, so `python3` may resolve to RHEL 8's own 3.6 rather than your 3.14 in
-  `/usr/local`. If it does, pass the real interpreter:
-  `-e dhm_python=/usr/local/python-3.14/bin/python3`.
-- **Ansible version.** The playbook uses fully qualified names (`ansible.builtin.git`).
-  It was tested on ansible-core 2.19. The host has the Ansible Engine 2 repo configured,
-  which is the 2.9 line; I have not confirmed 2.9 accepts these names. A
-  `--syntax-check` fails before touching anything, so it is safe to find out:
-  `ansible-playbook -i deploy/inventory.local.ini deploy/dhm-deploy.yml --syntax-check`.
-- **`/etc/cron.allow`.** If it exists and does not list `dhm`, cron silently refuses to
-  run `dhm`'s jobs even though installing the entry succeeds.
-
-### 5c. Rehearse, then deploy without scheduling
+`namei -l` lists the permissions of every directory on the way to the virtualenv's Python,
+including the symlink into `/usr/local/python-3.14`. Each one must be traversable (`x`) by
+`dhm`. A `umask` of `027` or `077` means files you created are unreadable to other
+accounts. If anything fails, fix permissions without changing ownership:
 
 ```bash
-# 1. read-only rehearsal: runs the preflight for real, previews every change
-ansible-playbook -i deploy/inventory.local.ini deploy/dhm-deploy.yml --check --diff
-
-# 2. deploy for real, but leave the schedule commented out
-ansible-playbook -i deploy/inventory.local.ini deploy/dhm-deploy.yml -e dhm_cron_disabled=true
+chmod -R u=rwX,g=rX,o=rX /opt/kibana_dashboard_runtime_monitor
 ```
 
-Add `-e dhm_python=...` to both if 5b said so. The `--check` run can fail on its last
-task (the cron entry) if `dhm` does not exist yet, because check mode never creates the
-account. That is a limit of rehearsing, not a fault; the real run creates the account
-first.
-
-**Why `dhm_cron_disabled=true` first.** Without it the playbook installs a live `*/30`
-entry, which starts writing to Elasticsearch within half an hour. If the ILM policy and
-index template do not exist by then, the first write auto-creates the data stream with
-**default mappings instead of ours**, and fixing that means deleting the data stream and
-its data. Apply the cluster assets first (`--tags setup`, or
-`python scripts/setup_elasticsearch.py` by hand), then remove the flag.
-
-### 5d. Run the collector as `dhm`
-
-From the checkout the playbook deployed (`/opt/dashboard-health-monitor`, a **separate**
-directory from your manual `/opt/kibana_dashboard_runtime_monitor`):
+### 5c. Run the collector as `dhm`
 
 ```bash
 sudo -u dhm env HOME=/var/lib/dhm bash -c \
-  'cd /opt/dashboard-health-monitor && .venv/bin/python scripts/run_collector.py --dry-run --out /var/lib/dhm/run.json'
+  'cd /opt/kibana_dashboard_runtime_monitor && .venv/bin/python scripts/run_collector.py --dry-run --out /var/lib/dhm/run.json'
 ```
 
-A result that differs from the root run points at the account, not the collector. The
-likely failures are a browser that cannot create its profile (the home directory), a
-virtualenv `dhm` cannot execute because it cannot traverse the Python install, or a
-settings file `dhm` cannot read.
+Expect the same as the root run: `Connection:` showing `<-aws-bundle`, then all 22
+dashboards. Anything different points at the account, not the collector.
 
-### Other things to be wary of
-
-| Risk | What happens |
+| Symptom as `dhm` | Likely cause |
 |---|---|
-| Playbook creates a second checkout | It deploys to `/opt/dashboard-health-monitor`. Your manual `/opt/kibana_dashboard_runtime_monitor` stays as it is; pass `-e dhm_root=...` to reuse it instead. |
-| The playbook writes its own `config/settings.yaml` | It renders from `deploy/settings.prod.yaml.j2` and replaces any hand-written one in its checkout. `ca_bundle` now defaults to the system bundle so the proxy's CA is trusted. |
-| It needs GitHub | The `git` task clones from `github.com` through the host's network and trust store. |
-| It changes the host | Creates the `dhm` account, `/var/lib/dhm`, `/var/log/dhm`, a logrotate rule and (unless disabled) `dhm`'s crontab. |
-| A real run writes to the cluster | The cron entry runs `run_collector.py` without `--dry-run`. |
+| `Permission denied` on `.venv/bin/python` | `dhm` cannot traverse the path to Python. `namei -l` in 5b shows which directory. |
+| Browser fails to start, or cannot write a profile | The home directory, or SELinux (`sudo ausearch -m avc -ts recent`) |
+| Cannot read `settings.yaml` | File permissions; the `chmod` in 5b |
+| Same results as root | The account is fine |
 
 ## Step 6. Certificates in the browser
 
@@ -323,10 +268,147 @@ sudo ausearch -m avc -ts recent | tail
 An AVC denial naming the browser confirms it. Do not respond by disabling SELinux; ask
 for a policy fix.
 
+## Step 8. Write to Elasticsearch by hand
+
+Do this before AAP. The write path has never run on this cluster, and AAP adds layers
+(inventory, credential, SSH, `sudo`, execution environment, project sync). If the first AAP
+run fails you could not tell whether the collector or AAP is at fault. By hand there is
+one variable.
+
+**Order matters: the cluster assets first, then the write.** Applying the ILM policy and
+index template creates no index. The first `_bulk` write auto-creates the data stream from
+that template. If a write happens first, the data stream is created with **default mappings
+instead of ours**, and undoing that means deleting the data stream and its data.
+
+```bash
+# 1. ILM policy + index template
+sudo -u dhm env HOME=/var/lib/dhm bash -c \
+  'cd /opt/kibana_dashboard_runtime_monitor && .venv/bin/python scripts/setup_elasticsearch.py'
+
+# 2. the first real write, which creates the data stream
+sudo -u dhm env HOME=/var/lib/dhm bash -c \
+  'cd /opt/kibana_dashboard_runtime_monitor && .venv/bin/python scripts/run_collector.py'
+```
+
+Success: `Applied ILM policy: dashboard-health-monitor`,
+`Applied index template: dashboard-health-monitor`, then
+`Indexed 22 documents into dashboard-health-monitor`.
+
+Step 1 needs cluster privileges (`manage_ilm`, `manage_index_templates`). If it fails with a
+**403**, the key in the secret does not hold them (the long-lived key should not). Run that
+one command with an admin key, supplied without leaving it in shell history:
+
+```bash
+read -rsp 'Admin ES API key: ' DHM_ES_API_KEY; echo; export DHM_ES_API_KEY
+sudo -u dhm --preserve-env=DHM_ES_API_KEY env HOME=/var/lib/dhm bash -c \
+  'cd /opt/kibana_dashboard_runtime_monitor && .venv/bin/python scripts/setup_elasticsearch.py'
+unset DHM_ES_API_KEY
+```
+
+Passing `--es-api-key` works too but puts the key in history and the process list. If
+`sudo` refuses to preserve the variable, set it inside the `bash -c` instead.
+
+**Verify** (the `ES_URL` and `APIKEY` shorthand is from HOWTO §0.0):
+
+```bash
+# the data stream exists and is using OUR template and ILM policy
+curl -s --cacert /etc/pki/tls/certs/ca-bundle.crt "$ES_URL/_data_stream/dashboard-health-monitor" \
+  -H "Authorization: ApiKey $APIKEY" | python3 -m json.tool | grep -E '"(name|template|ilm_policy)"'
+
+# and holds the 22 documents
+curl -s --cacert /etc/pki/tls/certs/ca-bundle.crt "$ES_URL/dashboard-health-monitor/_count" \
+  -H "Authorization: ApiKey $APIKEY"
+```
+
+Expect `"template": "dashboard-health-monitor"`, `"ilm_policy": "dashboard-health-monitor"`
+and a count of 22. A different template name, or no `ilm_policy`, means a write got in
+before the assets did.
+
+## Step 9. Deploy from Ansible Automation Platform
+
+The playbook is meant to run from AAP, so **Ansible does not need installing on this
+host.** AAP runs Ansible from its own execution environment. The host needs SSH, `sudo`
+and a Python the modules can use. Over SSH the modules use RHEL's own Python, which has the
+SELinux bindings, so the custom 3.14 in `/usr/local` is not in their path.
+
+**Start the prerequisites in step 9a now**, in parallel with steps 5 to 8. Inventory
+entries, an SSH credential, a security-group rule for the controller and GitHub access can
+take other teams days.
+
+### 9a. What AAP needs
+
+| Object | Setting |
+|---|---|
+| **Inventory** | Add this host to a group named **`dhm_runners`**. `deploy/inventory.local.ini` is for running Ansible on the host itself and is irrelevant here. |
+| **Credential (Machine)** | SSH user and key for the host, with privilege escalation (`sudo`). The playbook uses `become: true`. |
+| **Project** | `https://github.com/olajio/kibana_dashboard_runtime_monitor.git`, branch `main`. A private repository needs a Source Control credential. |
+| **Job template** | Playbook `deploy/dhm-deploy.yml`, with this inventory, credential and project. Extra variables below. Tick **Prompt on launch** for Job Type and Job Tags. |
+
+Extra variables on the template:
+
+```yaml
+dhm_python: /usr/local/python-3.14/bin/python3
+dhm_cron_disabled: true
+```
+
+`dhm_python` only builds the virtualenv. Under `sudo`, `PATH` resets, so bare `python3` may
+be RHEL 8's own 3.6, and the playbook's preflight needs 3.10 or newer. **Do not** set
+`ansible_python_interpreter` to the 3.14 path as well: that points the modules at an
+interpreter with no SELinux bindings, which fails on the first file task.
+
+AAP needs **no AWS credential**. The secret is read by the host's instance role.
+
+Menu names vary a little between AAP versions.
+
+### 9b. Launch in this order
+
+1. **Run Command, module `ping`**, from Inventories, Hosts, the host, Run Command. This
+   checks SSH, `sudo` and Python before any playbook runs, and it is cheap. A failure here
+   is an inventory, credential or network problem, not a playbook problem.
+2. **Job Type: Check** (with Show Changes on). This runs the read-only preflight for real
+   and previews every change. Its last task, the cron entry, may fail if `dhm` does not
+   exist yet, because check mode never creates the account. If you did step 5a it does
+   exist.
+3. **A real run** with `dhm_cron_disabled: true`. This creates the checkout at
+   `/opt/dashboard-health-monitor`, the virtualenv, `settings.yaml`, the log directory and
+   a logrotate rule, and installs the schedule commented out.
+4. **Test as `dhm` from the checkout the playbook made**, the same command as step 5c with
+   `cd /opt/dashboard-health-monitor`.
+5. **Enable the schedule**: re-run with `dhm_cron_disabled` removed or `false`.
+
+Step 8 already applied the ILM policy and template, so you do not need the playbook's
+`setup` tag. If you ever do (a new cluster), put `setup` in Job Tags: it runs only that
+task, as `dhm`, and needs step 3 to have created the checkout.
+
+### 9c. Things to watch for
+
+| Risk | What happens |
+|---|---|
+| **A green job is not proof** | With no host in `dhm_runners` the job prints `skipping: no hosts matched`, runs nothing and reports success. Check the host appears in the play recap. |
+| **GitHub is needed twice** | The controller syncs the project, and the host runs `git` itself. Both need `github.com`. |
+| **Execution environment's ansible-core** | Newer ansible-core drops support for Python 3.6 on the target, and RHEL 8's system Python is 3.6. If the first task fails with a Python version error, that is it. Paste the exact message. |
+| **`sudo` needs a password** | The machine credential needs the privilege-escalation password, or `NOPASSWD` for that user. |
+| **`/etc/cron.allow`** | If it exists and does not list `dhm`, cron silently skips `dhm`'s jobs even though installing the entry succeeds. `ls -l /etc/cron.allow /etc/cron.deny` (printing nothing from `cat` is ambiguous: a missing file and an empty one look the same). |
+| **Second checkout** | The playbook deploys to `/opt/dashboard-health-monitor`. Your manual `/opt/kibana_dashboard_runtime_monitor` stays as it is. Delete it once AAP works, or pass `dhm_root` to reuse it. |
+| **Its own `settings.yaml`** | The playbook renders `config/settings.yaml` from `deploy/settings.prod.yaml.j2` and replaces any hand-written one in its checkout. `ca_bundle` defaults to the system bundle so the proxy's CA is trusted. |
+| **It changes the host** | Creates the `dhm` account, `/var/lib/dhm`, `/var/log/dhm`, a logrotate rule and, unless disabled, `dhm`'s crontab. |
+| **A real run writes to the cluster** | The cron entry runs `run_collector.py` without `--dry-run`. |
+
+### 9d. Alternative: run Ansible on the host itself
+
+Not the plan, noted so the files in `deploy/` make sense. `deploy/inventory.local.ini`
+defines `dhm_runners` as the machine you are on, so
+`ansible-playbook -i deploy/inventory.local.ini deploy/dhm-deploy.yml --check --diff`
+works once Ansible is installed (the host has none; `pip install ansible-core` in a
+separate virtualenv works on Python 3.14). Expect trouble from running it against the
+custom 3.14 interpreter on an SELinux host, which AAP over SSH avoids.
+
 ## When it works
 
-Return to [`RESUME.md`](RESUME.md) step 5: `setup_elasticsearch.py`, then a real run, then
-the Ansible playbook for the schedule.
+The sequence is: browser (steps 1 to 4), `dhm` by hand (5), certificates and SELinux if
+needed (6, 7), Elasticsearch by hand (8), then AAP (9). After step 9 enables the schedule,
+the remaining work is the Kibana side: the data view, the trend dashboard and the alert
+rules. Return to [`RESUME.md`](RESUME.md) for those.
 
 ## Troubleshooting
 
@@ -338,6 +420,11 @@ the Ansible playbook for the schedule.
 | `error while loading shared libraries: libXXX.so` | Step 3: `dnf install` the named library. |
 | `BEWARE: your OS is not officially supported by Playwright; installing dependencies for ubuntu24.04 as a fallback`, then an `apt-get` failure | You ran `playwright install-deps`. It is apt-only. Use step 3 instead. |
 | Works as root, fails under cron | Step 5: the `dhm` account and its home directory. |
+| `Permission denied` as `dhm` on `.venv/bin/python` | Step 5b: `namei -l` shows the directory `dhm` cannot traverse. |
+| `setup_elasticsearch.py` returns 403 | Step 8: the key lacks `manage_ilm` / `manage_index_templates`. Run that one command with an admin key. |
+| Data stream exists but `template` is not `dashboard-health-monitor` | A write happened before the assets existed. Step 8 explains the order; the fix is deleting the data stream. |
+| AAP job is green but nothing changed; `skipping: no hosts matched` | `dhm_runners` has no hosts in the inventory the template uses. Step 9c. |
+| AAP fails on the first task with a Python error | The execution environment's ansible-core is newer than the host's Python 3.6 supports. Step 9c. |
 | `net::ERR_CERT_AUTHORITY_INVALID` on dashboards | Step 6. |
 | Launch fails, no useful message | Step 7. |
 
@@ -361,9 +448,13 @@ the Ansible playbook for the schedule.
 - The playbook passes `--syntax-check`, and `--check` walks through every task.
 
 **Not verified, so confirm as you go:**
-- That the playbook runs on this host's Ansible version.
-- That `dhm` can run the browser (step 5d). The missing home directory is the likely
-  cause of any root-versus-`dhm` difference, but it has not been reproduced.
+- That `dhm` can run the browser (step 5c). The missing home directory is the likely cause
+  of any root-versus-`dhm` difference, but it has not been reproduced.
 - That `dhm` can traverse the Python install and read the checkout.
+- **The Elasticsearch write path on this cluster** (step 8). Neither the setup nor a real
+  write has run here yet.
+- **The AAP flow end to end** (step 9): inventory, credential, project sync, the job
+  template, and the execution environment against this host's Python.
+- That the playbook runs on the AAP execution environment's ansible-core version.
 - That the cron entry actually fires as `dhm` (`/etc/cron.allow`, SELinux).
 - SELinux behaviour with the installed browser under cron.
