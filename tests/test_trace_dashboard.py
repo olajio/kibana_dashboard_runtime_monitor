@@ -119,3 +119,18 @@ def test_report_lists_what_stays_not_ok_even_when_others_recover():
 def test_empty_samples_do_not_crash():
     r = td.analyze([], 3)
     assert r["exit_ms"] is None and "NEVER STOPPED" in td.verdict(r)
+
+
+def test_titles_are_cleaned_like_the_collector_does():
+    # real DOM text from the production host: screen-reader label, newline, visible title
+    raw = "Panel: CyHy Vulnerability Severity Levels\nCyHy Vulnerability Severity Levels"
+    r = td.analyze([sample(1000, S(raw, empty="x"))], expected_min=1)
+    assert [t for t, _s in r["at_exit"].values()] == ["CyHy Vulnerability Severity Levels"]
+    report = td.format_report(r, "X", 1)
+    assert "Panel:" not in report                         # the screen-reader prefix does not leak
+    assert report.count("CyHy Vulnerability Severity Levels") == 1   # and the title is not doubled
+
+
+def test_untitled_error_panels_are_named_by_position():
+    r = td.analyze([sample(1000, S("", err=True, idx=7))], expected_min=1)
+    assert [t for t, _s in r["at_exit"].values()] == ["(untitled panel #7)"]

@@ -40,7 +40,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from dhm.collect_core import dashboard_url, panel_key  # noqa: E402
 from dhm.config import load_settings  # noqa: E402
-from dhm.render_detection import classify_panel, is_resolved  # noqa: E402
+from dhm.render_detection import _clean_title, classify_panel, is_resolved  # noqa: E402
 from dhm.secrets import connection_warnings, describe_sources, resolve_connection  # noqa: E402
 
 Sample = Tuple[int, List[Dict[str, Any]]]   # (elapsed_ms since navigation, panel states)
@@ -52,7 +52,9 @@ WARMUP_CAP_MS = 30000   # longest we wait for the warm-up dashboard to settle
 def _status_map(states: List[Dict[str, Any]]) -> Dict[str, Tuple[str, str]]:
     """key -> (title, status) using the collector's own classifier."""
     return {
-        panel_key(s): ((s.get("title") or "").strip() or f"(panel #{s.get('index')})",
+        # _clean_title collapses Kibana's "Panel: X\nX" label; errored panels often have no
+        # title at all, so fall back to their position on the page.
+        panel_key(s): (_clean_title(s.get("title") or "") or f"(untitled panel #{s.get('index')})",
                        classify_panel(s))
         for s in states
     }
