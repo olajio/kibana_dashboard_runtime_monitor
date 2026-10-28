@@ -77,8 +77,9 @@ Add one matching line under `collector:` in `settings.yaml`:
 | distro chromium | `browser_executable: /usr/bin/chromium` |
 
 Edge and Chrome are both Chromium, so render detection behaves the same on either.
-If none of them is installed, see the HOWTO troubleshooting entry on a missing
-browser for the install options and the shared libraries a minimal server image lacks.
+If none of them is installed, follow [`LINUX_BROWSER_SETUP.md`](LINUX_BROWSER_SETUP.md)
+(RHEL 8 on EC2: repo checks, install options, the service-account home directory, and
+verification).
 
 ### 4. Dry run
 
@@ -120,7 +121,7 @@ When that is reliable, hand scheduling to Ansible with `deploy/dhm-deploy.yml`
 | `NoCredentialsError` / `AccessDenied` | The host's AWS role cannot read the secret. It needs `secretsmanager:GetSecretValue` on `federal_store`. |
 | `CERTIFICATE_VERIFY_FAILED` | Set `ca_bundle` as in step 2. HOWTO troubleshooting explains how to confirm the bundle with `curl` first. |
 | `Chromium distribution 'msedge' is not found` | No browser installed. See step 3. |
-| `a library is missing` when the browser starts | Run `python -m playwright install-deps chromium`. It installs system libraries through the package manager, not a browser download. |
+| A library is missing when the browser starts | Find it with `ldd <browser> \| grep 'not found'` and `dnf install` it. Do **not** use `playwright install-deps` on RHEL: it only knows `apt-get`. See `LINUX_BROWSER_SETUP.md`. |
 | `<-unset` after creating `settings.yaml` | Run from the repo root so `config/settings.yaml` resolves, or pass `--settings /full/path`. |
 
 When asking for help, include the `Connection:` line. It usually localises the problem.
