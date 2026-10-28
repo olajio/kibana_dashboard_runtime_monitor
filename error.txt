@@ -1,4 +1,3 @@
-sh-4.4$ sudo su
 [root@ip-10-34-44-18 bin]# cd /opt/kibana_dashboard_runtime_monitor && source .venv/bin/activate && git pull origin main
 remote: Enumerating objects: 12, done.
 remote: Counting objects: 100% (12/12), done.
@@ -31,3 +30,160 @@ wait  3000 ms: 0 panels on page, 0 render-complete, 0 flagged empty
 wait  8000 ms: 0 panels on page, 0 render-complete, 0 flagged empty
 wait 15000 ms: 12 panels on page, 0 render-complete, 0 flagged empty
 (.venv) [root@ip-10-34-44-18 kibana_dashboard_runtime_monitor]# 
+(.venv) [root@ip-10-34-44-18 kibana_dashboard_runtime_monitor]# 
+(.venv) [root@ip-10-34-44-18 kibana_dashboard_runtime_monitor]# 
+(.venv) [root@ip-10-34-44-18 kibana_dashboard_runtime_monitor]# 
+(.venv) [root@ip-10-34-44-18 kibana_dashboard_runtime_monitor]# git pull origin main
+remote: Enumerating objects: 14, done.
+remote: Counting objects: 100% (14/14), done.
+remote: Compressing objects: 100% (7/7), done.
+remote: Total 10 (delta 4), reused 6 (delta 3), pack-reused 0 (from 0)
+Unpacking objects: 100% (10/10), 11.64 KiB | 425.00 KiB/s, done.
+From https://github.com/olajio/kibana_dashboard_runtime_monitor
+ * branch            main       -> FETCH_HEAD
+   2d97b76..2088d03  main       -> origin/main
+Updating 2d97b76..2088d03
+Fast-forward
+ command.md                    |  78 ++++++++++++++++++---------------
+ error.txt                     |  33 ++++++++++++++
+ scripts/trace_dashboard.py    | 272 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/test_trace_dashboard.py | 121 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 470 insertions(+), 34 deletions(-)
+ create mode 100644 error.txt
+ create mode 100644 scripts/trace_dashboard.py
+ create mode 100644 tests/test_trace_dashboard.py
+(.venv) [root@ip-10-34-44-18 kibana_dashboard_runtime_monitor]# 
+(.venv) [root@ip-10-34-44-18 kibana_dashboard_runtime_monitor]# 
+(.venv) [root@ip-10-34-44-18 kibana_dashboard_runtime_monitor]# python scripts/trace_dashboard.py --dashboard-title "CyHy Overview" --repeat 3
+
+Connection: elasticsearch.api_key<-aws-bundle, elasticsearch.base_url<-aws-bundle, kibana.auth.api_key<-elasticsearch.api_key, kibana.base_url<-aws-bundle
+warm-up: 'AIM Score Overview'  ->  target: 'CyHy Overview'  (window 30000 ms, poll 250 ms)
+
+=== run 1 of 3 ===
+--- trace: CyHy Overview (collector expects 9 data panels) ---
+collector would have stopped at 4468 ms   -> empty=7, ok=5
+end of window (30119 ms)                   -> empty=7, ok=5
+no panel changed state after the collector would have stopped
+still not ok at the end of the window:
+    Panel: CyHy Vulnerability Severity Levels
+CyHy Vulnerabi empty
+    Panel: CyHy Most Prevalent Vulnerabilities
+CyHy Most Pre empty
+    Panel: CyHy Average Days to Remediate Vulnerabilities pe empty
+    Panel: CyHy Vulnerability Severity Levels per Agency
+CyH empty
+    Panel: CyHy Most Prevalent Operating Systems
+CyHy Most P empty
+    Panel: CyHy Most Prevalent Unsupported Software
+CyHy Mos empty
+    Panel: CyHy Most Prevalent Risky Services
+CyHy Most Prev empty
+STABLE: 7 panel(s) were not ok at the stop moment and stayed that way for the whole window. Timing does not explain them.
+
+=== run 2 of 3 ===
+--- trace: CyHy Overview (collector expects 9 data panels) ---
+collector would have stopped at 3071 ms   -> empty=7, ok=5
+end of window (30161 ms)                   -> empty=7, ok=5
+no panel changed state after the collector would have stopped
+still not ok at the end of the window:
+    Panel: CyHy Vulnerability Severity Levels
+CyHy Vulnerabi empty
+    Panel: CyHy Most Prevalent Vulnerabilities
+CyHy Most Pre empty
+    Panel: CyHy Average Days to Remediate Vulnerabilities pe empty
+    Panel: CyHy Vulnerability Severity Levels per Agency
+CyH empty
+    Panel: CyHy Most Prevalent Operating Systems
+CyHy Most P empty
+    Panel: CyHy Most Prevalent Unsupported Software
+CyHy Mos empty
+    Panel: CyHy Most Prevalent Risky Services
+CyHy Most Prev empty
+STABLE: 7 panel(s) were not ok at the stop moment and stayed that way for the whole window. Timing does not explain them.
+
+=== run 3 of 3 ===
+--- trace: CyHy Overview (collector expects 9 data panels) ---
+collector would have stopped at 2339 ms   -> empty=7, ok=5
+end of window (30046 ms)                   -> empty=7, ok=5
+no panel changed state after the collector would have stopped
+still not ok at the end of the window:
+    Panel: CyHy Vulnerability Severity Levels
+CyHy Vulnerabi empty
+    Panel: CyHy Most Prevalent Vulnerabilities
+CyHy Most Pre empty
+    Panel: CyHy Average Days to Remediate Vulnerabilities pe empty
+    Panel: CyHy Vulnerability Severity Levels per Agency
+CyH empty
+    Panel: CyHy Most Prevalent Operating Systems
+CyHy Most P empty
+    Panel: CyHy Most Prevalent Unsupported Software
+CyHy Mos empty
+    Panel: CyHy Most Prevalent Risky Services
+CyHy Most Prev empty
+STABLE: 7 panel(s) were not ok at the stop moment and stayed that way for the whole window. Timing does not explain them.
+
+(.venv) [root@ip-10-34-44-18 kibana_dashboard_runtime_monitor]# python scripts/trace_dashboard.py --dashboard-title "Priority Risks" --repeat 3
+Connection: elasticsearch.api_key<-aws-bundle, elasticsearch.base_url<-aws-bundle, kibana.auth.api_key<-elasticsearch.api_key, kibana.base_url<-aws-bundle
+warm-up: 'Misconfiguration Records'  ->  target: 'Priority Risks'  (window 30000 ms, poll 250 ms)
+
+Traceback (most recent call last):
+  File "/opt/kibana_dashboard_runtime_monitor/scripts/trace_dashboard.py", line 272, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "/opt/kibana_dashboard_runtime_monitor/scripts/trace_dashboard.py", line 258, in main
+    driver.goto(dashboard_url(settings, target["dashboard_id"]), timeout_ms)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/kibana_dashboard_runtime_monitor/scripts/../src/dhm/collector.py", line 24, in goto
+    self.page.goto(url, wait_until="domcontentloaded", timeout=timeout_ms)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/python-3.14/lib/python3.14/site-packages/playwright/sync_api/_generated.py", line 9875, in goto
+    self._sync(
+    ~~~~~~~~~~^
+        self._impl_obj.goto(
+        ^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+        )
+        ^
+    )
+    ^
+  File "/usr/local/python-3.14/lib/python3.14/site-packages/playwright/_impl/_sync_base.py", line 115, in _sync
+    return task.result()
+           ~~~~~~~~~~~^^
+  File "/usr/local/python-3.14/lib/python3.14/site-packages/playwright/_impl/_page.py", line 560, in goto
+    return await self._main_frame.goto(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/python-3.14/lib/python3.14/site-packages/playwright/_impl/_frame.py", line 156, in goto
+    await self._channel.send(
+        "goto", self._navigation_timeout, locals_to_params(locals())
+    )
+  File "/usr/local/python-3.14/lib/python3.14/site-packages/playwright/_impl/_connection.py", line 76, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/usr/local/python-3.14/lib/python3.14/site-packages/playwright/_impl/_connection.py", line 632, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+playwright._impl._errors.TargetClosedError: Page.goto: Page crashed
+Call log:
+  - navigating to "https://fdb-es-federal.kb.us-gov-east-1.aws.elastic-cloud.com/s/fed2/app/dashboards#/view/6b48e19c-c987-4094-901a-78ee82269654?_g=(time:(from:now-30d,to:now))", waiting until "domcontentloaded"
+
+(.venv) [root@ip-10-34-44-18 kibana_dashboard_runtime_monitor]# python scripts/trace_dashboard.py --dashboard-title "AIM Score Overview" --repeat 3
+Connection: elasticsearch.api_key<-aws-bundle, elasticsearch.base_url<-aws-bundle, kibana.auth.api_key<-elasticsearch.api_key, kibana.base_url<-aws-bundle
+warm-up: 'Agency Details'  ->  target: 'AIM Score Overview'  (window 30000 ms, poll 250 ms)
+
+=== run 1 of 3 ===
+--- trace: AIM Score Overview (collector expects 7 data panels) ---
+collector would have stopped at 1757 ms   -> empty=1, error=3, ok=6
+end of window (30200 ms)                   -> empty=1, error=3, ok=6
+no panel changed state after the collector would have stopped
+still not ok at the end of the window:
+    (panel #2)                                               error
+    Panel: Agency AIM Scores
+Agency AIM Scores               empty
+    (panel #7)                                               error
+    (panel #8)                                               error
+STABLE: 4 panel(s) were not ok at the stop moment and stayed that way for the whole window. Timing does not explain them.
+
+
+
