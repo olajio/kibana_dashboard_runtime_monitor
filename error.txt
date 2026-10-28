@@ -1,0 +1,5 @@
+[root@ip-10-34-44-18 bin]# sudo -u dhm env HOME=/var/lib/dhm bash -c \
+>   'cd /opt/kibana_dashboard_runtime_monitor && .venv/bin/python scripts/setup_elasticsearch.py'
+sudo: unknown user: dhm
+sudo: error initializing audit plugin sudoers_audit
+[root@ip-10-34-44-18 bin]# 
