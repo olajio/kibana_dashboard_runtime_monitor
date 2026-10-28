@@ -1,0 +1,33 @@
+sh-4.4$ sudo su
+[root@ip-10-34-44-18 bin]# cd /opt/kibana_dashboard_runtime_monitor && source .venv/bin/activate && git pull origin main
+remote: Enumerating objects: 12, done.
+remote: Counting objects: 100% (12/12), done.
+remote: Compressing objects: 100% (10/10), done.
+remote: Total 11 (delta 3), reused 2 (delta 1), pack-reused 0 (from 0)
+Unpacking objects: 100% (11/11), 417.20 KiB | 6.13 MiB/s, done.
+From https://github.com/olajio/kibana_dashboard_runtime_monitor
+ * branch            main       -> FETCH_HEAD
+   80b9959..2d97b76  main       -> origin/main
+Updating 80b9959..2d97b76
+Fast-forward
+ command.md | 59 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 59 insertions(+)
+ create mode 100644 command.md
+(.venv) [root@ip-10-34-44-18 kibana_dashboard_runtime_monitor]# 
+(.venv) [root@ip-10-34-44-18 kibana_dashboard_runtime_monitor]# 
+(.venv) [root@ip-10-34-44-18 kibana_dashboard_runtime_monitor]# for w in 1000 3000 8000 15000; do
+>   python scripts/debug_spike.py --dashboard-title "CyHy Overview" --wait-ms $w --out debug_$w.json > /dev/null
+>   python - $w <<'PY'
+> import json, sys
+> w = sys.argv[1]
+> panels = json.load(open(f"debug_{w}.json"))["panels"]
+> complete = [p for p in panels if p.get("descRenderCompleteTrueValue") or p.get("selfRenderComplete") == "true"]
+> flagged  = [p for p in panels if p.get("emptyText") is not None]
+> print(f"wait {w:>5} ms: {len(panels)} panels on page, {len(complete)} render-complete, {len(flagged)} flagged empty")
+> PY
+> done
+wait  1000 ms: 0 panels on page, 0 render-complete, 0 flagged empty
+wait  3000 ms: 0 panels on page, 0 render-complete, 0 flagged empty
+wait  8000 ms: 0 panels on page, 0 render-complete, 0 flagged empty
+wait 15000 ms: 12 panels on page, 0 render-complete, 0 flagged empty
+(.venv) [root@ip-10-34-44-18 kibana_dashboard_runtime_monitor]# 
