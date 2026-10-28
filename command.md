@@ -1,19 +1,26 @@
-# Timing experiment: do the "empty" panels settle?
+# Do the "empty" panels settle? Trace one dashboard under the collector's conditions
 
-Run on the production host. Read-only: it opens a browser against Kibana and reads the page;
-nothing is written to Elasticsearch or the cluster.
+Run on the production host. Read-only: it opens a browser against Kibana and reads the page.
+Nothing is written to Elasticsearch or to disk, and the output contains panel titles only.
 
 ## Why
 
 On CyHy Overview the collector reports 5 panels as `empty`, but a person looking at the same
-dashboard in Kibana sees data in all of them. Every dashboard that has control dropdowns
-(the Agency / IP / Operating System filters across the top) has not-ok panels in the
-collector's results, and none of the dashboards without controls do. The collector stops
-waiting the moment every panel counts as resolved, and an empty placeholder counts as
-resolved, so it may be reading panels before they have finished loading.
+dashboard in Kibana sees data in all of them. The collector stops waiting the instant every
+panel counts as resolved, and an empty placeholder counts as resolved, so a placeholder that
+is only a loading state would be frozen into the result.
 
-This loads CyHy Overview four times, waiting longer each time, and counts the panels the
-page marks as empty at each point.
+This script loads the dashboard the way the collector does, works out when the collector
+**would have stopped**, keeps watching for 30 seconds longer, and reports which panels
+changed state after that point.
+
+### The earlier experiment was withdrawn
+
+The first version of this file ran `debug_spike.py` with different waits. That was invalid:
+`debug_spike.py` opens a fresh page each time, so every run pays Kibana's full cold start
+(about 10 seconds on this host), and its results said nothing about settling. The collector
+reuses one page and moves between dashboards by changing the URL fragment, which Kibana
+handles without rebooting. `trace_dashboard.py` does the same.
 
 ## 1. Get the checkout ready
 
@@ -21,39 +28,42 @@ page marks as empty at each point.
 cd /opt/kibana_dashboard_runtime_monitor && source .venv/bin/activate && git pull origin main
 ```
 
-## 2. Run the experiment
+## 2. Trace CyHy Overview
 
-It takes a few minutes: each pass launches the browser and loads the dashboard.
+Each repeat takes about a minute (warm-up, then a 30 second window). Three repeats show
+whether the result is the same every time.
 
 ```bash
-for w in 1000 3000 8000 15000; do
-  python scripts/debug_spike.py --dashboard-title "CyHy Overview" --wait-ms $w --out debug_$w.json > /dev/null
-  python - $w <<'PY'
-import json, sys
-w = sys.argv[1]
-panels = json.load(open(f"debug_{w}.json"))["panels"]
-complete = [p for p in panels if p.get("descRenderCompleteTrueValue") or p.get("selfRenderComplete") == "true"]
-flagged  = [p for p in panels if p.get("emptyText") is not None]
-print(f"wait {w:>5} ms: {len(panels)} panels on page, {len(complete)} render-complete, {len(flagged)} flagged empty")
-PY
-done
+python scripts/trace_dashboard.py --dashboard-title "CyHy Overview" --repeat 3
 ```
 
-The `debug_*.json` files are written into the checkout and are git-ignored.
+## 3. Two more, for comparison
 
-## 3. How to read the output
+Priority Risks is the dashboard whose result flipped between two runs (15 empty panels, then
+none). AIM Score Overview reported every panel ok, so it checks that the script reports
+"ALL OK" when nothing is wrong.
 
-One line per wait time. Look at the last number, "flagged empty", as the wait grows.
+```bash
+python scripts/trace_dashboard.py --dashboard-title "Priority Risks" --repeat 3
+python scripts/trace_dashboard.py --dashboard-title "AIM Score Overview"
+```
 
-| What you see | What it means | What follows |
+## 4. How to read the output
+
+Each trace ends with one verdict line.
+
+| Verdict | What it means | What follows |
 |---|---|---|
-| Falls toward 0 (for example 5, 4, 1, 0) | The "empty" state is transient: panels show a placeholder while loading. | The collector needs to wait for panels to settle, or for the controls to finish loading, before reading them. |
-| Stays high even at 15000 ms | Timing is not the cause. The collector's session sees something a person does not. | Look at identity and environment instead: which user or API key, which Kibana hostname, headless against headed. |
-| "render-complete" climbs while "flagged empty" stays flat | Panels finish rendering but the placeholder is still in the page. | The empty check is matching an element that remains after rendering. |
+| `READ TOO EARLY` | Some panels were not ok when the collector would have stopped, but were ok by the end of the window. Those "empty" results are a loading state. | The collector needs to keep watching panels that look empty, or wait for the page to settle, before it classifies them. |
+| `STABLE` | Panels that were not ok at the stop moment stayed that way for the whole window. | Timing does not explain them. Look at identity and environment instead: which user or API key the collector uses, and which Kibana host. |
+| `NEVER STOPPED` | The collector's stop condition was never met within 30 seconds. | The real collector would run to its timeout on this dashboard. Something on the page never finishes. |
+| `UNSTABLE` | Panels that were ok at the stop moment became not ok later. | The page is changing underneath the collector. |
+| `ALL OK` | Nothing wrong at either point. | Expected for AIM Score Overview. If it says anything else there, the script itself needs a look. |
 
-## 4. Send the result
+The section "still not ok at the end of the window" matters most. Those are the panels that
+timing does not explain. `CDM-Nav-LCKUP` (a static text label) is expected to appear there if
+it really is empty.
 
-Paste the four lines into the chat.
+## 5. Send the result
 
-Do not commit the output, screenshots or the `debug_*.json` files. This repository is
-public, and those files contain real Kibana hostnames and agency data.
+Paste the output into the chat. Do not commit it. This repository is public.
