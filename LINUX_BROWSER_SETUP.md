@@ -275,6 +275,11 @@ Do this before AAP. The write path has never run on this cluster, and AAP adds l
 run fails you could not tell whether the collector or AAP is at fault. By hand there is
 one variable.
 
+**Prerequisite: the `dhm` account and a clean dry run as `dhm` (steps 5a to 5c).** Every
+command below runs as `dhm`. If you see `sudo: unknown user: dhm`, the account does not
+exist yet; check with `id dhm`, create it in step 5a, and do not continue until the dry run
+in step 5c passes, because from here on commands write to the cluster.
+
 **Order matters: the cluster assets first, then the write.** Applying the ILM policy and
 index template creates no index. The first `_bulk` write auto-creates the data stream from
 that template. If a write happens first, the data stream is created with **default mappings
@@ -420,6 +425,7 @@ rules. Return to [`RESUME.md`](RESUME.md) for those.
 | `error while loading shared libraries: libXXX.so` | Step 3: `dnf install` the named library. |
 | `BEWARE: your OS is not officially supported by Playwright; installing dependencies for ubuntu24.04 as a fallback`, then an `apt-get` failure | You ran `playwright install-deps`. It is apt-only. Use step 3 instead. |
 | Works as root, fails under cron | Step 5: the `dhm` account and its home directory. |
+| `sudo: unknown user: dhm` | The account does not exist. Step 5a creates it; step 8 and the dry run both depend on it. |
 | `Permission denied` as `dhm` on `.venv/bin/python` | Step 5b: `namei -l` shows the directory `dhm` cannot traverse. |
 | `setup_elasticsearch.py` returns 403 | Step 8: the key lacks `manage_ilm` / `manage_index_templates`. Run that one command with an admin key. |
 | Data stream exists but `template` is not `dashboard-health-monitor` | A write happened before the assets existed. Step 8 explains the order; the fix is deleting the data stream. |
