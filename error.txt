@@ -41,3 +41,1052 @@ data_dictionary                                    200  readable  1,505 docs
 
 summary: EMPTY=20, ERROR=9, readable=3
 (.venv) [root@ip-10-34-44-18 kibana_dashboard_runtime_monitor]# 
+
+
+# 1: GET cdm_aim/_count 200 OK
+{
+  "count": 124,
+  "_shards": {
+    "total": 1,
+    "successful": 1,
+    "skipped": 0,
+    "failed": 0
+  }
+}
+# 2: GET cdm_cyhy_vuln/_count 200 OK
+{
+  "count": 73938,
+  "_shards": {
+    "total": 1,
+    "successful": 1,
+    "skipped": 0,
+    "failed": 0
+  }
+}
+# 3: GET cdm_scuba_result/_count 200 OK
+{
+  "count": 24287,
+  "_shards": {
+    "total": 1,
+    "successful": 1,
+    "skipped": 0,
+    "failed": 0
+  }
+}
+# 4: GET agency-dashboard-*:cdm_vuln_current/_count 200 OK
+{
+  "count": 609330753,
+  "_shards": {
+    "total": 168,
+    "successful": 168,
+    "skipped": 0,
+    "failed": 0
+  }
+}
+# 5: GET _remote/info 200 OK
+{
+  "agency-dashboard-dos": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "0f1a7441b2a5412bb330ef592c3f71bc.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "0f1a7441b2a5412bb330ef592c3f71bc.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-eac": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "3bfcb2e1c2334ac58d7f74b5089c455f.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "3bfcb2e1c2334ac58d7f74b5089c455f.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-fca": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "cb2db0a950774946a616f0137b6c0999.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "cb2db0a950774946a616f0137b6c0999.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-nwtrb": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "be4d9332b00f48c79c7b4b4fc0d4bd91.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "cdm-nwtrb.es.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-cigie": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "839a24f73afa436ca6171bfb5b0b9f5f.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "839a24f73afa436ca6171bfb5b0b9f5f.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-dol": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "f700c2a9c08a4501a7dcb9a9e021e424.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "cdm-dol.es.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-ncd": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "e4c04e79f8aa46c4ba1aacd02d989437.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "cdm-ncd.es.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-iaf": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "88c4cc9afbc144c0876ebd1728e42d5c.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "88c4cc9afbc144c0876ebd1728e42d5c.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-ustda": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "e4cd02c53e384ae29268cd774561ef9f.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "e4cd02c53e384ae29268cd774561ef9f.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-dot": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "9da52bbc88874339a697b7281a3c5da0.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "9da52bbc88874339a697b7281a3c5da0.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-imls": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "ad8431d22c574ceaa5a5c54992aabf6c.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "ad8431d22c574ceaa5a5c54992aabf6c.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-csosa": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "114f3b63b4d949ee8aae198cd9e54bf9.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "114f3b63b4d949ee8aae198cd9e54bf9.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-ftc": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "3c1af5708960446badce160c5f8ac7d9.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "3c1af5708960446badce160c5f8ac7d9.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-pc": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "d053ef9867b44198915c1407e793da33.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "d053ef9867b44198915c1407e793da33.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-sec": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "2a2f99e6310c4bba906abf3d70c46ffa.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "cdm-sec.es.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-nigc": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "5eb6c168097348b4a3c6ba6f14b139f4.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "cdm-nigc.es.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-ibwc": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "e7b977d2a2d249ceaff3984bf26f2f60.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "e7b977d2a2d249ceaff3984bf26f2f60.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-cfa": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "97e1d4eca8824f818f6d561ebaa9cd61.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "97e1d4eca8824f818f6d561ebaa9cd61.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-pclob": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "ee43cb24f811441c93bdbd6398cba6e2.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "ee43cb24f811441c93bdbd6398cba6e2.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-udall": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "519b7b9bf7ec4cada0b353ec5ef25489.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "519b7b9bf7ec4cada0b353ec5ef25489.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-pt": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "149565948f78429ea886034e3a1ffd9f.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "149565948f78429ea886034e3a1ffd9f.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-dhs": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "accd8faf7c3f43afbe5360bc5cf9a171.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "accd8faf7c3f43afbe5360bc5cf9a171.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-gcerc": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "60acaccb63bf423380486719d68b4a70.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "60acaccb63bf423380486719d68b4a70.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-usagm": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "143b1414ba18408a9c0beebb0e973ffd.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "143b1414ba18408a9c0beebb0e973ffd.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-hhs": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "a087abbdddba4cc485aa1edaaa2aab58.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "a087abbdddba4cc485aa1edaaa2aab58.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-siem-va-02": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "8f64de702dfb44b1b8bdc9a0f14ce19d.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "8f64de702dfb44b1b8bdc9a0f14ce19d.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-siem-va-03": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "638f5be1b8a2488d822c9b498fabeae0.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "638f5be1b8a2488d822c9b498fabeae0.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-fmc": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "14c73a78247246f589cd03b0067da43d.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "14c73a78247246f589cd03b0067da43d.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-fhfaoig": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "1547fd2241cf4a379f9ec5d16c4ab073.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "1547fd2241cf4a379f9ec5d16c4ab073.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-dnfsb": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "ba8ebd3e5c7d46c4bd71667d7bcf0f60.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "ba8ebd3e5c7d46c4bd71667d7bcf0f60.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-ncua": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "c62d48f66ff446f89e0c50c4c1d32d35.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "cdm-ncua.es.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-fhfa": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "a39664946a4c41cda4ad985597fbb111.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "a39664946a4c41cda4ad985597fbb111.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-logging-doc-tlc": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "33efca7d3afe40e8a31f4b11aa3d7c40.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "33efca7d3afe40e8a31f4b11aa3d7c40.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-ssa": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "dac93f903e0340738c3aceb72c46bd51.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "cdm-ssa.es.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-epa": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "24913fe898aa4000ba89a2632c9fd5e6.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "24913fe898aa4000ba89a2632c9fd5e6.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-frb": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "2b9b4430e9a547ecbe652459763a01df.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "2b9b4430e9a547ecbe652459763a01df.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-sss": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "fbd48f46a8d94bcd9c174e3618e85289.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "fbd48f46a8d94bcd9c174e3618e85289.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-usadf": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "0602d5fec8b7423ebfe708bad0a832ba.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "0602d5fec8b7423ebfe708bad0a832ba.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-tva": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "a80411dbfd564b83a12f2134a59b6edd.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "a80411dbfd564b83a12f2134a59b6edd.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-mspb": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "0b9bc7cefe7c4876b07bfb3e319a73ad.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "0b9bc7cefe7c4876b07bfb3e319a73ad.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-siem-va": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "fddfe8672e2f45b7b142e9fb54e8663f.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "fddfe8672e2f45b7b142e9fb54e8663f.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-nrc": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "b1a9029e8e984cac99106eb202f71e1f.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "b1a9029e8e984cac99106eb202f71e1f.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-exim": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "bd0923a2a89142b49e221c44c91e0b3b.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "bd0923a2a89142b49e221c44c91e0b3b.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-rrb": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "f55d0758e168436880e5285198fae0ea.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "f55d0758e168436880e5285198fae0ea.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-stb": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "33d083cae0c744c19d4a267ceab67158.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "33d083cae0c744c19d4a267ceab67158.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-cncs": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "ab80b5462f8047d3b25d932d1fa90adb.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "ab80b5462f8047d3b25d932d1fa90adb.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-dfc": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "282e868e3d45402dbf88ab07cb90a081.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "282e868e3d45402dbf88ab07cb90a081.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-cftc": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "79e16ec64a5b4e37b86c046018b2c59a.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "79e16ec64a5b4e37b86c046018b2c59a.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-doc": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "65b50b9d4c4a4bbda7abb2da2367a817.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "65b50b9d4c4a4bbda7abb2da2367a817.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-siem-gsa": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "d995612687e0470188e9aa531a135d1a.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "d995612687e0470188e9aa531a135d1a.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-logging-federal-ech": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "a4114d4ac54d458bad0b67732c4faed1.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "a4114d4ac54d458bad0b67732c4faed1.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-logging-dos-tlc": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "3e9bcddad6134c6f9c0b870191a8e378.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "3e9bcddad6134c6f9c0b870191a8e378.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-doj": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "93dd5d8ad9fd4730922952266111e1d8.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "93dd5d8ad9fd4730922952266111e1d8.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-doi": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "16376ff681414b52b3f6a50459fd4522.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "cdm-doi.es.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-doe": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "ceb892e8e3b84c01b064e445414c3336.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "cdm-doe.es.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-logging-dhs-tlc": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "9329e6c50f774e808cfabd4ecfd76290.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "9329e6c50f774e808cfabd4ecfd76290.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-nasa": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "72480ae364fd4199bdf01ee6b8e95891.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "cdm-nasa.es.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-usab": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "f05b625c1ff24e75a415b7fd278f6fd4.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "f05b625c1ff24e75a415b7fd278f6fd4.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-usac": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "3f94640efcda4f3f8d49d6a10862fe38.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "3f94640efcda4f3f8d49d6a10862fe38.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-frtib": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "857b58aa12a6498e8451afa35f6ed6e7.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "857b58aa12a6498e8451afa35f6ed6e7.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-ferc": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "43dd9edb3c1b4dc680504c5f00e9f3b0.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "43dd9edb3c1b4dc680504c5f00e9f3b0.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-pbgc": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "8da614656eb446249499d98c5ce94115.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "cdm-pbgc.es.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-treas": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "17d55ba912e640cdae0979d36e9e5795.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "17d55ba912e640cdae0979d36e9e5795.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-dosoig": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "1c968284912d41aa90575f6cf0f5cf92.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "1c968284912d41aa90575f6cf0f5cf92.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-bgsf": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "97081b3e94e248a4baafee4e1bc5bf9a.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "97081b3e94e248a4baafee4e1bc5bf9a.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-nara": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "c4302052dd4942b7badcebbb16c70d23.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "c4302052dd4942b7badcebbb16c70d23.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-fdic": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "9da25159a01a407b944caa5e7a8bd9ef.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "9da25159a01a407b944caa5e7a8bd9ef.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-usitc": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "0f70180c20d64f19a036560f2da52733.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "0f70180c20d64f19a036560f2da52733.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-logging-occ-tlc": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "2b3cd0da437d4742a1046c05537ea3c9.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "2b3cd0da437d4742a1046c05537ea3c9.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-hudoig": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "f72e77f5b0914d63842619ba471d43a6.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "cdm-hudoig.es.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-hud": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "ad7372940f0d43fc8f0842688a84093a.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "ad7372940f0d43fc8f0842688a84093a.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-gsa": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "896e25335eec4b9a87abe4b38c3f3bc8.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "896e25335eec4b9a87abe4b38c3f3bc8.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-sba": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "9b02a52f7a2c4d6782fc1fd88afafadd.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "cdm-sba.es.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-csb": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "660e3e34f035407885dd81d2f1279983.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "660e3e34f035407885dd81d2f1279983.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-osc": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "8ebb12da479347c4b83e630587b8d95d.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "cdm-osc.es.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-acus": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "6375e435cf4d4ae693a6a1eb85fd535a.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "6375e435cf4d4ae693a6a1eb85fd535a.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-abmc": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "afc92c0822514dac87939dac96ac990e.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "afc92c0822514dac87939dac96ac990e.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-ed": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "81ff697e0d2d418e903e8bca00ad065a.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "cdm-ed.es.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-fec": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "2344fe92116948a390c0c7272a111d73.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "2344fe92116948a390c0c7272a111d73.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-fmcs": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "e11042e0daa948c092ba3abe0c2f32f0.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "e11042e0daa948c092ba3abe0c2f32f0.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-cpsc": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "7402ff57841243f29d431051fe943a79.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "7402ff57841243f29d431051fe943a79.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-nmb": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "54f4cf9dc4f54a5599141186e8c22349.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "cdm-nmb.es.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-eeoc": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "b17e9047041e4edc8916ebfbe315eb4d.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "b17e9047041e4edc8916ebfbe315eb4d.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-oge": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "aced109fd0e44ca89c685709c68ef668.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "cdm-oge.es.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-mcc": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "682db1529f2342dc91ec20c7ad161fb7.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "682db1529f2342dc91ec20c7ad161fb7.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-flra": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "a462686c20314f499d5e2ab3d9763d47.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "a462686c20314f499d5e2ab3d9763d47.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-va": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "9f99ca750dfd4e3ca2522efb575bba39.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "9f99ca750dfd4e3ca2522efb575bba39.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-nea": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "ba330455318641a5861ebb470c1aa17c.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "ba330455318641a5861ebb470c1aa17c.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-logging-va-tlc": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "30e557b60df94ca38326ed3c0e249844.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "30e557b60df94ca38326ed3c0e249844.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-ntsb": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "944712cf167640348d0c04b0f7d3f00c.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "cdm-ntsb.es.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-neh": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "3cba758447fd427b9fffb2c0961a9ddf.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "cdm-neh.es.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-usda": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "72f7bd0e6ff14f709780aa32bf0ff5d7.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "72f7bd0e6ff14f709780aa32bf0ff5d7.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-denali": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "9aca8874593e419999ec83838e49e063.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "9aca8874593e419999ec83838e49e063.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-prc": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "9da2fbad9ba94a2484dbe39857eb84fc.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "9da2fbad9ba94a2484dbe39857eb84fc.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-ncpc": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "bc40ce9fe6814372b81221476c415189.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "cdm-ncpc.es.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-opm": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "9246528917364d35a5bbd368af9e2040.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "9246528917364d35a5bbd368af9e2040.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-cfpb": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "bfcdbf34439a49e0b68d6474d93d6d8e.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "bfcdbf34439a49e0b68d6474d93d6d8e.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-nlrb": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "a095c9ad71d8407dafaa91093414455e.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "a095c9ad71d8407dafaa91093414455e.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-fmshrc": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "20c89c7145724cb4a742dad3eddaa600.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "20c89c7145724cb4a742dad3eddaa600.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  },
+  "agency-dashboard-oshrc": {
+    "connected": true,
+    "mode": "proxy",
+    "proxy_address": "34202ef38107422c8313a7e89311cf55.us-gov-east-1.aws.elastic-cloud.com:9400",
+    "server_name": "34202ef38107422c8313a7e89311cf55.us-gov-east-1.aws.elastic-cloud.com",
+    "num_proxy_sockets_connected": 18,
+    "max_proxy_socket_connections": 18,
+    "initial_connect_timeout": "30s",
+    "skip_unavailable": true
+  }
+}
+# 6: GET _security/api_key?name=dashboard_health_monitor 200 OK
+{
+  "api_keys": []
+}
