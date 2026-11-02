@@ -86,6 +86,21 @@ def authenticate(session, base: str, headers: Dict[str, str], verify) -> Dict[st
     }
 
 
+def cluster_identity(session, base: str, headers: Dict[str, str], verify) -> Dict[str, Any]:
+    """Which cluster answered: name and uuid (`GET /`). Compare with the same call in the
+    Dev Tools you normally use; different uuids mean the two sessions are on different
+    clusters, whatever the URLs look like."""
+    try:
+        resp = session.get(f"{base}/", headers=headers, verify=verify, timeout=30)
+    except requests.RequestException as exc:
+        return {"error": type(exc).__name__}
+    if resp.status_code != 200:
+        return {"error": _reason(resp)}
+    d = resp.json()
+    return {"cluster_name": d.get("cluster_name"), "cluster_uuid": d.get("cluster_uuid"),
+            "version": (d.get("version") or {}).get("number")}
+
+
 def count_pattern(session, base: str, headers: Dict[str, str], verify, pattern: str) -> Dict[str, Any]:
     """Documents the credential can see in one pattern: {'status', 'count' | 'reason'}."""
     try:
@@ -155,6 +170,12 @@ def main() -> int:
             print(f"authenticated as: {who['username']}  type={who['type']}  realm={who['realm']}  "
                   f"api_key_name={who['api_key']!r}")
             print(f"roles: {who['roles'] or '(none listed)'}")
+        cluster = cluster_identity(session, base, headers, verify)
+        if "error" in cluster:
+            print(f"cluster: unavailable ({cluster['error']})")
+        else:
+            print(f"cluster: name={cluster['cluster_name']}  uuid={cluster['cluster_uuid']}  "
+                  f"version={cluster['version']}")
         print(f"\nprobing {len(patterns)} pattern(s)...\n")
         rows = {p: count_pattern(session, base, headers, verify, p) for p in patterns}
     print(format_table(rows))
