@@ -100,3 +100,14 @@ def test_table_has_a_summary_line():
                             "c": {"status": 200, "count": 0}})
     assert "readable" in text and "DENIED" in text and "EMPTY" in text
     assert text.strip().splitlines()[-1] == "summary: DENIED=1, EMPTY=1, readable=1"
+
+
+def test_cluster_identity_reports_name_and_uuid():
+    s = Session({"es/": Resp(200, {"cluster_name": "fed", "cluster_uuid": "abc", "version": {"number": "9.1.0"}})})
+    assert ca.cluster_identity(s, "http://es", {}, True) == {
+        "cluster_name": "fed", "cluster_uuid": "abc", "version": "9.1.0"}
+
+
+def test_cluster_identity_failure_is_reported_not_raised():
+    s = Session({"es/": Resp(401, {"error": {"type": "security_exception"}})})
+    assert ca.cluster_identity(s, "http://es", {}, True) == {"error": "security_exception"}
