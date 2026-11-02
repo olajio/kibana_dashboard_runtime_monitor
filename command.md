@@ -1,3 +1,43 @@
+# Are the collector and you looking at the same cluster?
+
+Your Dev Tools numbers (all real) against the collector key's numbers:
+
+| Index | You (Dev Tools) | Collector's key |
+|---|---|---|
+| `cdm_aim` | 124 | 0 |
+| `cdm_cyhy_vuln` | 73,938 | 0 |
+| `cdm_scuba_result` | 24,287 | 404 (index does not exist) |
+| `agency-dashboard-*:cdm_vuln_current` | 609,330,753 | 0 |
+
+`GET _security/api_key?name=dashboard_health_monitor` returned an empty list for you. A 404
+is not what a missing permission looks like (that is a 403), so the likeliest reading is that
+**the collector's Elasticsearch is a different cluster from the one your Dev Tools is on.**
+
+## 1. Pull, then ask the collector's cluster who it is
+
+```bash
+cd /opt/kibana_dashboard_runtime_monitor && source .venv/bin/activate && git pull origin main
+python scripts/check_access.py --patterns cdm_aim | head -5
+```
+
+The `cluster:` line shows a name and a uuid.
+
+## 2. Ask the same question in your Dev Tools
+
+```
+GET /
+```
+
+Compare `cluster_uuid`. Paste both uuids in chat (a cluster uuid is not a credential).
+
+- **Different uuids:** the secret `federal_store` points the collector at another cluster.
+  Fix `elastic_url` and `kibana_url` in the secret, and make sure the key exists on the right one.
+- **Same uuid:** the key is being filtered on that cluster; then run
+  `GET _security/api_key?name=dashboard_health_monitor&owner=false` and
+  `GET _security/user/_privileges` as an admin and paste the `role_descriptors`.
+
+---
+
 # Why do the collector's panels read "empty"? Two checks, run in this order
 
 Run on the production host. Both are read-only. Output contains panel titles, index
