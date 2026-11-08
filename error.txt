@@ -1,0 +1,137 @@
+[root@ip-10-34-43-217 bin]# uname -m; cat /etc/os-release | head -3; env | grep -i proxy
+x86_64
+NAME="Red Hat Enterprise Linux"
+VERSION="8.10 (Ootpa)"
+ID="rhel"
+[root@ip-10-34-43-217 bin]# python3 --version        # needs 3.10 or newer; RHEL 8's own python3 is 3.6
+Python 3.14.7
+[root@ip-10-34-43-217 bin]# cd /opt && git clone https://github.com/olajio/kibana_dashboard_runtime_monitor.git
+fatal: destination path 'kibana_dashboard_runtime_monitor' already exists and is not an empty directory.
+[root@ip-10-34-43-217 opt]# cd kibana_dashboard_runtime_monitor
+[root@ip-10-34-43-217 kibana_dashboard_runtime_monitor]# python3 -m venv .venv
+[root@ip-10-34-43-217 kibana_dashboard_runtime_monitor]# source .venv/bin/activate
+(.venv) [root@ip-10-34-43-217 kibana_dashboard_runtime_monitor]# python -m pip install -r requirements.txt
+Requirement already satisfied: playwright==1.62.0 in /usr/local/python-3.14/lib/python3.14/site-packages (from -r requirements.txt (line 18)) (1.62.0)
+Requirement already satisfied: requests==2.32.3 in /usr/local/python-3.14/lib/python3.14/site-packages (from -r requirements.txt (line 21)) (2.32.3)
+Requirement already satisfied: boto3==1.34.100 in /usr/local/python-3.14/lib/python3.14/site-packages (from -r requirements.txt (line 22)) (1.34.100)
+Requirement already satisfied: PyYAML==6.0.3 in /usr/local/python-3.14/lib/python3.14/site-packages (from -r requirements.txt (line 26)) (6.0.3)
+Requirement already satisfied: pytest==9.1.1 in /usr/local/python-3.14/lib/python3.14/site-packages (from -r requirements.txt (line 29)) (9.1.1)
+Requirement already satisfied: pyee<14,>=13 in /usr/local/python-3.14/lib/python3.14/site-packages (from playwright==1.62.0->-r requirements.txt (line 18)) (13.0.1)
+Requirement already satisfied: greenlet<4.0.0,>=3.1.1 in /usr/local/python-3.14/lib/python3.14/site-packages (from playwright==1.62.0->-r requirements.txt (line 18)) (3.5.6)
+Requirement already satisfied: charset-normalizer<4,>=2 in /usr/local/python-3.14/lib/python3.14/site-packages (from requests==2.32.3->-r requirements.txt (line 21)) (3.5.1)
+Requirement already satisfied: idna<4,>=2.5 in /usr/local/python-3.14/lib/python3.14/site-packages (from requests==2.32.3->-r requirements.txt (line 21)) (3.19)
+Requirement already satisfied: urllib3<3,>=1.21.1 in /usr/local/python-3.14/lib/python3.14/site-packages (from requests==2.32.3->-r requirements.txt (line 21)) (2.7.0)
+Requirement already satisfied: certifi>=2017.4.17 in /usr/local/python-3.14/lib/python3.14/site-packages (from requests==2.32.3->-r requirements.txt (line 21)) (2026.7.22)
+Requirement already satisfied: botocore<1.35.0,>=1.34.100 in /usr/local/python-3.14/lib/python3.14/site-packages (from boto3==1.34.100->-r requirements.txt (line 22)) (1.34.162)
+Requirement already satisfied: jmespath<2.0.0,>=0.7.1 in /usr/local/python-3.14/lib/python3.14/site-packages (from boto3==1.34.100->-r requirements.txt (line 22)) (1.1.0)
+Requirement already satisfied: s3transfer<0.11.0,>=0.10.0 in /usr/local/python-3.14/lib/python3.14/site-packages (from boto3==1.34.100->-r requirements.txt (line 22)) (0.10.4)
+Requirement already satisfied: iniconfig>=1.0.1 in /usr/local/python-3.14/lib/python3.14/site-packages (from pytest==9.1.1->-r requirements.txt (line 29)) (2.3.1)
+Requirement already satisfied: packaging>=22 in /usr/local/python-3.14/lib/python3.14/site-packages (from pytest==9.1.1->-r requirements.txt (line 29)) (26.3)
+Requirement already satisfied: pluggy<2,>=1.5 in /usr/local/python-3.14/lib/python3.14/site-packages (from pytest==9.1.1->-r requirements.txt (line 29)) (1.7.0)
+Requirement already satisfied: pygments>=2.7.2 in /usr/local/python-3.14/lib/python3.14/site-packages (from pytest==9.1.1->-r requirements.txt (line 29)) (2.21.0)
+Requirement already satisfied: python-dateutil<3.0.0,>=2.1 in /usr/local/python-3.14/lib/python3.14/site-packages (from botocore<1.35.0,>=1.34.100->boto3==1.34.100->-r requirements.txt (line 22)) (2.9.0.post0)
+Requirement already satisfied: typing-extensions in /usr/local/python-3.14/lib/python3.14/site-packages (from pyee<14,>=13->playwright==1.62.0->-r requirements.txt (line 18)) (4.16.0)
+Requirement already satisfied: six>=1.5 in /usr/local/python-3.14/lib/python3.14/site-packages (from python-dateutil<3.0.0,>=2.1->botocore<1.35.0,>=1.34.100->boto3==1.34.100->-r requirements.txt (line 22)) (1.17.0)
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.
+(.venv) [root@ip-10-34-43-217 kibana_dashboard_runtime_monitor]# which python
+alias python='/usr/local/python-3.14/bin/python3.14'
+        /usr/local/python-3.14/bin/python3.14
+(.venv) [root@ip-10-34-43-217 kibana_dashboard_runtime_monitor]# sudo tee /etc/yum.repos.d/microsoft-edge.repo >/dev/null <<'REPO'
+> [microsoft-edge]
+> name=microsoft-edge
+> baseurl=https://packages.microsoft.com/yumrepos/edge
+> enabled=1
+> gpgcheck=1
+> gpgkey=https://packages.microsoft.com/keys/microsoft.asc
+> REPO
+(.venv) [root@ip-10-34-43-217 kibana_dashboard_runtime_monitor]# sudo dnf install -y microsoft-edge-stable
+Updating Subscription Management repositories.
+Unable to read consumer identity
+
+This system is not registered with an entitlement server. You can use subscription-manager to register.
+
+microsoft-edge                                                                                                          6.9 kB/s | 1.5 kB     00:00    
+Package microsoft-edge-stable-157.0.4341.42-1.x86_64 is already installed.
+Dependencies resolved.
+Nothing to do.
+Complete!
+(.venv) [root@ip-10-34-43-217 kibana_dashboard_runtime_monitor]# /opt/microsoft/msedge/msedge --version
+Microsoft Edge 157.0.4341.42 unknown
+(.venv) [root@ip-10-34-43-217 kibana_dashboard_runtime_monitor]# ldd /opt/microsoft/msedge/msedge | grep -i "not found"     # must print nothing
+(.venv) [root@ip-10-34-43-217 kibana_dashboard_runtime_monitor]# 
+(.venv) [root@ip-10-34-43-217 kibana_dashboard_runtime_monitor]# cat > config/settings.yaml <<'EOF'
+> aws_secret_id: federal_store
+> aws_region: us-east-1
+> kibana_space: fed2
+> ca_bundle: /etc/pki/tls/certs/ca-bundle.crt   # only behind a TLS-inspecting proxy; delete the line otherwise
+> 
+> collector:
+>   registry_source: api                        # read the dashboard list live from Kibana
+> EOF
+(.venv) [root@ip-10-34-43-217 kibana_dashboard_runtime_monitor]# cat config/settings.yaml
+aws_secret_id: federal_store
+aws_region: us-east-1
+kibana_space: fed2
+ca_bundle: /etc/pki/tls/certs/ca-bundle.crt   # only behind a TLS-inspecting proxy; delete the line otherwise
+
+collector:
+  registry_source: api                        # read the dashboard list live from Kibana
+(.venv) [root@ip-10-34-43-217 kibana_dashboard_runtime_monitor]# python scripts/check_access.py 2>&1 | head -12
+ERROR: no Elasticsearch URL or API key resolved.
+Connection: elasticsearch.api_key<-unset, elasticsearch.base_url<-aws-bundle, kibana.auth.api_key<-unset, kibana.base_url<-aws-bundle
+Secret read: arn=arn:aws:secretsmanager:us-east-1:393421781446:secret:federal_store-TERNX7 region=us-east-1 stages=AWSCURRENT version_created=2026-10-13 19:42:01.621000+00:00
+(.venv) [root@ip-10-34-43-217 kibana_dashboard_runtime_monitor]# python scripts/run_collector.py --dry-run --out run.json
+Connection: elasticsearch.api_key<-unset, elasticsearch.base_url<-aws-bundle, kibana.auth.api_key<-unset, kibana.base_url<-aws-bundle
+Traceback (most recent call last):
+  File "/opt/kibana_dashboard_runtime_monitor/scripts/run_collector.py", line 185, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "/opt/kibana_dashboard_runtime_monitor/scripts/run_collector.py", line 151, in main
+    registry = _load_registry(settings)
+  File "/opt/kibana_dashboard_runtime_monitor/scripts/run_collector.py", line 74, in _load_registry
+    reg = registry_to_dict(build_registry_from_api(settings))
+                           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "/opt/kibana_dashboard_runtime_monitor/scripts/../src/dhm/discovery.py", line 93, in build_registry_from_api
+    objs = fetch_saved_objects(settings)
+  File "/opt/kibana_dashboard_runtime_monitor/scripts/../src/dhm/discovery.py", line 79, in fetch_saved_objects
+    data = _get_with_retries(session, settings, url, params).json()
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/kibana_dashboard_runtime_monitor/scripts/../src/dhm/discovery.py", line 61, in _get_with_retries
+    resp.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "/usr/local/python-3.14/lib/python3.14/site-packages/requests/models.py", line 1024, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 401 Client Error: Unauthorized for url: https://cdm-fdb.kb.us-gov-east-1.aws.elastic-cloud.com/s/fed2/api/saved_objects/_find?type=dashboard&type=links&per_page=1000&page=1
+(.venv) [root@ip-10-34-43-217 kibana_dashboard_runtime_monitor]# 
+(.venv) [root@ip-10-34-43-217 kibana_dashboard_runtime_monitor]# id dhm 2>/dev/null || sudo useradd --system --home-dir /var/lib/dhm --create-home --shell /usr/sbin/nologin dhm
+uid=989(dhm) gid=984(dhm) groups=984(dhm)
+(.venv) [root@ip-10-34-43-217 kibana_dashboard_runtime_monitor]# sudo chmod 0750 /var/lib/dhm
+(.venv) [root@ip-10-34-43-217 kibana_dashboard_runtime_monitor]# sudo chmod -R u=rwX,g=rX,o=rX /opt/kibana_dashboard_runtime_monitor
+(.venv) [root@ip-10-34-43-217 kibana_dashboard_runtime_monitor]# sudo -u dhm env HOME=/var/lib/dhm bash -c \
+>   'cd /opt/kibana_dashboard_runtime_monitor && .venv/bin/python scripts/run_collector.py --dry-run --out /var/lib/dhm/run.json'
+Traceback (most recent call last):
+  File "/opt/kibana_dashboard_runtime_monitor/scripts/run_collector.py", line 46, in <module>
+    from dhm.config import load_settings  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/kibana_dashboard_runtime_monitor/scripts/../src/dhm/config.py", line 13, in <module>
+    import yaml
+ModuleNotFoundError: No module named 'yaml'
+(.venv) [root@ip-10-34-43-217 kibana_dashboard_runtime_monitor]# sudo -u dhm env HOME=/var/lib/dhm bash -c \
+>   'cd /opt/kibana_dashboard_runtime_monitor && .venv/bin/python scripts/setup_elasticsearch.py'
+Traceback (most recent call last):
+  File "/opt/kibana_dashboard_runtime_monitor/scripts/setup_elasticsearch.py", line 28, in <module>
+    from dhm.config import load_settings  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/kibana_dashboard_runtime_monitor/scripts/../src/dhm/config.py", line 13, in <module>
+    import yaml
+ModuleNotFoundError: No module named 'yaml'
+(.venv) [root@ip-10-34-43-217 kibana_dashboard_runtime_monitor]# sudo -u dhm env HOME=/var/lib/dhm bash -c \
+>   'cd /opt/kibana_dashboard_runtime_monitor && .venv/bin/python scripts/run_collector.py'
+Traceback (most recent call last):
+  File "/opt/kibana_dashboard_runtime_monitor/scripts/run_collector.py", line 46, in <module>
+    from dhm.config import load_settings  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/kibana_dashboard_runtime_monitor/scripts/../src/dhm/config.py", line 13, in <module>
+    import yaml
+ModuleNotFoundError: No module named 'yaml'
+(.venv) [root@ip-10-34-43-217 kibana_dashboard_runtime_monitor]# 
