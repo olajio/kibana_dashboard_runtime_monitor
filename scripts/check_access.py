@@ -65,7 +65,11 @@ def _reason(resp: requests.Response) -> str:
     try:
         err = resp.json().get("error", {})
     except ValueError:
-        return f"HTTP {resp.status_code}"
+        # Not Elasticsearch's JSON: a proxy, a load balancer or a web app answered.
+        # Say what, so a wrong URL can be told apart from a missing permission.
+        ctype = (resp.headers.get("Content-Type") or "").split(";")[0] or "no content-type"
+        snippet = " ".join((resp.text or "")[:80].split())
+        return f"HTTP {resp.status_code} not-elasticsearch ({ctype}) {snippet!r}"
     if isinstance(err, dict):
         return err.get("type") or f"HTTP {resp.status_code}"
     return str(err)[:60]
@@ -159,6 +163,7 @@ def main() -> int:
     patterns = ([p.strip() for p in args.patterns.split(",") if p.strip()]
                 if args.patterns else parse_patterns(args.export))
     base = settings.elasticsearch.base_url
+    print(f"Elasticsearch URL: {base}")
     headers = {"Authorization": f"ApiKey {settings.elasticsearch.api_key}"}
     verify = tls_verify(settings, settings.elasticsearch.verify_tls)
 
