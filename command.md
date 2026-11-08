@@ -1,37 +1,41 @@
-# The collector's Elasticsearch URL no longer exists
+# The host still reads the OLD Elasticsearch URL from the secret
 
-```
-Elasticsearch URL: https://HOST-REDACTED.es.example.invalid
-authenticate: FAILED (HTTP 404, HTTP 404)
-```
+The secret `federal_store` as you see it in the AWS console holds the new `cdm-fdb` URLs, but
+the host's run still printed the old endpoint (`Connection: ... base_url<-aws-bundle`) and
+Elastic Cloud answered `HTTP 404 'Unknown resource.'`. So the host is reading a different
+copy of the secret than the one you edited: another region, another AWS account, or a version
+that is not the current one.
 
-The reply is JSON with no Elasticsearch `error` object, which is the shape of Elastic
-Cloud's proxy saying the endpoint is unknown, not of a cluster refusing a request. After
-the pull below, the line reads `HTTP 404 'Unknown resource.'` if that is what it is.
-
-## 1. Pull and confirm
+## 1. Pull, then see exactly which secret was read
 
 ```bash
 cd /opt/kibana_dashboard_runtime_monitor && source .venv/bin/activate && git pull origin main
 python scripts/check_access.py --patterns cdm_aim
 ```
 
-## 2. In the Elastic Cloud console (cloud.elastic.co / gov console)
+The output now has a `Secret read:` line with the secret's ARN (it contains the AWS region and
+account id), the version stage and when that version was created. It never prints a value.
 
-Open the deployment you use for the Federal Overview and copy two things from its page:
+## 2. Compare with what you edited in the console
 
-- the **Elasticsearch endpoint** and the **Kibana endpoint** (the hostnames only);
-- its **deployment name and alias**. If the alias changed, the old hostname stops resolving.
+- **Region:** the console shows the region at the top right. The host reads the region in
+  `aws_region` (default `us-east-1`). If you edited the secret in another region, that
+  explains it: move it or set `aws_region` to match.
+- **Account:** the account id in the ARN must be the one you edited it in.
+- **Version:** `stages=AWSCURRENT` is the one that is read. If `version_created` is older than
+  your edit, the edit saved to another place or did not save.
 
-Then check whether `fdb-es-federal` exists at all. Paste the hostnames in chat.
+Paste the `Secret read:` line and the region/account shown in the console. The account id is
+not a credential.
 
-## 3. Fix the secret
+## 3. Once the right values are read
 
-`federal_store` holds `elastic_url` and `kibana_url`. Set them to the endpoints from step 2,
-and create the `dashboard_health_monitor` API key on that deployment (the one in the secret
-belongs to whichever cluster issued it). Nothing in the repo changes.
+`check_access.py` should show your `cdm-fdb` URL, a `cluster:` line with uuid
+`CLUSTER-UUID-REDACTED`, and counts like yours (`cdm_aim` about 124, `cdm_cyhy_vuln` about
+73,938). The API key must also be a key created on that cluster.
 
 ---
+
 
 # The collector's Elasticsearch now answers 404 to everything
 

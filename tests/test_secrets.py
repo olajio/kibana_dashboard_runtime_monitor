@@ -421,3 +421,32 @@ def test_warns_when_tls_verification_is_disabled():
     assert any("DISABLED for kibana" in w for w in warnings)
     s.elasticsearch.verify_tls = False
     assert any("kibana, elasticsearch" in w for w in sec.connection_warnings(s))
+
+
+def test_secret_origin_reports_version_but_never_a_value(monkeypatch):
+    import sys
+    import types
+
+    class Client:
+        meta = types.SimpleNamespace(region_name="us-east-1")
+
+        def get_secret_value(self, SecretId):
+            return {"ARN": "arn:aws:secretsmanager:us-east-1:111122223333:secret:federal_store-AbCd",
+                    "VersionId": "v1", "VersionStages": ["AWSCURRENT"], "CreatedDate": "2026-11-08",
+                    "SecretString": '{"elastic_url": "https://es", "ans_dashboard_health_monitor": "KEY-VALUE"}'}
+
+    fake_boto3 = types.SimpleNamespace(session=types.SimpleNamespace(
+        Session=lambda: types.SimpleNamespace(client=lambda *a, **k: Client())))
+    fake_cfg = types.ModuleType("botocore.config")
+    fake_cfg.Config = lambda **k: None
+    monkeypatch.setitem(sys.modules, "boto3", fake_boto3)
+    monkeypatch.setitem(sys.modules, "botocore", types.ModuleType("botocore"))
+    monkeypatch.setitem(sys.modules, "botocore.config", fake_cfg)
+
+    sec.clear_secret_cache()
+    assert sec.secret_origin("federal_store") == ""
+    sec._get_aws_secret_raw("federal_store", "us-east-1", 1)
+    out = sec.secret_origin("federal_store")
+    assert "us-east-1" in out and "AWSCURRENT" in out and "2026-11-08" in out
+    assert "federal_store" in out and "KEY-VALUE" not in out
+    sec.clear_secret_cache()

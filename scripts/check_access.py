@@ -37,7 +37,9 @@ import requests
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from dhm.config import load_settings, tls_verify  # noqa: E402
-from dhm.secrets import connection_warnings, describe_sources, resolve_connection  # noqa: E402
+from dhm.secrets import (  # noqa: E402
+    connection_warnings, describe_sources, resolve_connection, secret_origin,
+)
 
 DEFAULT_EXPORT = os.path.join(os.path.dirname(__file__), "..", "federal_overview_dashboard.ndjson")
 
@@ -159,6 +161,9 @@ def main() -> int:
         settings.aws_secret_id = args.aws_secret_id
     sources = resolve_connection(settings, cli_es_api_key=args.es_api_key, cli_es_url=args.es_url)
     print(f"Connection: {describe_sources(sources)}")
+    origin = secret_origin(settings.aws_secret_id)
+    if origin:
+        print(f"Secret read: {origin}")
     for w in connection_warnings(settings):
         print(f"WARNING: {w}", file=sys.stderr)
     if not settings.elasticsearch.base_url or not settings.elasticsearch.api_key:
