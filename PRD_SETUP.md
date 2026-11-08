@@ -37,15 +37,30 @@ python3 --version        # needs 3.10 or newer; RHEL 8's own python3 is 3.6
 
 ## 2. Python 3.10+ and the code
 
+Use the interpreter from step 1 (on the prd host `python3` is 3.14, so `python3` below is
+right; if yours says 3.6, give the full path to a newer one instead). Copy the commands as
+they are: nothing here is a placeholder.
+
 ```bash
 cd /opt && git clone https://github.com/olajio/kibana_dashboard_runtime_monitor.git
 cd kibana_dashboard_runtime_monitor
-/path/to/python3.1x -m venv .venv && source .venv/bin/activate
+python3 -m venv .venv
+source .venv/bin/activate
 python -m pip install -r requirements.txt
 ```
 
-Use `python -m pip`, so pip and the interpreter always match. The playbook uses
-`/opt/dashboard-health-monitor` as its checkout; decide which path you want before step 8.
+Check you are inside the virtualenv before installing anything. The prompt starts with
+`(.venv)`, and this prints a path under the checkout, not `/usr/local/...`:
+
+```bash
+which python
+```
+
+If it does not, stop. `pip install` outside a virtualenv changes the system Python for every
+program on the host (as root it can downgrade packages other tools use).
+
+The playbook uses `/opt/dashboard-health-monitor` as its checkout; decide which path you
+want before step 8.
 
 ## 3. Install a browser (doc steps 2 and 3)
 
@@ -70,11 +85,20 @@ step 2, options B to D). Do not run `playwright install` or `playwright install-
 
 ## 4. Create `config/settings.yaml`
 
-```yaml
+This writes the file. Copy the whole block, from `cat` to the closing `EOF`, in one go.
+Typing the YAML lines on their own at the prompt makes the shell try to run them as commands.
+
+```bash
+cat > config/settings.yaml <<'EOF'
 aws_secret_id: federal_store
 aws_region: us-east-1
 kibana_space: fed2
-ca_bundle: /etc/pki/tls/certs/ca-bundle.crt   # only behind a TLS-inspecting proxy
+ca_bundle: /etc/pki/tls/certs/ca-bundle.crt   # only behind a TLS-inspecting proxy; delete the line otherwise
+
+collector:
+  registry_source: api                        # read the dashboard list live from Kibana
+EOF
+cat config/settings.yaml
 ```
 
 `config/settings.example.yaml` lists the other fields. Put no URL and no key in this file:
@@ -110,6 +134,9 @@ sudo chmod -R u=rwX,g=rX,o=rX /opt/kibana_dashboard_runtime_monitor
 sudo -u dhm env HOME=/var/lib/dhm bash -c \
   'cd /opt/kibana_dashboard_runtime_monitor && .venv/bin/python scripts/run_collector.py --dry-run --out /var/lib/dhm/run.json'
 ```
+
+If a command says `.venv/bin/python: No such file or directory`, step 2 did not build the
+virtualenv; go back to it. Nothing has been written to Elasticsearch at that point.
 
 Expect `Connection:` showing `<-aws-bundle`, all dashboards found, and a result per dashboard.
 Nothing is written to Elasticsearch in a dry run. This is the first real read of prd, so send
