@@ -41,23 +41,23 @@ Use the interpreter from step 1 (on the prd host `python3` is 3.14, so `python3`
 right; if yours says 3.6, give the full path to a newer one instead). Copy the commands as
 they are: nothing here is a placeholder.
 
+From here on every command calls `.venv/bin/python` by its path, not `python`. A shell alias
+or a different `python` earlier on `PATH` can win over an activated virtualenv. On the prd
+host the root shell has `alias python='/usr/local/python-3.14/bin/python3.14'`, so a bare
+`python` ran the system interpreter even with `(.venv)` in the prompt, and the packages went
+into the system Python while the virtualenv stayed empty.
+
 ```bash
 cd /opt && git clone https://github.com/olajio/kibana_dashboard_runtime_monitor.git
 cd kibana_dashboard_runtime_monitor
 python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install -r requirements.txt
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python -c "import yaml, boto3, playwright, requests; print('virtualenv ok:', yaml.__file__)"
 ```
 
-Check you are inside the virtualenv before installing anything. The prompt starts with
-`(.venv)`, and this prints a path under the checkout, not `/usr/local/...`:
-
-```bash
-which python
-```
-
-If it does not, stop. `pip install` outside a virtualenv changes the system Python for every
-program on the host (as root it can downgrade packages other tools use).
+The last line must print a path under `/opt/kibana_dashboard_runtime_monitor/.venv/`. If it
+says `No module named ...`, the install did not go into the virtualenv; stop and fix that
+first. If the clone says the directory already exists, `cd` into it and `git pull origin main`.
 
 The playbook uses `/opt/dashboard-health-monitor` as its checkout; decide which path you
 want before step 8.
@@ -107,26 +107,29 @@ both come from the secret.
 ## 5. Check what the host reads, before anything is written
 
 ```bash
-python scripts/check_access.py 2>&1 | head -12
+.venv/bin/python scripts/check_access.py 2>&1 | head -12
 ```
 
 It must show all of these:
 
 | Line | Expected |
 |---|---|
-| `Secret read:` | the **prd** AWS account id (the number in the ARN) and `stages=AWSCURRENT` |
+| `Secret read:` | the **prd** AWS account id (the number in the ARN), `stages=AWSCURRENT`, and `fields=[...]` listing `ans_dashboard_health_monitor`, `elastic_url` and `kibana_url` (names only, never values) |
+| `Connection:` | every item `<-aws-bundle`; `elasticsearch.api_key<-unset` means the key field is missing from the secret |
 | `Elasticsearch URL:` | the `cdm-fdb` host |
 | `cluster:` | the `cluster_uuid` that `GET /` returns in your Dev Tools on `cdm-fdb` |
 | the counts | like yours in Dev Tools: `cdm_aim` about 124, `cdm_cyhy_vuln` about 73,938 |
 
-Do not continue until they match. `HTTP 404 'Unknown resource.'` means the endpoint in the
+Do not continue until they match. If `fields=[...]` has no `ans_dashboard_health_monitor`,
+add that field to the prd secret with the key you created on `cdm-fdb` in step 0, then run this
+step again (the script reads the secret fresh each time). `HTTP 404 'Unknown resource.'` means the endpoint in the
 secret does not exist; a 401 means the key is not from this cluster; zero counts where you
 see data mean the key is filtered by its role.
 
 ## 6. Dry run, as root and then as `dhm` (doc steps 4 and 5)
 
 ```bash
-python scripts/run_collector.py --dry-run --out run.json
+.venv/bin/python scripts/run_collector.py --dry-run --out run.json
 
 id dhm 2>/dev/null || sudo useradd --system --home-dir /var/lib/dhm --create-home --shell /usr/sbin/nologin dhm
 sudo chmod 0750 /var/lib/dhm

@@ -181,14 +181,17 @@ def _parse_bundle(raw: str, secret_id: str = "<secret>") -> Dict[str, str]:
 
 def secret_origin(secret_id: str) -> str:
     """Which secret version was read, for logs: ARN (so the account and region are visible),
-    version stage and creation time. Never includes a value. '' until a fetch has happened.
+    version stage, creation time and the secret's field names. Never includes a value. '' until a fetch has happened.
     Needed because a console edit that lands in a different region, account or version
     than the one the collector reads is otherwise invisible."""
     m = _secret_meta.get(secret_id)
     if not m:
         return ""
-    return (f"arn={m['arn']} region={m['region']} stages={m['stages'] or '?'} "
-            f"version_created={m['created']}")
+    out = (f"arn={m['arn']} region={m['region']} stages={m['stages'] or '?'} "
+           f"version_created={m['created']}")
+    if "fields" in m:
+        out += f" fields=[{m['fields']}]"
+    return out
 
 
 def load_aws_bundle(settings: Settings, max_attempts: int = 4) -> Dict[str, str]:
@@ -200,6 +203,9 @@ def load_aws_bundle(settings: Settings, max_attempts: int = 4) -> Dict[str, str]
     if secret_id not in _bundle_cache:
         raw = _get_aws_secret_raw(secret_id, settings.aws_region, max_attempts)
         _bundle_cache[secret_id] = _parse_bundle(raw, secret_id)
+        if secret_id in _secret_meta:
+            # Field NAMES only (never values): tells a missing key apart from a wrong name.
+            _secret_meta[secret_id]["fields"] = ",".join(sorted(_bundle_cache[secret_id]))
     return _bundle_cache[secret_id]
 
 
