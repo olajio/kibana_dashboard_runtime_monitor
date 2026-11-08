@@ -445,8 +445,12 @@ def test_secret_origin_reports_version_but_never_a_value(monkeypatch):
 
     sec.clear_secret_cache()
     assert sec.secret_origin("federal_store") == ""
-    sec._get_aws_secret_raw("federal_store", "us-east-1", 1)
+    from dhm.config import Settings
+    settings = Settings()
+    settings.aws_secret_id, settings.aws_region = "federal_store", "us-east-1"
+    sec.load_aws_bundle(settings)
     out = sec.secret_origin("federal_store")
+    assert "fields=[ans_dashboard_health_monitor,elastic_url]" in out
     assert "us-east-1" in out and "AWSCURRENT" in out and "2026-11-08" in out
     assert "federal_store" in out and "KEY-VALUE" not in out
     sec.clear_secret_cache()
