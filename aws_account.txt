@@ -1,1 +1,0 @@
-arn:aws:secretsmanager:us-east-1:393421781446:secret:federal_store-TERNX7
