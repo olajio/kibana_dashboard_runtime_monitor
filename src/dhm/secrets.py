@@ -58,6 +58,8 @@ from .config import Settings
 # One run should make at most one Secrets Manager call per secret, even though
 # several values are read out of the same bundle.
 _bundle_cache: Dict[str, Dict[str, str]] = {}
+# Non-secret facts about the version that was read (ARN, stage, created time).
+_secret_meta: Dict[str, Dict[str, str]] = {}
 
 # Field names we accept in the bundle in addition to the configured ones, so a
 # secret written by hand with a reasonable-looking key still works. The first entry
@@ -75,6 +77,7 @@ _BUNDLE_ALIASES: Dict[str, Tuple[str, ...]] = {
 def clear_secret_cache() -> None:
     """Drop the cached bundle(s). Only needed by tests and long-lived processes."""
     _bundle_cache.clear()
+    _secret_meta.clear()
 
 
 # --------------------------------------------------------------------------- #
@@ -103,6 +106,13 @@ def _get_aws_secret_raw(secret_id: str, region: Optional[str], max_attempts: int
     client = session.client("secretsmanager", region_name=region or None, config=cfg)
 
     resp = client.get_secret_value(SecretId=secret_id)
+    _secret_meta[secret_id] = {
+        "arn": resp.get("ARN", ""),
+        "version_id": resp.get("VersionId", ""),
+        "stages": ",".join(resp.get("VersionStages") or []),
+        "created": str(resp.get("CreatedDate", "")),
+        "region": client.meta.region_name or "",
+    }
     raw = resp.get("SecretString")
     if raw is None:  # binary secret
         raw = base64.b64decode(resp["SecretBinary"]).decode("utf-8")
@@ -167,6 +177,18 @@ def _parse_bundle(raw: str, secret_id: str = "<secret>") -> Dict[str, str]:
             f"elasticsearch.aws_secret_id instead."
         )
     return {str(k): ("" if v is None else str(v).strip()) for k, v in data.items()}
+
+
+def secret_origin(secret_id: str) -> str:
+    """Which secret version was read, for logs: ARN (so the account and region are visible),
+    version stage and creation time. Never includes a value. '' until a fetch has happened.
+    Needed because a console edit that lands in a different region, account or version
+    than the one the collector reads is otherwise invisible."""
+    m = _secret_meta.get(secret_id)
+    if not m:
+        return ""
+    return (f"arn={m['arn']} region={m['region']} stages={m['stages'] or '?'} "
+            f"version_created={m['created']}")
 
 
 def load_aws_bundle(settings: Settings, max_attempts: int = 4) -> Dict[str, str]:
