@@ -63,7 +63,12 @@ def parse_patterns(ndjson_path: str) -> List[str]:
 
 def _reason(resp: requests.Response) -> str:
     try:
-        err = resp.json().get("error", {})
+        body = resp.json()
+        err = body.get("error", {})
+        # Elastic Cloud's proxy answers {"ok": false, "message": "Unknown resource."} for a
+        # deployment endpoint that does not exist; there is no "error" key to read.
+        if not err and isinstance(body.get("message"), str):
+            return f"HTTP {resp.status_code} {body['message'][:60]!r}"
     except ValueError:
         # Not Elasticsearch's JSON: a proxy, a load balancer or a web app answered.
         # Say what, so a wrong URL can be told apart from a missing permission.

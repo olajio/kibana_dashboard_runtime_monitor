@@ -121,3 +121,8 @@ def test_a_non_elasticsearch_404_says_what_answered():
     out = ca.cluster_identity(s, "http://es", {}, True)
     assert "not-elasticsearch" in out["error"] and "text/html" in out["error"]
     assert "Not Found" in out["error"]
+
+
+def test_elastic_cloud_proxy_message_is_shown():
+    s = Session({"es/": Resp(404, {"ok": False, "message": "Unknown resource."})})
+    assert ca.cluster_identity(s, "http://es", {}, True) == {"error": "HTTP 404 'Unknown resource.'"}

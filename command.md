@@ -1,3 +1,38 @@
+# The collector's Elasticsearch URL no longer exists
+
+```
+Elasticsearch URL: https://fdb-es-federal.es.us-gov-east-1.aws.elastic-cloud.com
+authenticate: FAILED (HTTP 404, HTTP 404)
+```
+
+The reply is JSON with no Elasticsearch `error` object, which is the shape of Elastic
+Cloud's proxy saying the endpoint is unknown, not of a cluster refusing a request. After
+the pull below, the line reads `HTTP 404 'Unknown resource.'` if that is what it is.
+
+## 1. Pull and confirm
+
+```bash
+cd /opt/kibana_dashboard_runtime_monitor && source .venv/bin/activate && git pull origin main
+python scripts/check_access.py --patterns cdm_aim
+```
+
+## 2. In the Elastic Cloud console (cloud.elastic.co / gov console)
+
+Open the deployment you use for the Federal Overview and copy two things from its page:
+
+- the **Elasticsearch endpoint** and the **Kibana endpoint** (the hostnames only);
+- its **deployment name and alias**. If the alias changed, the old hostname stops resolving.
+
+Then check whether `fdb-es-federal` exists at all. Paste the hostnames in chat.
+
+## 3. Fix the secret
+
+`federal_store` holds `elastic_url` and `kibana_url`. Set them to the endpoints from step 2,
+and create the `dashboard_health_monitor` API key on that deployment (the one in the secret
+belongs to whichever cluster issued it). Nothing in the repo changes.
+
+---
+
 # The collector's Elasticsearch now answers 404 to everything
 
 Last run on the host:
