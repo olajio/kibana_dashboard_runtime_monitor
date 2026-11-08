@@ -1,3 +1,38 @@
+# The collector's Elasticsearch now answers 404 to everything
+
+Last run on the host:
+
+```
+authenticate: FAILED (HTTP 404, HTTP 404)
+cluster: unavailable (HTTP 404)
+```
+
+Both `/` and `/_security/_authenticate` returned 404. On 28 Oct the same key authenticated
+fine, so the URL the collector resolves has changed or stopped being an Elasticsearch
+endpoint (a deleted/renamed Elastic Cloud deployment, a Kibana or proxy URL, or a changed
+`elastic_url` in the secret). Your Dev Tools cluster is `CLUSTER-UUID-REDACTED`
+(`CLUSTER-NAME-REDACTED`, 8.19.23).
+
+## 1. Pull and re-run, without `head`
+
+```bash
+cd /opt/kibana_dashboard_runtime_monitor && source .venv/bin/activate && git pull origin main
+python scripts/check_access.py --patterns cdm_aim
+```
+
+It now prints the Elasticsearch URL it is using, and when the answer is not from Elasticsearch
+it says what answered (content type and the first words of the reply).
+
+## 2. Compare the URL with your Dev Tools
+
+- Open Dev Tools in the Kibana you normally use and note that Kibana's hostname.
+- Paste the `Elasticsearch URL:` line and the `cluster:` line in chat. URLs are not secrets;
+  the API key is never printed.
+
+Then I can tell whether `elastic_url` in `federal_store` needs to change.
+
+---
+
 # Are the collector and you looking at the same cluster?
 
 Your Dev Tools numbers (all real) against the collector key's numbers:

@@ -9,8 +9,9 @@ import check_access as ca
 
 
 class Resp:
-    def __init__(self, status, body):
+    def __init__(self, status, body, headers=None, text=""):
         self.status_code, self._body = status, body
+        self.headers, self.text = headers or {}, text
 
     def json(self):
         if isinstance(self._body, Exception):
@@ -111,3 +112,12 @@ def test_cluster_identity_reports_name_and_uuid():
 def test_cluster_identity_failure_is_reported_not_raised():
     s = Session({"es/": Resp(401, {"error": {"type": "security_exception"}})})
     assert ca.cluster_identity(s, "http://es", {}, True) == {"error": "security_exception"}
+
+
+def test_a_non_elasticsearch_404_says_what_answered():
+    page = Resp(404, ValueError("no json"), {"Content-Type": "text/html; charset=utf-8"},
+                "<html>\n  Not   Found </html>")
+    s = Session({"es/": page})
+    out = ca.cluster_identity(s, "http://es", {}, True)
+    assert "not-elasticsearch" in out["error"] and "text/html" in out["error"]
+    assert "Not Found" in out["error"]
