@@ -46,7 +46,7 @@ def test_controls_use_the_data_view_and_have_references():
 
 def test_every_lens_object_is_self_consistent():
     lenses = [o for o in OBJECTS if o["type"] == "lens"]
-    assert len(lenses) == 10
+    assert len(lenses) == 8
     for o in lenses:
         st = o["attributes"]["state"]
         (layer_id, layer), = st["datasourceStates"]["formBased"]["layers"].items()
@@ -61,7 +61,7 @@ def test_every_lens_object_is_self_consistent():
         if "layers" in vis:                                              # XY
             for ly in vis["layers"]:
                 assert ly["layerId"] == layer_id
-                used += ly["accessors"] + [ly["xAccessor"], ly["splitAccessor"]]
+                used += ly["accessors"] + [ly["xAccessor"]] + ([ly["splitAccessor"]] if "splitAccessor" in ly else [])
         else:
             assert vis["layerId"] == layer_id
             used += [vis[k] for k in ("metricAccessor", "xAccessor", "yAccessor", "valueAccessor") if k in vis]
@@ -94,3 +94,54 @@ def test_ndjson_is_one_object_per_line_with_a_summary():
 def test_the_checked_in_file_is_what_the_builder_produces():
     path = os.path.join(os.path.dirname(__file__), "..", "kibana", "dashboard_health_monitor.ndjson")
     assert open(path, encoding="utf-8").read() == bd.to_ndjson(bd.build())
+
+
+def _vega_specs():
+    for o in OBJECTS:
+        if o["type"] == "visualization" and json.loads(o["attributes"]["visState"])["type"] == "vega":
+            yield o["attributes"]["title"], json.loads(json.loads(o["attributes"]["visState"])["params"]["spec"])
+
+
+def _strings(node):
+    if isinstance(node, dict):
+        for k, v in node.items():
+            yield k
+            yield from _strings(v)
+    elif isinstance(node, list):
+        for v in node:
+            yield from _strings(v)
+    elif isinstance(node, str):
+        yield node
+
+
+def test_vega_charts_query_the_nested_panel_fields_that_exist():
+    mapping = json.load(open(os.path.join(os.path.dirname(__file__), "..", "es", "index_template.json")))
+    props = mapping["template"]["mappings"]["properties"]
+    assert props["panels"]["type"] == "nested"
+    specs = dict(_vega_specs())
+    assert len(specs) == 2
+    for title, spec in specs.items():
+        url = spec["data"]["url"]
+        assert url["%context%"] is True and url["%timefield%"] == "@timestamp"
+        assert url["index"] == "dashboard-health-monitor*"
+        for text in _strings(url["body"]):
+            if text.startswith("panels."):
+                assert text.split(".", 1)[1] in props["panels"]["properties"], (title, text)
+            if text == "dashboard_title":
+                assert text in props
+
+
+def test_panel_health_covers_every_status_the_collector_can_write():
+    from dhm import render_detection as rd
+    written = {rd.OK, rd.EMPTY, rd.ERROR, rd.MISSING, rd.TIMEOUT}
+    assert set(bd.PANEL_STATUSES) == written
+
+
+def test_the_status_tiles_are_green_amber_red_and_filter_on_the_status():
+    tiles = {o["attributes"]["title"]: o for o in OBJECTS if o["id"] in
+             {bd._id("tile-ok"), bd._id("tile-degraded"), bd._id("tile-failed")}}
+    colours = {t: o["attributes"]["state"]["visualization"]["color"] for t, o in tiles.items()}
+    assert colours == {"Dashboards ok": bd.GREEN, "Dashboards degraded": bd.AMBER, "Dashboards failed": bd.RED}
+    queries = {t: o["attributes"]["state"]["query"]["query"] for t, o in tiles.items()}
+    assert queries == {"Dashboards ok": "load_status : ok", "Dashboards degraded": "load_status : degraded",
+                       "Dashboards failed": "load_status : failed"}
