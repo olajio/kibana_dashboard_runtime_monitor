@@ -210,6 +210,9 @@
       tags: [setup, never]
 
     # ----------------------------------------------------------------- schedule
+    # `flock -n` makes a run skip itself if the previous one is still going. A full run takes
+    # about 7 minutes, but one hung dashboard can hold it for much longer, and stacked browsers
+    # would slow every run and corrupt the baseline.
     # The data stream itself is created by the first real write, not by the setup
     # step above, so the first cron run is what brings the index into existence.
     - name: Schedule the collection cycle
@@ -220,7 +223,8 @@
         disabled: "{{ dhm_cron_disabled | bool }}"
         job: >-
           cd {{ dhm_root }} &&
-          HOME={{ dhm_home }}
+          flock -n {{ dhm_home }}/collector.lock
+          env HOME={{ dhm_home }}
           DHM_AWS_SECRET_ID={{ dhm_aws_secret_id }}
           DHM_AWS_REGION={{ dhm_aws_region }}
           {{ dhm_root }}/.venv/bin/python scripts/run_collector.py
