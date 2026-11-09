@@ -1,246 +1,32 @@
-# The host still reads the OLD Elasticsearch URL from the secret
+# Dry run on the prd appserver
 
-The secret `federal_store` as you see it in the AWS console holds the new `cdm-fdb` URLs, but
-the host's run still printed the old endpoint (`Connection: ... base_url<-aws-bundle`) and
-Elastic Cloud answered `HTTP 404 'Unknown resource.'`. So the host is reading a different
-copy of the secret than the one you edited: another region, another AWS account, or a version
-that is not the current one.
+Read-only: it reads Kibana and runs the browser, and writes nothing to Elasticsearch.
+Run it after `check_access.py` shows the `cdm-fdb` URL and counts that match your Dev Tools.
 
-## 1. Pull, then see exactly which secret was read
+## 1. Pull and run as root
 
 ```bash
-cd /opt/kibana_dashboard_runtime_monitor && source .venv/bin/activate && git pull origin main
-python scripts/check_access.py --patterns cdm_aim
+cd /opt/kibana_dashboard_runtime_monitor && git pull origin main
+.venv/bin/python scripts/run_collector.py --dry-run --out run.json
 ```
 
-The output now has a `Secret read:` line with the secret's ARN (it contains the AWS region and
-account id), the version stage and when that version was created. It never prints a value.
-
-## 2. Compare with what you edited in the console
-
-- **Region:** the console shows the region at the top right. The host reads the region in
-  `aws_region` (default `us-east-1`). If you edited the secret in another region, that
-  explains it: move it or set `aws_region` to match.
-- **Account:** the account id in the ARN must be the one you edited it in.
-- **Version:** `stages=AWSCURRENT` is the one that is read. If `version_created` is older than
-  your edit, the edit saved to another place or did not save.
-
-Paste the `Secret read:` line and the region/account shown in the console. The account id is
-not a credential.
-
-## 3. Once the right values are read
-
-`check_access.py` should show your `cdm-fdb` URL, a `cluster:` line with uuid
-`m405qWrgRnOo9MVLVlLI9A`, and counts like yours (`cdm_aim` about 124, `cdm_cyhy_vuln` about
-73,938). The API key must also be a key created on that cluster.
-
----
-
-
-# The collector's Elasticsearch now answers 404 to everything
-
-Last run on the host:
-
-```
-authenticate: FAILED (HTTP 404, HTTP 404)
-cluster: unavailable (HTTP 404)
-```
-
-Both `/` and `/_security/_authenticate` returned 404. On 28 Oct the same key authenticated
-fine, so the URL the collector resolves has changed or stopped being an Elasticsearch
-endpoint (a deleted/renamed Elastic Cloud deployment, a Kibana or proxy URL, or a changed
-`elastic_url` in the secret). Your Dev Tools cluster is `m405qWrgRnOo9MVLVlLI9A`
-(`643ad47723e346ffa843f74a7d1e5ff0`, 8.19.23).
-
-## 1. Pull and re-run, without `head`
+## 2. Run as the `dhm` service account
 
 ```bash
-cd /opt/kibana_dashboard_runtime_monitor && source .venv/bin/activate && git pull origin main
-python scripts/check_access.py --patterns cdm_aim
+sudo -u dhm env HOME=/var/lib/dhm bash -c \
+  'cd /opt/kibana_dashboard_runtime_monitor && .venv/bin/python scripts/run_collector.py --dry-run --out /var/lib/dhm/run.json'
 ```
 
-It now prints the Elasticsearch URL it is using, and when the answer is not from Elasticsearch
-it says what answered (content type and the first words of the reply).
+## 3. Send the result
 
-## 2. Compare the URL with your Dev Tools
+Paste the summary lines into the chat as text: the dashboard count, and ok, degraded or failed
+for each dashboard. Do not paste or commit `run.json`; it holds the full result, and this
+repository must not receive pasted output.
 
-- Open Dev Tools in the Kibana you normally use and note that Kibana's hostname.
-- Paste the `Elasticsearch URL:` line and the `cluster:` line in chat. URLs are not secrets;
-  the API key is never printed.
+If a browser or permission error appears, see the troubleshooting table in
+`LINUX_BROWSER_SETUP.md` step 5.
 
-Then I can tell whether `elastic_url` in `federal_store` needs to change.
+## 4. After a clean dry run
 
----
-
-# Are the collector and you looking at the same cluster?
-
-Your Dev Tools numbers (all real) against the collector key's numbers:
-
-| Index | You (Dev Tools) | Collector's key |
-|---|---|---|
-| `cdm_aim` | 124 | 0 |
-| `cdm_cyhy_vuln` | 73,938 | 0 |
-| `cdm_scuba_result` | 24,287 | 404 (index does not exist) |
-| `agency-dashboard-*:cdm_vuln_current` | 609,330,753 | 0 |
-
-`GET _security/api_key?name=dashboard_health_monitor` returned an empty list for you. A 404
-is not what a missing permission looks like (that is a 403), so the likeliest reading is that
-**the collector's Elasticsearch is a different cluster from the one your Dev Tools is on.**
-
-## 1. Pull, then ask the collector's cluster who it is
-
-```bash
-cd /opt/kibana_dashboard_runtime_monitor && source .venv/bin/activate && git pull origin main
-python scripts/check_access.py --patterns cdm_aim | head -5
-```
-
-The `cluster:` line shows a name and a uuid.
-
-## 2. Ask the same question in your Dev Tools
-
-```
-GET /
-```
-
-Compare `cluster_uuid`. Paste both uuids in chat (a cluster uuid is not a credential).
-
-- **Different uuids:** the secret `federal_store` points the collector at another cluster.
-  Fix `elastic_url` and `kibana_url` in the secret, and make sure the key exists on the right one.
-- **Same uuid:** the key is being filtered on that cluster; then run
-  `GET _security/api_key?name=dashboard_health_monitor&owner=false` and
-  `GET _security/user/_privileges` as an admin and paste the `role_descriptors`.
-
----
-
-# Why do the collector's panels read "empty"? Two checks, run in this order
-
-Run on the production host. Both are read-only. Output contains panel titles, index
-patterns and document counts, never the API key.
-
-## What the CyHy trace showed (the last run you sent)
-
-- **CyHy Overview was STABLE on all three repeats.** The 7 panels that were `empty` when the
-  collector would have stopped were still empty 30 seconds later, identically each time. So
-  waiting longer does not fix them; timing is not the cause.
-- The empty panels read `cdm_cyhy_vuln` and `cdm_cyhy_host_scans`. The panel on
-  `cdm_cyhy_vuln_trending` and the navigation panel were ok. That split by index is what a
-  credential that cannot see (or sees fewer documents in) some indices looks like.
-- **Priority Risks crashed the browser page** (`Page crashed`). That is a resource problem on
-  the host, not a Kibana verdict. Check 3 below looks at memory.
-- **AIM Score Overview was inconsistent between repeats** (errors on one, none on another),
-  which points at intermittent backend errors rather than a fixed cause.
-
-I earlier said the false "empty" results were a timing problem. The trace shows that was wrong
-for CyHy Overview, so the next step is the access check below, not a longer wait.
-
-## 1. Get the checkout ready
-
-```bash
-cd /opt/kibana_dashboard_runtime_monitor && source .venv/bin/activate && git pull origin main
-```
-
-## 2. Count documents the way the collector's key sees them
-
-One request per data-view pattern in the dashboard export (32 patterns).
-
-```bash
-python scripts/check_access.py
-```
-
-Each row is `readable`, `EMPTY` (HTTP 200, zero documents), `DENIED` (401/403), or `ERROR`.
-Then, **in Kibana Dev Tools logged in as yourself**, run for any pattern that is not `readable`:
-
-```
-GET cdm_cyhy_vuln/_count
-GET cdm_cyhy_host_scans/_count
-```
-
-| Collector's key says | Your Dev Tools says | Meaning |
-|---|---|---|
-| `EMPTY` (0) | a real count | The key is filtered: document- or field-level security, or a remote cluster it is not authorised on. Fix the role. |
-| `DENIED` | a real count | The key lacks `read` on that index. Fix the role in `es/api_key_collector*.json`. |
-| `readable`, same count | same count | The key sees the data. The cause is elsewhere (Kibana-side). |
-
-## 3. Why did Priority Risks crash the page?
-
-```bash
-free -m
-df -h /dev/shm
-dmesg -T 2>/dev/null | grep -iE "oom|killed process" | tail -5
-```
-
-A low `available` memory figure, a small `/dev/shm`, or an OOM line naming a browser process
-means the host is too small for that dashboard. Paste all three outputs.
-
-## 4. Send the result
-
-Paste the output into the chat. Do not commit it. This repository is public.
-
----
-
-# Do the "empty" panels settle? Trace one dashboard (already run once; kept for reference)
-
-### Why
-
-On CyHy Overview the collector reports 5 panels as `empty`, but a person looking at the same
-dashboard in Kibana sees data in all of them. The collector stops waiting the instant every
-panel counts as resolved, and an empty placeholder counts as resolved, so a placeholder that
-is only a loading state would be frozen into the result.
-
-This script loads the dashboard the way the collector does, works out when the collector
-**would have stopped**, keeps watching for 30 seconds longer, and reports which panels
-changed state after that point.
-
-### The earlier experiment was withdrawn
-
-The first version of this file ran `debug_spike.py` with different waits. That was invalid:
-`debug_spike.py` opens a fresh page each time, so every run pays Kibana's full cold start
-(about 10 seconds on this host), and its results said nothing about settling. The collector
-reuses one page and moves between dashboards by changing the URL fragment, which Kibana
-handles without rebooting. `trace_dashboard.py` does the same.
-
-### Trace step 1. Get the checkout ready
-
-```bash
-cd /opt/kibana_dashboard_runtime_monitor && source .venv/bin/activate && git pull origin main
-```
-
-### Trace step 2. Trace CyHy Overview
-
-Each repeat takes about a minute (warm-up, then a 30 second window). Three repeats show
-whether the result is the same every time.
-
-```bash
-python scripts/trace_dashboard.py --dashboard-title "CyHy Overview" --repeat 3
-```
-
-### Trace step 3. Two more, for comparison
-
-Priority Risks is the dashboard whose result flipped between two runs (15 empty panels, then
-none). AIM Score Overview reported every panel ok, so it checks that the script reports
-"ALL OK" when nothing is wrong.
-
-```bash
-python scripts/trace_dashboard.py --dashboard-title "Priority Risks" --repeat 3
-python scripts/trace_dashboard.py --dashboard-title "AIM Score Overview"
-```
-
-### Trace step 4. How to read the output
-
-Each trace ends with one verdict line.
-
-| Verdict | What it means | What follows |
-|---|---|---|
-| `READ TOO EARLY` | Some panels were not ok when the collector would have stopped, but were ok by the end of the window. Those "empty" results are a loading state. | The collector needs to keep watching panels that look empty, or wait for the page to settle, before it classifies them. |
-| `STABLE` | Panels that were not ok at the stop moment stayed that way for the whole window. | Timing does not explain them. Look at identity and environment instead: which user or API key the collector uses, and which Kibana host. |
-| `NEVER STOPPED` | The collector's stop condition was never met within 30 seconds. | The real collector would run to its timeout on this dashboard. Something on the page never finishes. |
-| `UNSTABLE` | Panels that were ok at the stop moment became not ok later. | The page is changing underneath the collector. |
-| `ALL OK` | Nothing wrong at either point. | Expected for AIM Score Overview. If it says anything else there, the script itself needs a look. |
-
-The section "still not ok at the end of the window" matters most. Those are the panels that
-timing does not explain. `CDM-Nav-LCKUP` (a static text label) is expected to appear there if
-it really is empty.
-
-### Trace step 5. Send the result
-
-Paste the output into the chat. Do not commit it. This repository is public.
+The first write (`PRD_SETUP.md` step 7): the ILM policy and index template first, then the
+collector. Do not run the collector before the setup script.
