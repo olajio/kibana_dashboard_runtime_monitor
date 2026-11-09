@@ -1,32 +1,56 @@
-# Dry run on the prd appserver
+# First real write on the prd appserver
 
-Read-only: it reads Kibana and runs the browser, and writes nothing to Elasticsearch.
-Run it after `check_access.py` shows the `cdm-fdb` URL and counts that match your Dev Tools.
+The dry run is clean: 22 dashboards, no panel that is not ok. This is the first run that writes
+to Elasticsearch.
 
-## 1. Pull and run as root
+**Order matters.** The setup script first, then the collector. A write before the index
+template exists creates the data stream with default mappings, and the only way back is to
+delete the data.
+
+## 1. Pull
 
 ```bash
 cd /opt/kibana_dashboard_runtime_monitor && git pull origin main
-.venv/bin/python scripts/run_collector.py --dry-run --out run.json
 ```
 
-## 2. Run as the `dhm` service account
+## 2. Apply the ILM policy and index template
 
 ```bash
 sudo -u dhm env HOME=/var/lib/dhm bash -c \
-  'cd /opt/kibana_dashboard_runtime_monitor && .venv/bin/python scripts/run_collector.py --dry-run --out /var/lib/dhm/run.json'
+  'cd /opt/kibana_dashboard_runtime_monitor && .venv/bin/python scripts/setup_elasticsearch.py'
 ```
 
-## 3. Send the result
+Expect `Applied ILM policy: dashboard-health-monitor` and
+`Applied index template: dashboard-health-monitor`. A 403 here means the account that owns the
+API key lacks `manage_ilm` or `manage_index_templates`. Stop and tell me; do not run step 3.
 
-Paste the summary lines into the chat as text: the dashboard count, and ok, degraded or failed
-for each dashboard. Do not paste or commit `run.json`; it holds the full result, and this
-repository must not receive pasted output.
+## 3. Run the collector and write
 
-If a browser or permission error appears, see the troubleshooting table in
-`LINUX_BROWSER_SETUP.md` step 5.
+```bash
+sudo -u dhm env HOME=/var/lib/dhm bash -c \
+  'cd /opt/kibana_dashboard_runtime_monitor && .venv/bin/python scripts/run_collector.py'
+```
 
-## 4. After a clean dry run
+Expect one line per dashboard, then `Indexed 22 documents into dashboard-health-monitor`.
 
-The first write (`PRD_SETUP.md` step 7): the ILM policy and index template first, then the
-collector. Do not run the collector before the setup script.
+## 4. Check it in Kibana Dev Tools
+
+```
+GET _data_stream/dashboard-health-monitor
+GET dashboard-health-monitor/_count
+```
+
+Expect `template` and `ilm_policy` both `dashboard-health-monitor`, and a count of 22.
+A different template name, or no `ilm_policy`, means a write got in before the setup script.
+
+## 5. Send the result
+
+Paste the output of steps 2 and 3 into the chat as text. Do not commit it; do not upload it to
+this repository.
+
+## Note on the statuses
+
+`degraded` starts at 30 s of load time and `failed` at 120 s (`degraded_over_ms` and
+`failed_over_ms` under `collector:` in `config/settings.yaml`). In the dry run Software Overview
+took 83 to 159 s, Priority Risks 31 to 67 s and Agency Details 27 to 39 s, so those will show as
+degraded or failed until the thresholds are changed. Decide on that before turning on alerts.
