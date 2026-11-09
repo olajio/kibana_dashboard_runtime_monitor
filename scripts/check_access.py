@@ -121,6 +121,30 @@ def check_write_access(session, base: str, headers: Dict[str, str], verify,
             "missing": [p for p in WRITE_PRIVILEGES if not have.get(p)]}
 
 
+def data_stream_status(session, base: str, headers: Dict[str, str], verify,
+                       name: str = WRITE_INDEX, timeout: int = 60) -> Dict[str, Any]:
+    """What the first write created: the data stream, the template and ILM policy it picked up,
+    and how many documents it holds. Read with the collector's own key (it can read and view
+    metadata on `dashboard-health-monitor*`), because a person's account usually cannot."""
+    try:
+        r = session.get(f"{base}/_data_stream/{name}", headers=headers, verify=verify, timeout=timeout)
+    except requests.RequestException as exc:
+        return {"error": type(exc).__name__}
+    if r.status_code == 404:
+        return {"exists": False}
+    if r.status_code != 200:
+        return {"error": _reason(r)}
+    streams = r.json().get("data_streams") or []
+    if not streams:
+        return {"exists": False}
+    ds = streams[0]
+    out = {"exists": True, "template": ds.get("template"), "ilm_policy": ds.get("ilm_policy"),
+           "backing_indices": len(ds.get("indices") or [])}
+    c = count_pattern(session, base, headers, verify, name, timeout)
+    out["count"] = c.get("count") if c.get("status") == 200 else None
+    return out
+
+
 def cluster_identity(session, base: str, headers: Dict[str, str], verify) -> Dict[str, Any]:
     """Which cluster answered: name and uuid (`GET /`). Compare with the same call in the
     Dev Tools you normally use; different uuids mean the two sessions are on different
@@ -179,6 +203,9 @@ def main() -> int:
     ap.add_argument("--es-api-key", default=None)
     ap.add_argument("--es-url", default=None)
     ap.add_argument("--aws-secret-id", default=None)
+    ap.add_argument("--verify-write", action="store_true",
+                    help="after a first write, show the data stream, its template and ILM policy, "
+                         "and its document count (and skip the per-pattern probe)")
     ap.add_argument("--timeout", type=int, default=180,
                     help="seconds to wait for each count; trending patterns across ~100 remote "
                          "clusters hold billions of documents and can exceed 60 s")
@@ -227,6 +254,17 @@ def main() -> int:
         else:
             print(f"cluster: name={cluster['cluster_name']}  uuid={cluster['cluster_uuid']}  "
                   f"version={cluster['version']}")
+        if args.verify_write:
+            ds = data_stream_status(session, base, headers, verify)
+            if "error" in ds:
+                print(f"\ndata stream {WRITE_INDEX}: unavailable ({ds['error']})")
+            elif not ds["exists"]:
+                print(f"\ndata stream {WRITE_INDEX}: does not exist yet (no write has happened)")
+            else:
+                print(f"\ndata stream {WRITE_INDEX}: template={ds['template']}  "
+                      f"ilm_policy={ds['ilm_policy']}  backing_indices={ds['backing_indices']}  "
+                      f"documents={ds['count']}")
+            return 0
         print(f"\nprobing {len(patterns)} pattern(s)...\n")
         rows = {p: count_pattern(session, base, headers, verify, p, args.timeout) for p in patterns}
     print(format_table(rows))

@@ -153,3 +153,18 @@ def test_write_access_ok_when_everything_is_granted():
 def test_write_access_failure_is_reported_not_raised():
     s = Session({"_has_privileges": Resp(401, {"error": {"type": "security_exception"}})})
     assert ca.check_write_access(s, "http://es", {}, True) == {"error": "security_exception"}
+
+
+def test_data_stream_status_reports_template_policy_and_count():
+    ds = {"data_streams": [{"template": "dashboard-health-monitor", "ilm_policy": "dashboard-health-monitor",
+                            "indices": [{"index_name": ".ds-x-1"}]}]}
+    s = Session({"_data_stream/dashboard-health-monitor": Resp(200, ds),
+                 "dashboard-health-monitor/_count": Resp(200, {"count": 22})})
+    assert ca.data_stream_status(s, "http://es", {}, True) == {
+        "exists": True, "template": "dashboard-health-monitor",
+        "ilm_policy": "dashboard-health-monitor", "backing_indices": 1, "count": 22}
+
+
+def test_data_stream_status_when_nothing_was_written():
+    s = Session({"_data_stream/dashboard-health-monitor": Resp(404, {"error": {"type": "index_not_found_exception"}})})
+    assert ca.data_stream_status(s, "http://es", {}, True) == {"exists": False}
