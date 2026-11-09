@@ -1,0 +1,30 @@
+data stream dashboard-health-monitor: template=dashboard-health-monitor  ilm_policy=dashboard-health-monitor  backing_indices=1  documents=22
+[root@ip-10-34-43-217 kibana_dashboard_runtime_monitor]# 
+[root@ip-10-34-43-217 kibana_dashboard_runtime_monitor]# 
+[root@ip-10-34-43-217 kibana_dashboard_runtime_monitor]# sudo -u dhm env HOME=/var/lib/dhm bash -c   'cd /opt/kibana_dashboard_runtime_monitor && .venv/bin/python scripts/run_collector.py'
+Connection: elasticsearch.api_key<-aws-bundle, elasticsearch.base_url<-aws-bundle, kibana.auth.api_key<-elasticsearch.api_key, kibana.base_url<-aws-bundle
+Collecting 22 dashboards for app 'federal_overview' (cluster=fed2, space=fed2) [backend=playwright, browser=msedge, registry=api, selection=linked (hub='Federal Overview' + reachable)]
+  Federal Overview                         ok         6452ms ok=6 not_ok=0
+  Agency Details                           degraded  33698ms ok=12 not_ok=0
+  AIM Score Overview                       ok          902ms ok=7 not_ok=0
+  CyHy Overview                            ok         1478ms ok=9 not_ok=0
+  Federal Landing Page                     ok          602ms ok=7 not_ok=0
+  Hardware Overview                        ok         3409ms ok=7 not_ok=0
+  HVA Devices                              ok          684ms ok=5 not_ok=0
+  HVA Misconfigurations                    ok          243ms ok=3 not_ok=0
+  HVA Software                             ok          238ms ok=3 not_ok=0
+  HVA System Boundaries                    ok          851ms ok=9 not_ok=0
+  HVA Vulnerabilities                      ok         1801ms ok=7 not_ok=0
+  Misconfiguration Overview                ok        10819ms ok=5 not_ok=0
+  Misconfiguration Records                 ok         4266ms ok=4 not_ok=0
+  Priority Risks                           degraded  60441ms ok=35 not_ok=0
+  Remediated Vulnerabilities               ok         9954ms ok=13 not_ok=0
+  Remote Cluster Connectivity Status Detai ok          480ms ok=2 not_ok=0
+  SCuBA Overview                           ok         2881ms ok=25 not_ok=0
+  SCuBA Overview - All                     ok         4433ms ok=27 not_ok=0
+  Software Overview                        degraded  92452ms ok=5 not_ok=0
+  SSVC Overview                            ok        14338ms ok=13 not_ok=0
+  Vulnerability Overview                   ok        12315ms ok=6 not_ok=0
+  Vulnerability Records                    ok         4697ms ok=5 not_ok=0
+Indexed 22 documents into dashboard-health-monitor
+[root@ip-10-34-43-217 kibana_dashboard_runtime_monitor]# 
