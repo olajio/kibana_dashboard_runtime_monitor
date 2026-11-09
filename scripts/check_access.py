@@ -97,6 +97,30 @@ def authenticate(session, base: str, headers: Dict[str, str], verify) -> Dict[st
     }
 
 
+WRITE_INDEX = "dashboard-health-monitor"
+WRITE_PRIVILEGES = ["create_doc", "auto_configure", "create_index"]
+
+
+def check_write_access(session, base: str, headers: Dict[str, str], verify,
+                       index: str = WRITE_INDEX) -> Dict[str, Any]:
+    """Can the credential create and write the monitor's data stream? An API key can never
+    hold more than its owner, so a key whose role lists these privileges can still be refused
+    when the account that created it does not have them. Asking Elasticsearch directly
+    (`_has_privileges` on itself) shows the effective answer before a real write fails."""
+    body = {"index": [{"names": [index], "privileges": WRITE_PRIVILEGES}]}
+    try:
+        resp = session.post(f"{base}/_security/user/_has_privileges", headers=headers,
+                            json=body, verify=verify, timeout=30)
+    except requests.RequestException as exc:
+        return {"error": type(exc).__name__}
+    if resp.status_code != 200:
+        return {"error": _reason(resp)}
+    d = resp.json()
+    have = (d.get("index") or {}).get(index) or {}
+    return {"ok": bool(d.get("has_all_requested")),
+            "missing": [p for p in WRITE_PRIVILEGES if not have.get(p)]}
+
+
 def cluster_identity(session, base: str, headers: Dict[str, str], verify) -> Dict[str, Any]:
     """Which cluster answered: name and uuid (`GET /`). Compare with the same call in the
     Dev Tools you normally use; different uuids mean the two sessions are on different
@@ -189,6 +213,14 @@ def main() -> int:
             print(f"authenticated as: {who['username']}  type={who['type']}  realm={who['realm']}  "
                   f"api_key_name={who['api_key']!r}")
             print(f"roles: {who['roles'] or '(none listed)'}")
+        write = check_write_access(session, base, headers, verify)
+        if "error" in write:
+            print(f"write access to {WRITE_INDEX}: unavailable ({write['error']})")
+        elif write["ok"]:
+            print(f"write access to {WRITE_INDEX}: yes ({', '.join(WRITE_PRIVILEGES)})")
+        else:
+            print(f"write access to {WRITE_INDEX}: NO, missing {', '.join(write['missing'])}. The "
+                  f"collector's first write will fail. A key holds only what its OWNER holds.")
         cluster = cluster_identity(session, base, headers, verify)
         if "error" in cluster:
             print(f"cluster: unavailable ({cluster['error']})")

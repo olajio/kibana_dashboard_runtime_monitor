@@ -24,6 +24,13 @@ class Session:
     def __init__(self, routes):
         self.routes, self.calls = routes, []
 
+    def post(self, url, headers=None, json=None, verify=None, timeout=None):
+        self.calls.append((url, dict(headers or {})))
+        for suffix, resp in self.routes.items():
+            if url.endswith(suffix):
+                return resp
+        return Resp(404, {"error": {"type": "not_found"}})
+
     def get(self, url, headers=None, verify=None, timeout=None):
         self.calls.append((url, dict(headers or {})))
         for suffix, resp in self.routes.items():
@@ -126,3 +133,23 @@ def test_a_non_elasticsearch_404_says_what_answered():
 def test_elastic_cloud_proxy_message_is_shown():
     s = Session({"es/": Resp(404, {"ok": False, "message": "Unknown resource."})})
     assert ca.cluster_identity(s, "http://es", {}, True) == {"error": "HTTP 404 'Unknown resource.'"}
+
+
+def test_write_access_reports_the_missing_privileges():
+    body = {"has_all_requested": False, "index": {"dashboard-health-monitor": {
+        "create_doc": True, "auto_configure": False, "create_index": False}}}
+    s = Session({"_has_privileges": Resp(200, body)})
+    assert ca.check_write_access(s, "http://es", {}, True) == {
+        "ok": False, "missing": ["auto_configure", "create_index"]}
+
+
+def test_write_access_ok_when_everything_is_granted():
+    body = {"has_all_requested": True, "index": {"dashboard-health-monitor": {
+        "create_doc": True, "auto_configure": True, "create_index": True}}}
+    s = Session({"_has_privileges": Resp(200, body)})
+    assert ca.check_write_access(s, "http://es", {}, True) == {"ok": True, "missing": []}
+
+
+def test_write_access_failure_is_reported_not_raised():
+    s = Session({"_has_privileges": Resp(401, {"error": {"type": "security_exception"}})})
+    assert ca.check_write_access(s, "http://es", {}, True) == {"error": "security_exception"}
