@@ -1,0 +1,2159 @@
+# 10: GET / 200 OK
+{
+  "name": "instance-0000000004",
+  "cluster_name": "643ad47723e346ffa843f74a7d1e5ff0",
+  "cluster_uuid": "m405qWrgRnOo9MVLVlLI9A",
+  "version": {
+    "number": "8.19.23",
+    "build_flavor": "default",
+    "build_type": "docker",
+    "build_hash": "6940e499f8a38841809b8e295a20c6421c95d9e4",
+    "build_date": "2026-09-30T23:11:55.493565832Z",
+    "build_snapshot": false,
+    "lucene_version": "9.12.2",
+    "minimum_wire_compatibility_version": "7.17.0",
+    "minimum_index_compatibility_version": "7.0.0"
+  },
+  "tagline": "You Know, for Search"
+}
+# 11: GET _security/api_key 200 OK
+{
+  "api_keys": [
+    {
+      "id": "fjbEBJ8BXlbCKpEsA0qX",
+      "name": "awx_manage_security",
+      "type": "rest",
+      "creation": 1782491382763,
+      "expiration": 1814027382763,
+      "invalidated": false,
+      "username": "elastic",
+      "realm": "found",
+      "realm_type": "file",
+      "metadata": {},
+      "role_descriptors": {
+        "superuser": {
+          "cluster": [
+            "manage",
+            "manage_security"
+          ],
+          "indices": [
+            {
+              "names": [
+                "*"
+              ],
+              "privileges": [
+                "manage"
+              ],
+              "allow_restricted_indices": false
+            }
+          ],
+          "applications": [],
+          "run_as": [],
+          "metadata": {},
+          "transient_metadata": {
+            "enabled": true
+          }
+        }
+      }
+    },
+    {
+      "id": "rtGiXJ8B51W7I1crCQhB",
+      "name": "Shawn Lynott API Key",
+      "type": "rest",
+      "creation": 1783965550915,
+      "invalidated": false,
+      "username": "shawn.lynott@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "TdB73J8BnI5q870IMk7G",
+      "name": "vince.jones@mail.associates.cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1786110489288,
+      "expiration": 1793886489288,
+      "invalidated": false,
+      "username": "vince.jones@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "mcmS3J8BmNYOwcXgaplz",
+      "name": "CDM API",
+      "type": "rest",
+      "creation": 1786112010868,
+      "expiration": 1793888010868,
+      "invalidated": false,
+      "username": "angello.vizcarragamarra@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "l8mS3J8BmNYOwcXgI5nU",
+      "name": "jeno.thomas@associates.cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1786111992790,
+      "expiration": 1793887992790,
+      "invalidated": false,
+      "username": "jeno.thomas@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "m8mS3J8BmNYOwcXg0pnq",
+      "name": "Alexander.Kreckel",
+      "type": "rest",
+      "creation": 1786112037611,
+      "expiration": 1793888037611,
+      "invalidated": false,
+      "username": "alexander.kreckel@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "BM7I8Z8BmNYOwcXgg8pR",
+      "name": "Adele Birkenes",
+      "type": "rest",
+      "creation": 1786467877715,
+      "expiration": 1794243877715,
+      "invalidated": false,
+      "username": "adele.birkenes@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "DM4N8p8BmNYOwcXgH81Y",
+      "name": "CDM_API_Key",
+      "type": "rest",
+      "creation": 1786472374106,
+      "expiration": 1794248374106,
+      "invalidated": false,
+      "username": "shahrzad.nahid@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "08-S958BmNYOwcXgPBMN",
+      "name": "BotKey",
+      "type": "rest",
+      "creation": 1786564983824,
+      "expiration": 1794340983824,
+      "invalidated": false,
+      "username": "anil.rangi@cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "BdalEKABmNYOwcXgWdkJ",
+      "name": "DQMP_mcross_API",
+      "type": "rest",
+      "creation": 1786985666827,
+      "expiration": 1794675266827,
+      "invalidated": false,
+      "username": "michael.cross2@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {
+        "read-only-role": {
+          "cluster": [],
+          "indices": [
+            {
+              "names": [
+                "*"
+              ],
+              "privileges": [
+                "read"
+              ],
+              "allow_restricted_indices": false
+            }
+          ],
+          "applications": [],
+          "run_as": [],
+          "metadata": {},
+          "transient_metadata": {
+            "enabled": true
+          }
+        }
+      }
+    },
+    {
+      "id": "Wt_5D6ABnI5q870IJHc9",
+      "name": "20260817_PrevBot",
+      "type": "rest",
+      "creation": 1786974381120,
+      "expiration": 1794750381120,
+      "invalidated": false,
+      "username": "christopher.schmaltz@cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "n9b2EKABmNYOwcXgVtyI",
+      "name": "Jason Lavoie",
+      "type": "rest",
+      "creation": 1786990974601,
+      "expiration": 1794766974601,
+      "invalidated": false,
+      "username": "5793079299",
+      "realm": "cloud-saml-kibana",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {
+        "superuser": {
+          "cluster": [
+            "all"
+          ],
+          "indices": [
+            {
+              "names": [
+                "*"
+              ],
+              "privileges": [
+                "all"
+              ],
+              "allow_restricted_indices": false
+            },
+            {
+              "names": [
+                "*"
+              ],
+              "privileges": [
+                "monitor",
+                "read",
+                "view_index_metadata",
+                "read_cross_cluster"
+              ],
+              "allow_restricted_indices": true
+            }
+          ],
+          "applications": [],
+          "run_as": [
+            "*"
+          ],
+          "metadata": {},
+          "transient_metadata": {
+            "enabled": true
+          },
+          "remote_indices": [
+            {
+              "names": [
+                "*"
+              ],
+              "privileges": [
+                "all"
+              ],
+              "allow_restricted_indices": false,
+              "clusters": [
+                "*"
+              ]
+            },
+            {
+              "names": [
+                "*"
+              ],
+              "privileges": [
+                "monitor",
+                "read",
+                "view_index_metadata",
+                "read_cross_cluster"
+              ],
+              "allow_restricted_indices": true,
+              "clusters": [
+                "*"
+              ]
+            }
+          ],
+          "remote_cluster": [
+            {
+              "privileges": [
+                "monitor_enrich",
+                "monitor_stats"
+              ],
+              "clusters": [
+                "*"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "fRanQ6AB-yWzQqC5-DzK",
+      "name": "Alerting: .es-query/DBaaS Reindexing All Shards Failed",
+      "type": "rest",
+      "creation": 1787841476814,
+      "invalidated": false,
+      "username": "sunil.sadhwani@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true,
+        "kibana": {
+          "type": "alerting_rule"
+        }
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "3CBFY6AB-yWzQqC5UEEa",
+      "name": "miguel.melendez@cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1788371882012,
+      "expiration": 1796147882012,
+      "invalidated": false,
+      "username": "miguel.melendez@cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "JiIDbaAB-yWzQqC5DmZV",
+      "name": "amy.thomas@cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1788535311959,
+      "expiration": 1796311311959,
+      "invalidated": false,
+      "username": "amy.thomas@cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "5iH_bKABu_1PEWNDFhw9",
+      "name": "amy.thomas@cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1788535051840,
+      "invalidated": false,
+      "username": "amy.thomas@cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "BSnei6ABu_1PEWND7Uvy",
+      "name": "TaskManager: report:execute-scheduled - sunny.shah@associates.cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1789053038070,
+      "invalidated": false,
+      "username": "sunny.shah@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "YtPGYJ8B51W7I1crOhj-",
+      "name": "cdm_data_pipeline_dictionary_read",
+      "type": "rest",
+      "creation": 1784035031881,
+      "expiration": 1815571031881,
+      "invalidated": false,
+      "username": "elastic",
+      "realm": "found",
+      "realm_type": "file",
+      "metadata": {
+        "description": "API Key leveraged by CDM Layer B Data Pipeline to read data from CDM indices."
+      },
+      "role_descriptors": {
+        "read-only-role": {
+          "cluster": [],
+          "indices": [
+            {
+              "names": [
+                "cdm_*dict*",
+                "cdm_threat",
+                "cdm_system_boundary"
+              ],
+              "privileges": [
+                "read",
+                "read_cross_cluster",
+                "view_index_metadata"
+              ],
+              "allow_restricted_indices": false
+            }
+          ],
+          "applications": [],
+          "run_as": [],
+          "metadata": {},
+          "transient_metadata": {
+            "enabled": true
+          }
+        }
+      }
+    },
+    {
+      "id": "xiowkaABu_1PEWNDr8Js",
+      "name": "CDM_API_KEY_20260911",
+      "type": "rest",
+      "creation": 1789142282094,
+      "invalidated": false,
+      "username": "shahrzad.nahid@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "Ci0akqAB-yWzQqC557ZG",
+      "name": "Robertito",
+      "type": "rest",
+      "creation": 1789157631816,
+      "expiration": 1796933631816,
+      "invalidated": false,
+      "username": "robert.bradley@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "sjfar6AB-yWzQqC5CJmD",
+      "name": "TaskManager: report:execute-scheduled - sunny.shah@associates.cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1789656696966,
+      "invalidated": false,
+      "username": "sunny.shah@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "aUAO0KABu_1PEWNDwuC1",
+      "name": "michael.rigual",
+      "type": "rest",
+      "creation": 1790197023416,
+      "expiration": 1797973023416,
+      "invalidated": false,
+      "username": "michael.rigual@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "kEI21KAB-yWzQqC5TyPZ",
+      "name": "awx_manage_kibana",
+      "type": "rest",
+      "creation": 1790266724313,
+      "expiration": 1821802724313,
+      "invalidated": false,
+      "username": "6093681630",
+      "realm": "cloud-saml-kibana",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {
+        "manage_saved_objects": {
+          "cluster": [],
+          "indices": [],
+          "applications": [
+            {
+              "application": "kibana-.kibana",
+              "privileges": [
+                "all"
+              ],
+              "resources": [
+                "*"
+              ]
+            }
+          ],
+          "run_as": [],
+          "metadata": {},
+          "transient_metadata": {
+            "enabled": true
+          }
+        }
+      }
+    },
+    {
+      "id": "W0LP1aABu_1PEWNDEE7G",
+      "name": "CyberScope API Key",
+      "type": "rest",
+      "creation": 1790293512392,
+      "expiration": 1798069512392,
+      "invalidated": false,
+      "username": "deep.multani@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "90Kz1KAB-yWzQqC50ih7",
+      "name": "VHooper",
+      "type": "rest",
+      "creation": 1790274949757,
+      "expiration": 1798050949757,
+      "invalidated": false,
+      "username": "victoria.hooper@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "gUTF2aAB-yWzQqC5t4mI",
+      "name": "ACG",
+      "type": "rest",
+      "creation": 1790360008586,
+      "expiration": 1821032008586,
+      "invalidated": false,
+      "username": "andrew.gilbert@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "s0Ih2KABu_1PEWND59nv",
+      "name": "victoria.hooper",
+      "type": "rest",
+      "creation": 1790332495856,
+      "expiration": 1798108495856,
+      "invalidated": false,
+      "username": "victoria.hooper@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "y2Pn8qAB-yWzQqC579QY",
+      "name": "Aaron CDM",
+      "type": "rest",
+      "creation": 1790781681434,
+      "expiration": 1798557681434,
+      "invalidated": false,
+      "username": "aaron.goldstein@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {
+        "read-only-role": {
+          "cluster": [],
+          "indices": [
+            {
+              "names": [
+                "*"
+              ],
+              "privileges": [
+                "read"
+              ],
+              "allow_restricted_indices": false
+            }
+          ],
+          "applications": [],
+          "run_as": [],
+          "metadata": {},
+          "transient_metadata": {
+            "enabled": true
+          }
+        }
+      }
+    },
+    {
+      "id": "mmq4_KABu_1PEWNDQogZ",
+      "name": "steven.hunt@cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1790946329115,
+      "expiration": 1798722329115,
+      "invalidated": false,
+      "username": "steven.hunt@cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "TGkV-aABu_1PEWND_uXF",
+      "name": "George Delis",
+      "type": "rest",
+      "creation": 1790885363399,
+      "expiration": 1798661363399,
+      "invalidated": false,
+      "username": "george.delis@cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "4XvsC6EB-yWzQqC5QM7K",
+      "name": "jason.domasky@associates.cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1791201394892,
+      "expiration": 1798977394892,
+      "invalidated": false,
+      "username": "jason.domasky@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "43Dl_aAB-yWzQqC5-sTv",
+      "name": "allan.foster",
+      "type": "rest",
+      "creation": 1790966102769,
+      "expiration": 1798742102769,
+      "invalidated": false,
+      "username": "allan.foster@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "Bmpm_qABu_1PEWNDbJt-",
+      "name": "Dev API Key",
+      "type": "rest",
+      "creation": 1790974520448,
+      "expiration": 1798750520448,
+      "invalidated": false,
+      "username": "deep.multani@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "l4NwDKEBu_1PEWNDU10_",
+      "name": "terrell.douglas@associates.cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1791210050369,
+      "expiration": 1798986050369,
+      "invalidated": false,
+      "username": "terrell.douglas@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "fntDDKEB-yWzQqC5a9LH",
+      "name": "sunny.shah@associates.cisa.dhs.gov_prev_bot",
+      "type": "rest",
+      "creation": 1791207107529,
+      "expiration": 1798983107529,
+      "invalidated": false,
+      "username": "sunny.shah@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "SIM7EaEB-yWzQqC5ZmPJ",
+      "name": "anju.subedi@cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1791290468043,
+      "expiration": 1799066468043,
+      "invalidated": false,
+      "username": "anju.subedi@cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "roMDE6EB-yWzQqC583aE",
+      "name": "colton.swan@associates.cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1791320388486,
+      "expiration": 1799096388486,
+      "invalidated": false,
+      "username": "colton.swan@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "MJACE6EBu_1PEWNDmP_L",
+      "name": "October_6_key",
+      "type": "rest",
+      "creation": 1791320299725,
+      "expiration": 1799096299725,
+      "invalidated": false,
+      "username": "daniel.allison@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "HLFdMKEBu_1PEWNDndkL",
+      "name": "ACG2",
+      "type": "rest",
+      "creation": 1791812803852,
+      "expiration": 1823348803852,
+      "invalidated": false,
+      "username": "andrew.gilbert@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "eLGuMKEBu_1PEWND4NzJ",
+      "name": "ACG3",
+      "type": "rest",
+      "creation": 1791818129611,
+      "expiration": 1823354129611,
+      "invalidated": false,
+      "username": "andrew.gilbert@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "EbLsMKEB-yWzQqC51dva",
+      "name": "ACG4",
+      "type": "rest",
+      "creation": 1791822190044,
+      "expiration": 1823358190044,
+      "invalidated": false,
+      "username": "andrew.gilbert@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "d7FAMaEBu_1PEWNDuOLS",
+      "name": "ACG5",
+      "type": "rest",
+      "creation": 1791827687636,
+      "expiration": 1823363687636,
+      "invalidated": false,
+      "username": "andrew.gilbert@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "pbIINaEBu_1PEWNDCgu-",
+      "name": "10-13_APIKEY_JM",
+      "type": "rest",
+      "creation": 1791891081919,
+      "expiration": 1799667081919,
+      "invalidated": false,
+      "username": "juan.martinez@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "RrhANqEBu_1PEWNDHaik",
+      "name": "APIKeyOct2026",
+      "type": "rest",
+      "creation": 1791911533990,
+      "expiration": 1799687533990,
+      "invalidated": false,
+      "username": "james.depolo@cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "X7isOqEB-yWzQqC53sbV",
+      "name": "dustin.mckinney@associates.cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1791985770199,
+      "expiration": 1799761770199,
+      "invalidated": false,
+      "username": "dustin.mckinney@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "ErXDNqEB-yWzQqC5RhCP",
+      "name": "seed_files",
+      "type": "rest",
+      "creation": 1791920129681,
+      "expiration": 1799696129681,
+      "invalidated": false,
+      "username": "zachary.rowe@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {
+        "read-only-role": {
+          "cluster": [
+            "monitor"
+          ],
+          "indices": [
+            {
+              "names": [
+                "*"
+              ],
+              "privileges": [
+                "read"
+              ],
+              "allow_restricted_indices": false
+            }
+          ],
+          "applications": [],
+          "run_as": [],
+          "metadata": {},
+          "transient_metadata": {
+            "enabled": true
+          }
+        }
+      }
+    },
+    {
+      "id": "DMQZO6EBu_1PEWND1hBB",
+      "name": "Steve",
+      "type": "rest",
+      "creation": 1791992911427,
+      "expiration": 1799768911427,
+      "invalidated": false,
+      "username": "steven.robinson@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "2LgHPKEB-yWzQqC5Q9Wg",
+      "name": "tristan.banks@associates.cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1792008471458,
+      "expiration": 1799784471458,
+      "invalidated": false,
+      "username": "tristan.banks@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "jtyxVKEB-yWzQqC5cr-8",
+      "name": "API Key 10/19/2026",
+      "type": "rest",
+      "creation": 1792422277822,
+      "expiration": 1800198277822,
+      "invalidated": false,
+      "username": "jonathan.reed@cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "3uHVTqEBu_1PEWND6L2U",
+      "name": "SeidenCDM261018",
+      "type": "rest",
+      "creation": 1792324003990,
+      "expiration": 1800100003990,
+      "invalidated": false,
+      "username": "stanley.seiden@cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "uOiXVKEBu_1PEWNDuABT",
+      "name": "Justin Murphy",
+      "type": "rest",
+      "creation": 1792420591701,
+      "expiration": 1800196591701,
+      "invalidated": false,
+      "username": "justin.murphy@cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "vNyXVKEB-yWzQqC5JrX4",
+      "name": "Liz API",
+      "type": "rest",
+      "creation": 1792420554490,
+      "expiration": 1800196554490,
+      "invalidated": false,
+      "username": "elizabeth.cardona@cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "M9-kVaEB-yWzQqC5FT7O",
+      "name": "sre-synthetic-monitor-for-fdb",
+      "type": "rest",
+      "creation": 1792438179281,
+      "expiration": 1800214179281,
+      "invalidated": false,
+      "username": "jesudas.chekuri@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "description": "Role for synthetics monitor to read and query all API key expiration dates"
+      },
+      "role_descriptors": {
+        "read-only-role": {
+          "cluster": [
+            "read_security"
+          ],
+          "indices": [
+            {
+              "names": [
+                "*"
+              ],
+              "privileges": [
+                "read"
+              ],
+              "allow_restricted_indices": false
+            }
+          ],
+          "applications": [],
+          "run_as": [],
+          "metadata": {},
+          "transient_metadata": {
+            "enabled": true
+          }
+        }
+      }
+    },
+    {
+      "id": "quOIWqEB-yWzQqC5g7pc",
+      "name": "dwright",
+      "type": "rest",
+      "creation": 1792520258398,
+      "expiration": 1800296258398,
+      "invalidated": false,
+      "username": "daniel.wright@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "y-36WqEBu_1PEWNDH3wH",
+      "name": "Mohammad Islam",
+      "type": "rest",
+      "creation": 1792527703817,
+      "expiration": 1800303703817,
+      "invalidated": false,
+      "username": "mohammad.islam@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "6OOqWqEB-yWzQqC5gLs-",
+      "name": "Steven Jeter",
+      "type": "rest",
+      "creation": 1792522485823,
+      "expiration": 1800298485823,
+      "invalidated": false,
+      "username": "steven.jeter@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "CuePX6EB-yWzQqC5F2yE",
+      "name": "CDMAPIKEYPEREIRA",
+      "type": "rest",
+      "creation": 1792604575622,
+      "invalidated": false,
+      "username": "jonathan.pereira@cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "8w9UZKEBu_1PEWNDKtkx",
+      "name": "christopher.murray@cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1792684599858,
+      "expiration": 1800460599858,
+      "invalidated": false,
+      "username": "christopher.murray@cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "8Q8KZKEBu_1PEWND1Nl4",
+      "name": "SimonTsui2",
+      "type": "rest",
+      "creation": 1792679793786,
+      "expiration": 1800455793786,
+      "invalidated": false,
+      "username": "simon.tsui@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "-Q_nZKEBu_1PEWNDJtm1",
+      "name": "samuel.davel@associates.cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1792694232758,
+      "expiration": 1800470232758,
+      "invalidated": false,
+      "username": "samuel.davel@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "5n5ag6EBAkz3kPNsDOHt",
+      "name": "scott.gravelle@associates.cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793205079279,
+      "expiration": 1800981079279,
+      "invalidated": false,
+      "username": "scott.gravelle@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "pH5qgqEBAkz3kPNsJdci",
+      "name": "JAldayAPIKey20261028",
+      "type": "rest",
+      "creation": 1793189356838,
+      "invalidated": false,
+      "username": "javier.alday@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "KolIiKEBAkz3kPNsezsm",
+      "name": "NickMuerPrev",
+      "type": "rest",
+      "creation": 1793287813927,
+      "expiration": 1801063813927,
+      "invalidated": false,
+      "username": "nicholas.muer@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "sKmSg6EBsBECZRUf6EZM",
+      "name": "Kmaurer_20261028",
+      "type": "rest",
+      "creation": 1793208805454,
+      "expiration": 1800984805454,
+      "invalidated": false,
+      "username": "kathrine.maurer@cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "oon6iKEBAkz3kPNsdEJp",
+      "name": "ChrissDunson",
+      "type": "rest",
+      "creation": 1793299477611,
+      "expiration": 1801075477611,
+      "invalidated": false,
+      "username": "chriss.dunson@cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "5b1pjqEBsBECZRUf5DtK",
+      "name": "TaskManager: report:execute - jahanzeb.khan@cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793390666976,
+      "invalidated": true,
+      "invalidation": 1793390673909,
+      "username": "jahanzeb.khan@cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "05dxjqEBAkz3kPNsqIrv",
+      "name": "TaskManager: report:execute - jahanzeb.khan@cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793391175923,
+      "invalidated": true,
+      "invalidation": 1793391182002,
+      "username": "jahanzeb.khan@cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "ZtUlnaEBsBECZRUf_Hrd",
+      "name": "TaskManager: report:execute - ashley.greene@associates.cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793637874912,
+      "invalidated": true,
+      "invalidation": 1793637879992,
+      "username": "ashley.greene@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "a6QknaEBAkz3kPNsDLqJ",
+      "name": "TaskManager: report:execute - ashley.greene@associates.cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793637747852,
+      "invalidated": true,
+      "invalidation": 1793637753934,
+      "username": "ashley.greene@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "dNUMnaEBsBECZRUfvnma",
+      "name": "TaskManager: report:execute - zachary.cozzens@associates.cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793636220573,
+      "invalidated": true,
+      "invalidation": 1793636225653,
+      "username": "zachary.cozzens@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "Og_FZaEBu_1PEWNDX-bs",
+      "name": "fed_app_server",
+      "type": "rest",
+      "creation": 1792708796396,
+      "invalidated": true,
+      "invalidation": 1793640729600,
+      "username": "elastic",
+      "realm": "found",
+      "realm_type": "file",
+      "metadata": {},
+      "role_descriptors": {
+        "fed_app_server": {
+          "cluster": [
+            "all"
+          ],
+          "indices": [
+            {
+              "names": [
+                ".cdm*",
+                "cdm*",
+                "data_dictionary"
+              ],
+              "privileges": [
+                "all"
+              ],
+              "allow_restricted_indices": false
+            }
+          ],
+          "applications": [
+            {
+              "application": "kibana-.kibana",
+              "privileges": [
+                "all"
+              ],
+              "resources": [
+                "*"
+              ]
+            }
+          ],
+          "run_as": [],
+          "metadata": {},
+          "transient_metadata": {
+            "enabled": true
+          }
+        }
+      }
+    },
+    {
+      "id": "MdVRnaEBsBECZRUfjnzR",
+      "name": "fed_app_server",
+      "type": "rest",
+      "creation": 1793640730323,
+      "invalidated": false,
+      "username": "elastic",
+      "realm": "found",
+      "realm_type": "file",
+      "metadata": {},
+      "role_descriptors": {
+        "fed_app_server": {
+          "cluster": [
+            "all"
+          ],
+          "indices": [
+            {
+              "names": [
+                ".cdm*",
+                "cdm*",
+                "data_dictionary"
+              ],
+              "privileges": [
+                "all"
+              ],
+              "allow_restricted_indices": false
+            }
+          ],
+          "applications": [
+            {
+              "application": "kibana-.kibana",
+              "privileges": [
+                "all"
+              ],
+              "resources": [
+                "*"
+              ]
+            }
+          ],
+          "run_as": [],
+          "metadata": {},
+          "transient_metadata": {
+            "enabled": true
+          }
+        }
+      }
+    },
+    {
+      "id": "YqSVnKEBAkz3kPNsnLTH",
+      "name": "TaskManager: report:execute - andrew.mcmahon@associates.cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793628413130,
+      "invalidated": true,
+      "invalidation": 1793628422235,
+      "username": "andrew.mcmahon@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "BqSunaEBAkz3kPNsTcB5",
+      "name": "Alerting: .es-query/TEST - DBaaS Reindexing All Shards Failed",
+      "type": "rest",
+      "creation": 1793646808444,
+      "invalidated": false,
+      "username": "sunil.sadhwani@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true,
+        "kibana": {
+          "type": "alerting_rule"
+        }
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "_9WnnaEBsBECZRUfXn9C",
+      "name": "TaskManager: report:execute - waqas.javaid@cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793646353990,
+      "invalidated": true,
+      "invalidation": 1793646359074,
+      "username": "waqas.javaid@cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "RKSbnaEBAkz3kPNs3r8t",
+      "name": "TaskManager: report:execute - waqas.javaid@cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793645600304,
+      "invalidated": true,
+      "invalidation": 1793645713948,
+      "username": "waqas.javaid@cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "ltW2naEBsBECZRUf54Bs",
+      "name": "TaskManager: report:execute - waqas.javaid@cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793647372143,
+      "invalidated": true,
+      "invalidation": 1793647444229,
+      "username": "waqas.javaid@cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "M9WsnaEBsBECZRUfJYAl",
+      "name": "TaskManager: report:execute - zachary.cozzens@associates.cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793646667048,
+      "invalidated": true,
+      "invalidation": 1793646671131,
+      "username": "zachary.cozzens@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "h9WdnaEBsBECZRUfjn-B",
+      "name": "tyrone.hayes",
+      "type": "rest",
+      "creation": 1793645710979,
+      "expiration": 1801421710979,
+      "invalidated": true,
+      "invalidation": 1793645784970,
+      "username": "tyrone.hayes@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "ldWfnaEBsBECZRUfA3-n",
+      "name": "tyrone.hayes@cisa.gov",
+      "type": "rest",
+      "creation": 1793645806505,
+      "expiration": 1801421806505,
+      "invalidated": false,
+      "username": "tyrone.hayes@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "W9WanaEBsBECZRUf73_K",
+      "name": "TaskManager: report:execute - waqas.javaid@cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793645539278,
+      "invalidated": true,
+      "invalidation": 1793645542355,
+      "username": "waqas.javaid@cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "b4mtiKEBAkz3kPNsej86",
+      "name": "Alerting: .es-query/TEST - DBaaS Reindexing All Shards Failed",
+      "type": "rest",
+      "creation": 1793294432829,
+      "invalidated": true,
+      "invalidation": 1793650685922,
+      "username": "sunil.sadhwani@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true,
+        "kibana": {
+          "type": "alerting_rule"
+        }
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "SKiQoaEBAkz3kPNsy1_P",
+      "name": "TaskManager: report:execute - scott.gravelle@associates.cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793711983571,
+      "invalidated": true,
+      "invalidation": 1793711989644,
+      "username": "scott.gravelle@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "b9XGnaEBsBECZRUfvoGr",
+      "name": "TaskManager: report:execute - waqas.javaid@cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793648410286,
+      "invalidated": true,
+      "invalidation": 1793648432372,
+      "username": "waqas.javaid@cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "WKTLnaEBAkz3kPNsVsGo",
+      "name": "TaskManager: report:execute - waqas.javaid@cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793648711339,
+      "invalidated": true,
+      "invalidation": 1793648734421,
+      "username": "waqas.javaid@cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "R6T9naEBAkz3kPNsScNi",
+      "name": "TaskManager: report:execute - christopher.schmaltz@cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793651984742,
+      "invalidated": true,
+      "invalidation": 1793651988824,
+      "username": "christopher.schmaltz@cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "19XSnaEBsBECZRUfpoEg",
+      "name": "TaskManager: report:execute - leigh.walzer@associates.cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793649190435,
+      "invalidated": true,
+      "invalidation": 1793649211557,
+      "username": "leigh.walzer@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "jqTSnaEBAkz3kPNsU8H_",
+      "name": "TaskManager: report:execute - leigh.walzer@associates.cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793649169410,
+      "invalidated": true,
+      "invalidation": 1793649280525,
+      "username": "leigh.walzer@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "-aTGnaEBAkz3kPNsZMDA",
+      "name": "TaskManager: report:execute - waqas.javaid@cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793648387267,
+      "invalidated": true,
+      "invalidation": 1793648410343,
+      "username": "waqas.javaid@cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "7-EYoqEBsBECZRUfeB_a",
+      "name": "TaskManager: report:execute - waqas.javaid@cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793720875229,
+      "invalidated": true,
+      "invalidation": 1793721000309,
+      "username": "waqas.javaid@cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "JuEHoqEBsBECZRUf9R-D",
+      "name": "TaskManager: report:execute - waqas.javaid@cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793719793031,
+      "invalidated": true,
+      "invalidation": 1793719917129,
+      "username": "waqas.javaid@cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "hqgIoqEBAkz3kPNsjWTx",
+      "name": "TaskManager: report:execute - waqas.javaid@cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793719832052,
+      "invalidated": true,
+      "invalidation": 1793719957144,
+      "username": "waqas.javaid@cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "v6gQoqEBAkz3kPNsO2Qj",
+      "name": "TaskManager: report:execute - waqas.javaid@cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793720335142,
+      "invalidated": true,
+      "invalidation": 1793720460221,
+      "username": "waqas.javaid@cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "6eG6oaEBsBECZRUfBBuj",
+      "name": "TaskManager: report:execute - andrew.mcmahon@associates.cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793714685094,
+      "invalidated": true,
+      "invalidation": 1793714690178,
+      "username": "andrew.mcmahon@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "46jnoqEBAkz3kPNse20K",
+      "name": "TaskManager: report:execute - dustin.granger@associates.cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793734441742,
+      "invalidated": true,
+      "invalidation": 1793734447713,
+      "username": "dustin.granger@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "5ajooqEBAkz3kPNsYW2k",
+      "name": "TaskManager: report:execute - dustin.granger@associates.cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793734500775,
+      "invalidated": true,
+      "invalidation": 1793734510843,
+      "username": "dustin.granger@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "iKgMoqEBAkz3kPNsP2Rs",
+      "name": "TaskManager: report:execute - waqas.javaid@cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793720074095,
+      "invalidated": true,
+      "invalidation": 1793720199181,
+      "username": "waqas.javaid@cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "QuVvp6EBsBECZRUf7q1P",
+      "name": "TaskManager: report:execute - omar.salehi@associates.cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793810493010,
+      "invalidated": true,
+      "invalidation": 1793810500919,
+      "username": "omar.salehi@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "RbMYp6EBAkz3kPNs2FKE",
+      "name": "TaskManager: report:execute - terrell.douglas@associates.cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793804785799,
+      "invalidated": true,
+      "invalidation": 1793804903002,
+      "username": "terrell.douglas@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "ROUqp6EBsBECZRUfjKq2",
+      "name": "TaskManager: report:execute - terrell.douglas@associates.cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793805946042,
+      "invalidated": true,
+      "invalidation": 1793806017217,
+      "username": "terrell.douglas@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "deUvp6EBsBECZRUfY6qH",
+      "name": "TaskManager: report:execute - terrell.douglas@associates.cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793806263178,
+      "invalidated": true,
+      "invalidation": 1793806424218,
+      "username": "terrell.douglas@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "juUzp6EBsBECZRUfFKrK",
+      "name": "TaskManager: report:execute - terrell.douglas@associates.cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793806505164,
+      "invalidated": true,
+      "invalidation": 1793806638360,
+      "username": "terrell.douglas@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "5-U7p6EBsBECZRUfjqo2",
+      "name": "TaskManager: report:execute - terrell.douglas@associates.cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793807060536,
+      "invalidated": true,
+      "invalidation": 1793807215746,
+      "username": "terrell.douglas@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "QbMxp6EBAkz3kPNsjVPf",
+      "name": "TaskManager: report:execute - terrell.douglas@associates.cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793806405090,
+      "invalidated": true,
+      "invalidation": 1793806420410,
+      "username": "terrell.douglas@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "AKioo6EBAkz3kPNssXZN",
+      "name": "TaskManager: report:execute - leigh.walzer@associates.cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793747104080,
+      "invalidated": true,
+      "invalidation": 1793747110158,
+      "username": "leigh.walzer@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "ROVwp6EBsBECZRUfiq2w",
+      "name": "TaskManager: report:execute - omar.salehi@associates.cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793810533043,
+      "invalidated": true,
+      "invalidation": 1793810540122,
+      "username": "omar.salehi@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "RuVxp6EBsBECZRUfnK05",
+      "name": "TaskManager: report:execute - omar.salehi@associates.cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793810603068,
+      "invalidated": true,
+      "invalidation": 1793810608148,
+      "username": "omar.salehi@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "JOU9qKEBsBECZRUf3syG",
+      "name": "TaskManager: report:execute - joseph.walter@associates.cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793823989385,
+      "invalidated": true,
+      "invalidation": 1793824028498,
+      "username": "joseph.walter@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "wuWsp6EBsBECZRUfE69K",
+      "name": "TaskManager: report:execute - zelnnetta.clark@cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793814434637,
+      "invalidated": true,
+      "invalidation": 1793814446492,
+      "username": "zelnnetta.clark@cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "Z-aJqKEBsBECZRUf0ymR",
+      "name": "TaskManager: report:execute - jahanzeb.khan@cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793828967316,
+      "invalidated": true,
+      "invalidation": 1793828973393,
+      "username": "jahanzeb.khan@cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "Z-UtqKEBsBECZRUfprh7",
+      "name": "JWalter_ReadOnly_DQMP_APIKey2",
+      "type": "rest",
+      "creation": 1793822926461,
+      "expiration": 1801598926461,
+      "invalidated": false,
+      "username": "joseph.walter@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {
+        "read-only-role": {
+          "cluster": [],
+          "indices": [
+            {
+              "names": [
+                "*"
+              ],
+              "privileges": [
+                "read"
+              ],
+              "allow_restricted_indices": false
+            }
+          ],
+          "applications": [],
+          "run_as": [],
+          "metadata": {},
+          "transient_metadata": {
+            "enabled": true
+          }
+        }
+      }
+    },
+    {
+      "id": "f7NcqKEBAkz3kPNsLZjH",
+      "name": "TaskManager: report:execute - alfred.simpson1@cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793825975754,
+      "invalidated": true,
+      "invalidation": 1793825999867,
+      "username": "alfred.simpson1@cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "dLNfqKEBAkz3kPNsdJzp",
+      "name": "TaskManager: report:execute - alfred.simpson1@cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793826190571,
+      "invalidated": true,
+      "invalidation": 1793826201657,
+      "username": "alfred.simpson1@cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "6e_-rKEBsBECZRUf5icT",
+      "name": "TaskManager: report:execute - nicholas.lewis@associates.cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793903748630,
+      "invalidated": true,
+      "invalidation": 1793903760458,
+      "username": "nicholas.lewis@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "gu8PraEBsBECZRUfTiho",
+      "name": "TaskManager: report:execute - nicholas.lewis@associates.cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793904823915,
+      "invalidated": true,
+      "invalidation": 1793904828994,
+      "username": "nicholas.lewis@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "qcH0rKEBAkz3kPNsHito",
+      "name": "TaskManager: report:execute-scheduled - neethu.shenoy@associates.cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793903042156,
+      "invalidated": false,
+      "username": "neethu.shenoy@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "ru9uraEBsBECZRUfNyx_",
+      "name": "TaskManager: report:execute - leigh.walzer@associates.cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793911043970,
+      "invalidated": true,
+      "invalidation": 1793911053050,
+      "username": "leigh.walzer@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "xcFRraEBAkz3kPNsSy_U",
+      "name": "TaskManager: report:execute - bradley.clinger@associates.cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793909148632,
+      "invalidated": true,
+      "invalidation": 1793909392420,
+      "username": "bradley.clinger@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "7O9FraEBsBECZRUf8Cr2",
+      "name": "TaskManager: report:execute - bradley.clinger@associates.cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793908404473,
+      "invalidated": true,
+      "invalidation": 1793908474277,
+      "username": "bradley.clinger@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "tsBjrKEBAkz3kPNsmJje",
+      "name": "TaskManager: report:execute - omar.salehi@associates.cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793893570786,
+      "invalidated": true,
+      "invalidation": 1793893574877,
+      "username": "omar.salehi@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "6-8AraEBsBECZRUfryep",
+      "name": "TaskManager: report:execute - nicholas.lewis@associates.cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793903865772,
+      "invalidated": true,
+      "invalidation": 1793903876561,
+      "username": "nicholas.lewis@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "sM1LsqEBAkz3kPNsyae7",
+      "name": "TaskManager: report:execute - omar.salehi@associates.cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793992673726,
+      "invalidated": true,
+      "invalidation": 1793992678104,
+      "username": "omar.salehi@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "pvWhsaEBsBECZRUf4Dyu",
+      "name": "Jamie Leshnov",
+      "type": "rest",
+      "creation": 1793981538480,
+      "expiration": 1801757538480,
+      "invalidated": false,
+      "username": "jamie.leshnov@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "h_X8saEBsBECZRUfP0Cm",
+      "name": "TaskManager: report:execute - zachary.cozzens@associates.cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793987461033,
+      "invalidated": true,
+      "invalidation": 1793987535868,
+      "username": "zachary.cozzens@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "uvXpsaEBsBECZRUf9j8V",
+      "name": "TaskManager: report:execute - zachary.cozzens@associates.cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793986262553,
+      "invalidated": true,
+      "invalidation": 1793986274894,
+      "username": "zachary.cozzens@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "B_WssaEBsBECZRUfvT1y",
+      "name": "automation_tests_eo",
+      "type": "rest",
+      "creation": 1793982250355,
+      "expiration": 1801758250355,
+      "invalidated": false,
+      "username": "erick.orozco@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "oEAp0KAB-yWzQqC5Apq0",
+      "name": "cdm_key",
+      "type": "rest",
+      "creation": 1790198743734,
+      "expiration": 1797974743734,
+      "invalidated": true,
+      "invalidation": 1793987534026,
+      "username": "mekonnen.merga@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "iPX9saEBsBECZRUf9EAg",
+      "name": "mekonnen.merga",
+      "type": "rest",
+      "creation": 1793987572770,
+      "expiration": 1801763572770,
+      "invalidated": false,
+      "username": "mekonnen.merga@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    },
+    {
+      "id": "3M1OsqEBAkz3kPNscqe6",
+      "name": "TaskManager: report:execute - omar.salehi@associates.cisa.dhs.gov",
+      "type": "rest",
+      "creation": 1793992848061,
+      "invalidated": true,
+      "invalidation": 1793992852842,
+      "username": "omar.salehi@associates.cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {
+        "managed": true
+      },
+      "role_descriptors": {}
+    },
+    {
+      "id": "4fVcsqEBsBECZRUfz0Ro",
+      "name": "CDM_Nov26",
+      "type": "rest",
+      "creation": 1793993789290,
+      "expiration": 1801769789290,
+      "invalidated": false,
+      "username": "alfred.simpson1@cisa.dhs.gov",
+      "realm": "saml1",
+      "realm_type": "saml",
+      "metadata": {},
+      "role_descriptors": {}
+    }
+  ]
+}
