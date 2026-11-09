@@ -1,0 +1,34 @@
+sh-4.4$ sudo su
+[root@ip-10-34-43-217 bin]# cd /opt && git clone https://github.com/olajio/kibana_dashboard_runtime_monitor.git
+fatal: destination path 'kibana_dashboard_runtime_monitor' already exists and is not an empty directory.
+[root@ip-10-34-43-217 opt]# cd kibana_dashboard_runtime_monitor
+[root@ip-10-34-43-217 kibana_dashboard_runtime_monitor]# python3 -m venv .venv
+[root@ip-10-34-43-217 kibana_dashboard_runtime_monitor]# cd /opt/kibana_dashboard_runtime_monitor && source .venv/bin/activate && git pull origin main
+remote: Enumerating objects: 14, done.
+remote: Counting objects: 100% (14/14), done.
+remote: Compressing objects: 100% (12/12), done.
+remote: Total 13 (delta 4), reused 1 (delta 1), pack-reused 0 (from 0)
+Unpacking objects: 100% (13/13), 77.16 KiB | 8.57 MiB/s, done.
+From https://github.com/olajio/kibana_dashboard_runtime_monitor
+ * branch            main       -> FETCH_HEAD
+   cf6d4fe..4437dd3  main       -> origin/main
+Updating cf6d4fe..4437dd3
+Fast-forward
+(.venv) [root@ip-10-34-43-217 kibana_dashboard_runtime_monitor]# python scripts/check_access.py 2>&1 | head -12
+^C
+(.venv) [root@ip-10-34-43-217 kibana_dashboard_runtime_monitor]# 
+(.venv) [root@ip-10-34-43-217 kibana_dashboard_runtime_monitor]# .venv/bin/python scripts/check_access.py 2>&1 | head -12
+
+^C
+(.venv) [root@ip-10-34-43-217 kibana_dashboard_runtime_monitor]# .venv/bin/python scripts/check_access.py
+Connection: elasticsearch.api_key<-aws-bundle, elasticsearch.base_url<-aws-bundle, kibana.auth.api_key<-elasticsearch.api_key, kibana.base_url<-aws-bundle
+Secret read: arn=arn:aws:secretsmanager:us-east-1:393421781446:secret:federal_store-TERNX7 region=us-east-1 stages=AWSCURRENT version_created=2026-11-09 00:34:03.406000+00:00 fields=[ans_dashboard_health_monitor,aws_s3_dashboards_bucket,aws_s3_key_id,aws_s3_key_secret,aws_s3_odf_bucket,aws_s3_pkg_bucket,awx_manage_ece_api_key,awx_manage_kibana_api_key,cert,deployment_id,ec_deployment_id,elastic_api_key,elastic_api_key_backup,elastic_manage_security_api_key,elastic_pwd,elastic_url,ingest_seed_apikey,key,kibana_url,metadata,rabbitmq_host,rabbitmq_port,saml_key,saml_public_cert]
+Elasticsearch URL: https://cdm-fdb.es.us-gov-east-1.aws.elastic-cloud.com
+authenticated as: olamide.olajide@associates.cisa.dhs.gov  type=api_key  realm=_es_api_key  api_key_name='dashboard_health_monitor'
+roles: (none listed)
+cluster: unavailable (security_exception)
+
+probing 32 pattern(s)...
+
+
+
