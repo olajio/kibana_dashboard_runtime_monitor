@@ -27,6 +27,7 @@
 
 
 
+
 sh-4.4$ sudo su
 [root@ip-10-34-43-217 bin]# cd /opt && git clone https://github.com/olajio/kibana_dashboard_runtime_monitor.git
 fatal: destination path 'kibana_dashboard_runtime_monitor' already exists and is not an empty directory.
@@ -59,5 +60,39 @@ cluster: unavailable (security_exception)
 
 probing 32 pattern(s)...
 
+pattern                                           http  result    detail
+agency-dashboard*:cdm_mdr                          200  readable  925,195,468 docs
+agency-dashboard*:cdm_mdr_trending                   0  ERROR     ReadTimeout
+agency-dashboard-*:cdm_csm_current                 200  readable  21,708,256 docs
+agency-dashboard-*:cdm_csm_trending                200  readable  7,496,333,582 docs
+agency-dashboard-*:cdm_hwam_current                200  readable  3,250,106 docs
+agency-dashboard-*:cdm_hwam_trending                 0  ERROR     ReadTimeout
+agency-dashboard-*:cdm_mdr                         200  readable  925,262,598 docs
+agency-dashboard-*:cdm_mdr_trending                  0  ERROR     ReadTimeout
+agency-dashboard-*:cdm_swam_current                200  readable  264,620,986 docs
+agency-dashboard-*:cdm_swam_trending                 0  ERROR     ReadTimeout
+agency-dashboard-*:cdm_system_boundary_current     200  readable  4,330 docs
+agency-dashboard-*:cdm_vuln_current                200  readable  635,797,315 docs
+agency-dashboard-*:cdm_vuln_remediated             200  readable  861,364,112 docs
+agency-dashboard-*:cdm_vuln_trending               200  readable  45,975,340,116 docs
+cdm_aim                                            200  readable  124 docs
+cdm_cve_dictionary                                 200  readable  421,267 docs
+cdm_cyhy_host_scans                                200  readable  1,428,354 docs
+cdm_cyhy_vuln                                      200  readable  77,687 docs
+cdm_cyhy_vuln_trending                             200  readable  2,371,079 docs
+cdm_remote_clusters_status                         200  readable  100 docs
+cdm_scuba_cyberscope_tenant                        200  readable  268 docs
+cdm_scuba_gws_common_control_alert_rule            200  readable  30 docs
+cdm_scuba_gws_common_control_alert_rule_history    200  readable  30 docs
+cdm_scuba_m365_conditional_access_policy           200  readable  4,987 docs
+cdm_scuba_m365_conditional_access_policy_history   200  readable  49,488 docs
+cdm_scuba_m365_license                             200  readable  3,268 docs
+cdm_scuba_m365_license_history                     200  readable  30,920 docs
+cdm_scuba_result                                   200  readable  24,256 docs
+cdm_scuba_result_history                           200  readable  245,337 docs
+cdm_stig_dictionary                                200  readable  91,102 docs
+cdm_threat                                         200  readable  105,806 docs
+data_dictionary                                    200  readable  1,505 docs
 
-
+summary: ERROR=4, readable=28
+(.venv) [root@ip-10-34-43-217 kibana_dashboard_runtime_monitor]# 
