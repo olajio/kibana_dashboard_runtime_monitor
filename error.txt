@@ -43,3 +43,34 @@ Collecting 22 dashboards for app 'federal_overview' (cluster=fed2, space=fed2) [
   Vulnerability Records                    ok         4020ms ok=5 not_ok=0
 Indexed 22 documents into dashboard-health-monitor
 [root@ip-10-34-43-217 kibana_dashboard_runtime_monitor]# 
+
+
+
+# 10: GET _data_stream/dashboard-health-monitor 403 Forbidden
+{
+  "error": {
+    "root_cause": [
+      {
+        "type": "security_exception",
+        "reason": "action [indices:admin/data_stream/get] is unauthorized for user [olamide.olajide@associates.cisa.dhs.gov] with effective roles [CDMFDBAdmins,CISAAnalyst,FDBCCSReader,FederalLoggingCCS,cdm_fdb_ccs_admin,cdm_fdb_ccs_hva,cdm_fdb_ccs_mdr_analyst,cdm_fdb_ccs_mur_analyst,fdb_ccs_metrics] on indices [dashboard-health-monitor], this action is granted by the index privileges [view_index_metadata,manage,all]"
+      }
+    ],
+    "type": "security_exception",
+    "reason": "action [indices:admin/data_stream/get] is unauthorized for user [olamide.olajide@associates.cisa.dhs.gov] with effective roles [CDMFDBAdmins,CISAAnalyst,FDBCCSReader,FederalLoggingCCS,cdm_fdb_ccs_admin,cdm_fdb_ccs_hva,cdm_fdb_ccs_mdr_analyst,cdm_fdb_ccs_mur_analyst,fdb_ccs_metrics] on indices [dashboard-health-monitor], this action is granted by the index privileges [view_index_metadata,manage,all]"
+  },
+  "status": 403
+}
+# 11: GET dashboard-health-monitor/_count 403 Forbidden
+{
+  "error": {
+    "root_cause": [
+      {
+        "type": "security_exception",
+        "reason": "action [indices:data/read/search] is unauthorized for user [olamide.olajide@associates.cisa.dhs.gov] with effective roles [CDMFDBAdmins,CISAAnalyst,FDBCCSReader,FederalLoggingCCS,cdm_fdb_ccs_admin,cdm_fdb_ccs_hva,cdm_fdb_ccs_mdr_analyst,cdm_fdb_ccs_mur_analyst,fdb_ccs_metrics] on indices [dashboard-health-monitor], this action is granted by the index privileges [read,all]"
+      }
+    ],
+    "type": "security_exception",
+    "reason": "action [indices:data/read/search] is unauthorized for user [olamide.olajide@associates.cisa.dhs.gov] with effective roles [CDMFDBAdmins,CISAAnalyst,FDBCCSReader,FederalLoggingCCS,cdm_fdb_ccs_admin,cdm_fdb_ccs_hva,cdm_fdb_ccs_mdr_analyst,cdm_fdb_ccs_mur_analyst,fdb_ccs_metrics] on indices [dashboard-health-monitor], this action is granted by the index privileges [read,all]"
+  },
+  "status": 403
+}
