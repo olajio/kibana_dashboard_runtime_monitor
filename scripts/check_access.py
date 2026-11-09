@@ -112,10 +112,11 @@ def cluster_identity(session, base: str, headers: Dict[str, str], verify) -> Dic
             "version": (d.get("version") or {}).get("number")}
 
 
-def count_pattern(session, base: str, headers: Dict[str, str], verify, pattern: str) -> Dict[str, Any]:
+def count_pattern(session, base: str, headers: Dict[str, str], verify, pattern: str,
+                  timeout: int = 60) -> Dict[str, Any]:
     """Documents the credential can see in one pattern: {'status', 'count' | 'reason'}."""
     try:
-        resp = session.get(f"{base}/{pattern}/_count", headers=headers, verify=verify, timeout=60)
+        resp = session.get(f"{base}/{pattern}/_count", headers=headers, verify=verify, timeout=timeout)
     except requests.RequestException as exc:
         return {"status": 0, "reason": type(exc).__name__}
     if resp.status_code == 200:
@@ -154,6 +155,9 @@ def main() -> int:
     ap.add_argument("--es-api-key", default=None)
     ap.add_argument("--es-url", default=None)
     ap.add_argument("--aws-secret-id", default=None)
+    ap.add_argument("--timeout", type=int, default=180,
+                    help="seconds to wait for each count; trending patterns across ~100 remote "
+                         "clusters hold billions of documents and can exceed 60 s")
     args = ap.parse_args()
 
     settings = load_settings(args.settings)
@@ -192,7 +196,7 @@ def main() -> int:
             print(f"cluster: name={cluster['cluster_name']}  uuid={cluster['cluster_uuid']}  "
                   f"version={cluster['version']}")
         print(f"\nprobing {len(patterns)} pattern(s)...\n")
-        rows = {p: count_pattern(session, base, headers, verify, p) for p in patterns}
+        rows = {p: count_pattern(session, base, headers, verify, p, args.timeout) for p in patterns}
     print(format_table(rows))
     return 0
 
