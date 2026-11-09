@@ -1,59 +1,54 @@
-# Build the load-time baseline, then set the thresholds
+# Import the Dashboard Health Monitor dashboard into Kibana
 
-Three runs are in `dashboard-health-monitor` so far (66 documents). Every panel on every
-dashboard was `ok` in all of them. Load times for the slow ones:
+The file is `kibana/dashboard_health_monitor.ndjson`. It carries its own data view
+(`dashboard-health-monitor*`, time field `@timestamp`), so nothing has to exist in the space first.
 
-| Dashboard | Fastest | Median | Slowest | Statuses seen |
-|---|---|---|---|---|
-| Software Overview | 92 s | 92 s | 169 s | degraded, degraded, failed |
-| Priority Risks | 56 s | 60 s | 101 s | degraded x3 |
-| Agency Details | 30.1 s | 33.7 s | 40.3 s | degraded x3 |
+## 1. Get the file
 
-The global thresholds (degraded 30 s, failed 120 s) cannot describe both Software Overview and
-HVA Software (0.2 s), and Agency Details sits on the 30 s line. Three runs minutes apart also
-only show a warm cache. So collect first, then decide.
+On GitHub open `kibana/dashboard_health_monitor.ndjson` and use **Download raw file**, or on a
+host with the checkout: `cd /opt/kibana_dashboard_runtime_monitor && git fetch origin && git reset --hard origin/main`.
 
-## 1. Put the collector on a schedule (every 30 minutes)
+## 2. Import it into the space you want
 
-A run takes about 7 minutes. `flock -n` makes a run skip itself if the previous one is still
-going, so a hung dashboard cannot stack browsers and distort the numbers.
+1. In Kibana, switch to the target space (top left).
+2. **Stack Management > Saved Objects > Import**, choose the file.
+3. If it says an object already exists (a data view with the same id, or an earlier import), choose
+   **Automatically overwrite conflicts**. The ids are fixed, so importing again updates in place.
+4. Open **Analytics > Dashboard > Dashboard Health Monitor**.
 
-```bash
-sudo -u dhm crontab -l 2>/dev/null; echo "(that was the current crontab, if any)"
-```
+Your account needs read access to `dashboard-health-monitor*` to see data; you already have it in
+Discover. It is the same account that imports, so nothing else is required.
 
-```bash
-( sudo -u dhm crontab -l 2>/dev/null; echo '*/30 * * * * cd /opt/kibana_dashboard_runtime_monitor && flock -n /var/lib/dhm/collector.lock env HOME=/var/lib/dhm /opt/kibana_dashboard_runtime_monitor/.venv/bin/python scripts/run_collector.py >> /var/lib/dhm/collector.log 2>&1' ) | sudo -u dhm crontab -
-sudo -u dhm crontab -l
-```
+## 3. What is on it
 
-(Under AAP the playbook installs the same job, with the same `flock`, at `dhm_cron_minute`.)
+| Panel | Shows |
+|---|---|
+| Collector runs | Distinct runs in the time range |
+| Results with not-ok panels | Results where `panels_not_ok > 0` |
+| Degraded or failed results | Results with that `load_status` |
+| Slowest load (ms) | Highest `load_time_ms` in the range |
+| Average load time over time | The 10 dashboards with the highest average, one line each |
+| Results by status over time | Stacked counts of ok, degraded and failed |
+| Slowest load per dashboard | Heatmap: dashboard by time, colour is the slowest load |
+| Load time by dashboard (baseline) | Per dashboard: runs, median, p95, slowest, not-ok panels |
+| Not-ok panels per dashboard | Heatmap of the worst run per time bucket |
+| Dashboards with not-ok panels | Table split into empty, error, timeout and missing |
+| How to read this dashboard | Short explanation of the statuses |
 
-## 2. Check that it is running
+Controls at the top filter every panel by dashboard and by status. The default range is the last
+7 days with a 5 minute refresh; both are saved with the dashboard.
 
-After the next :00 or :30:
+## 4. If something does not import or render
 
-```bash
-tail -n 30 /var/lib/dhm/collector.log
-```
+The import dialog lists each object that failed and why. Copy that text into the chat. Do not
+upload screenshots or exports of the data to this repository.
 
-You should see `Indexed 22 documents into dashboard-health-monitor`.
+## 5. Changing the layout
 
-## 3. Read the baseline
+Edit `scripts/build_monitor_dashboard.py`, run `python scripts/build_monitor_dashboard.py`, and
+commit the regenerated file. `pytest` checks that every panel, reference and column in it agrees.
 
-Once there are at least 48 runs (about a day), preferably 1 to 2 weeks with a weekend:
+## Meanwhile: the scheduled collector
 
-```bash
-cd /opt/kibana_dashboard_runtime_monitor && git fetch origin && git reset --hard origin/main
-.venv/bin/python scripts/baseline.py --days 14
-```
-
-It prints, per dashboard, the runs, p50, p95 and slowest load time, the not-ok panels, the
-statuses it was given, and suggested `degraded>` and `failed>` thresholds (1.5x p95, then twice
-that). Until there are 48 runs it says `NOT YET A BASELINE`. Paste the table into the chat.
-
-## 4. Meanwhile
-
-- Do not turn on alerts on `load_status`: it is a function of the global thresholds.
-- A dashboard with `not_ok` panels is the signal that does not depend on timing.
-- To stop collecting: `sudo -u dhm crontab -r`.
+After a :00 or :30, `tail -n 30 /var/lib/dhm/collector.log` should end with
+`Indexed 22 documents into dashboard-health-monitor`.
