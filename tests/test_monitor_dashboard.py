@@ -57,7 +57,7 @@ def test_controls_use_the_data_view_and_have_references():
 
 def test_every_lens_object_is_self_consistent():
     lenses = [o for o in OBJECTS if o["type"] == "lens"]
-    assert len(lenses) == 2
+    assert len(lenses) == 4
     for o in lenses:
         st = o["attributes"]["state"]
         (layer_id, layer), = st["datasourceStates"]["formBased"]["layers"].items()
@@ -67,10 +67,16 @@ def test_every_lens_object_is_self_consistent():
         assert layer["columnOrder"] == list(cols)
         buckets = [i for i, c in enumerate(layer["columnOrder"]) if cols[layer["columnOrder"][i]]["isBucketed"]]
         assert buckets == list(range(len(buckets)))                       # bucketed columns come first
-        for ly in st["visualization"]["layers"]:
-            assert ly["layerId"] == layer_id
-            for c in ly["accessors"] + [ly["xAccessor"]] + ([ly["splitAccessor"]] if "splitAccessor" in ly else []):
-                assert c in cols
+        vis = st["visualization"]
+        if "layers" in vis:                                               # XY charts
+            for ly in vis["layers"]:
+                assert ly["layerId"] == layer_id
+                for c in ly["accessors"] + [ly["xAccessor"]] + ([ly["splitAccessor"]] if "splitAccessor" in ly else []):
+                    assert c in cols
+        else:                                                             # data tables
+            assert vis["layerId"] == layer_id
+            assert vis["columns"] and all(c["columnId"] in cols for c in vis["columns"])
+            assert vis["sorting"]["columnId"] in cols
         for c in cols.values():
             assert c["sourceField"] == "___records___" or c["sourceField"] in MAPPING
             ob = (c.get("params") or {}).get("orderBy")
@@ -180,3 +186,9 @@ def test_the_checked_in_files_are_what_the_builder_produces():
     for theme, filename in bd.OUTPUTS.items():
         path = os.path.join(HERE, "..", "kibana", filename)
         assert open(path, encoding="utf-8").read() == bd.to_ndjson(bd.build(theme)), filename
+
+
+def test_the_panels_asked_for_by_name_are_all_on_the_dashboard():
+    d = BY_ID[("dashboard", bd.DASHBOARD_ID)]
+    on_page = {BY_ID[(r["type"], r["id"])]["attributes"]["title"] for r in d["references"] if ":panel_" in r["name"]}
+    assert {"Load time over time", "Latest result per dashboard", "Load time by dashboard (baseline)"} <= on_page

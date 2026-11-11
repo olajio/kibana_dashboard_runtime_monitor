@@ -246,6 +246,17 @@ def build(theme: str = "light") -> List[Dict[str, Any]]:
     o.append(vega("panel-health", "Panel health by dashboard",
                   "Share of panel results that were ok, empty, error, timeout or missing.", mv.panel_health(t)))
 
+    o.append(lens("latest-table", "Latest result per dashboard",
+                  "Each dashboard's most recent status, load time and not-ok panels.", "lnsDatatable",
+                  [("d", terms("dashboard_title", "Dashboard", 100, by_column("t"))),
+                   ("s", last_value("load_status", "Status", "string")),
+                   ("t", last_value("load_time_ms", "Load time (ms)")),
+                   ("n", last_value("panels_not_ok", "Not-ok panels")),
+                   ("w", last_value(TIME_FIELD, "Last run", "date"))],
+                  {"columns": [{"columnId": c} for c in ("d", "s", "t", "n", "w")],
+                   "sorting": {"columnId": "t", "direction": "desc"},
+                   "paging": {"size": 30, "enabled": False}}))
+
     # ---- section 3
     o.append(lens("load-time-trend", "Load time over time",
                   "Average load_time_ms per dashboard, one line each.", "lnsXY",
@@ -275,6 +286,18 @@ def build(theme: str = "light") -> List[Dict[str, Any]]:
                    "layers": [{"layerId": "", "layerType": "data", "accessors": ["y"], "xAccessor": "x",
                                "seriesType": "bar_horizontal", "position": "top", "showGridlines": False}]}))
     _fix_xy_layer(o[-1])
+    o.append(lens("baseline-table", "Load time by dashboard (baseline)",
+                  "Per dashboard over the selected range: runs, median, p95 and slowest load time, "
+                  "and not-ok panels. Sorted by p95.", "lnsDatatable",
+                  [("d", terms("dashboard_title", "Dashboard", 100, by_column("p95"))),
+                   ("n", count("Runs")),
+                   ("p50", metric("median", "load_time_ms", "Median (ms)")),
+                   ("p95", metric("percentile", "load_time_ms", "p95 (ms)", percentile=95)),
+                   ("mx", metric("max", "load_time_ms", "Slowest (ms)")),
+                   ("nok", metric("sum", "panels_not_ok", "Not-ok panels"))],
+                  {"columns": [{"columnId": c} for c in ("d", "n", "p50", "p95", "mx", "nok")],
+                   "sorting": {"columnId": "p95", "direction": "desc"},
+                   "paging": {"size": 30, "enabled": False}}))
     o.append(vega("run-duration", "Collector run duration", "Minutes each run took, against the 30 minute schedule.",
                   mv.run_duration(t)))
 
@@ -300,18 +323,20 @@ LAYOUT: List[Tuple[str, str, int, int, int, int, bool]] = [
     ("grid", "visualization", 0, 12, 48, 14, True),
     ("section-s2", "visualization", 0, 26, 48, 2, True),
     ("attention", "visualization", 0, 28, 48, 10, True),
-    ("panel-render", "visualization", 0, 38, 22, 22, True),
-    ("panel-health", "visualization", 22, 38, 26, 22, True),
-    ("section-s3", "visualization", 0, 60, 48, 2, True),
-    ("load-time-trend", "lens", 0, 62, 28, 16, False),
-    ("status-time", "visualization", 28, 62, 20, 16, True),
-    ("baseline", "visualization", 0, 78, 30, 22, True),
-    ("latest-cycle", "lens", 30, 78, 18, 22, False),
-    ("run-duration", "visualization", 0, 100, 48, 11, True),
-    ("section-s4", "visualization", 0, 111, 48, 2, True),
-    ("links", "visualization", 0, 113, 48, 12, True),
-    ("section-s5", "visualization", 0, 125, 48, 2, True),
-    ("help", "visualization", 0, 127, 48, 18, True),
+    ("latest-table", "lens", 0, 38, 48, 14, False),
+    ("panel-render", "visualization", 0, 52, 22, 22, True),
+    ("panel-health", "visualization", 22, 52, 26, 22, True),
+    ("section-s3", "visualization", 0, 74, 48, 2, True),
+    ("load-time-trend", "lens", 0, 76, 28, 16, False),
+    ("status-time", "visualization", 28, 76, 20, 16, True),
+    ("baseline", "visualization", 0, 92, 30, 22, True),
+    ("latest-cycle", "lens", 30, 92, 18, 22, False),
+    ("baseline-table", "lens", 0, 114, 48, 14, False),
+    ("run-duration", "visualization", 0, 128, 48, 11, True),
+    ("section-s4", "visualization", 0, 139, 48, 2, True),
+    ("links", "visualization", 0, 141, 48, 12, True),
+    ("section-s5", "visualization", 0, 153, 48, 2, True),
+    ("help", "visualization", 0, 155, 48, 18, True),
 ]
 
 

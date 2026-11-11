@@ -1,3 +1,0 @@
-Load time over time trend line graph
-Latest result per dashboard table
-Load time by dashboard (baseline)

@@ -24,8 +24,8 @@ Both use the same object ids, so importing the other one later overwrites the fi
 |---|---|
 | **Start here** banner | How to read the page |
 | **1 · Health right now** | Five cards (Overall health, Dashboards checked, Slow by load time, Panels not ok, Last run) and one card per dashboard, worst first, each showing its state, load time and panels ok |
-| **2 · What needs attention now** | Table of dashboards not healthy, with coloured state pills; Slowest panels; Panel health heatmap |
-| **3 · Trends and baseline** | Load time over time; Dashboards by collector status; Baseline (median to p95 and slowest per dashboard, with the 30 s and 120 s thresholds drawn across it); Latest load time per dashboard; Collector run duration against the 30 minute schedule |
+| **2 · What needs attention now** | Table of dashboards not healthy, with coloured state pills; **Latest result per dashboard** (all 22, sortable); Slowest panels; Panel health heatmap |
+| **3 · Trends and baseline** | **Load time over time** (the trend line, left); Dashboards by collector status; Baseline chart (median to p95 and slowest per dashboard, with the 30 s and 120 s thresholds drawn across it); Latest load time per dashboard; **Load time by dashboard (baseline)** table (runs, median, p95, slowest, not-ok panels); Collector run duration against the 30 minute schedule |
 | **4 · Monitored dashboards** | Links to all 22 (they open in space `fed2`) |
 | **5 · Reference** | The rules behind the states |
 
@@ -33,6 +33,13 @@ The states are one word each: **Healthy**, **Slow** (all panels rendered but the
 the collector's threshold), **Attention** (some panels not ok) and **Action** (half or more not ok).
 Overall health ignores Slow, because the 30 s and 120 s thresholds are global and Software Overview
 would otherwise keep the page red until you settle the baseline.
+
+## Panels brought back from the previous version
+
+The two tables that the redesign had replaced are back as Lens tables, with their old titles:
+**Latest result per dashboard** (section 2) and **Load time by dashboard (baseline)** (section 3).
+**Load time over time** was already on the page, in section 3, to the left of *Dashboards by collector
+status*. If you do not see it, tell me what is in that spot.
 
 ## New since the first version
 
