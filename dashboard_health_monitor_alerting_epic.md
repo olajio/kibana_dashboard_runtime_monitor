@@ -1,8 +1,8 @@
 # Dashboard Health Monitor: alerting epic and tasks
 
-Content to create in Jira. Task ids here (ALR-1 to ALR-10) are local labels; replace them with the
-keys Jira assigns. **Nothing in this file has been created in Kibana.** It replaces the older
-alerting items in `dashboard_health_monitor_jira_tasks.md` (DHM-G and DHM-15 to DHM-18).
+Content to create in Jira: one epic and eleven tasks. Task numbers below are the order of work;
+Jira will assign its own keys. **Nothing in this file has been created in Kibana.** It replaces the
+older alerting items in `dashboard_health_monitor_jira_tasks.md` (DHM-G and DHM-15 to DHM-18).
 
 ## What was cut, and why
 
@@ -10,11 +10,11 @@ An alert is worth having only if a person would act on it and nothing else alrea
 
 | Dropped | Why |
 |---|---|
-| Alert on `load_status` degraded or failed | The 30 s and 120 s thresholds are global. Software Overview, Priority Risks and Agency Details would alert every run for load times that are normal for them. Replaced by ALR-5, per dashboard, after the baseline. |
-| Separate rules for error, timeout and missing panels, and for a dashboard that will not load | All of them are already `panels_not_ok > 0`. One rule (ALR-4) covers them; the message shows the breakdown. |
-| "Dashboard stopped being collected" as its own rule | Folded into ALR-2, which counts how many dashboards produced a result. |
-| Hard load-time ceiling | Covered by the per-dashboard thresholds in ALR-5. |
-| Slow single-panel regression | Informational. The dashboard already shows it. |
+| Alert on `load_status` with the global 30 s and 120 s thresholds | Software Overview, Priority Risks and Agency Details would alert every run for load times that are normal for them. Instead, Task 5 makes the thresholds per dashboard, and Task 6 then alerts on `load_status`. |
+| Separate rules for error, timeout and missing panels, and for a dashboard that will not load | All of them are already `panels_not_ok > 0`. One rule (Task 3) covers them; the message shows the breakdown. |
+| "Dashboard stopped being collected" as its own rule | Folded into Task 2, which counts how many dashboards produced a result. |
+| Hard load-time ceiling | Covered by the per-dashboard thresholds in Task 5. |
+| Slow single-panel alert | Informational. The dashboard already shows it. |
 
 ---
 
@@ -42,44 +42,45 @@ Notify the right people about the few conditions that need a human, quickly and 
 - Alert on persistence, not one result: a run is one browser session, and one-off errors happen.
 - One notification per rule run, summarising every dashboard affected (Kibana "Summary of alerts"),
   with recovery notices and a reminder interval, so a platform-wide outage is one message.
-- Do not alert on `load_status`: it depends on global thresholds that do not fit every dashboard.
+- Load-time alerts use `load_status` only once each dashboard has its own thresholds (Task 5), and
+  only for timing (all panels ok), so they never duplicate the panel alert (Task 3).
 - Planned work (such as the agency upgrade window) is silenced with a Kibana maintenance window.
 - Every alert message says which dashboard, what was seen, and links to the Dashboard Health
   Monitor dashboard and the runbook.
 
 **Scope**
 
-In: four must-have alerts (ALR-2 to ALR-5), the shared notification setup (ALR-1), and a short
-list of good-to-have alerts (ALR-6 to ALR-10) to pick up later.
+In: six must-have tasks (Tasks 1 to 6) and five good-to-have tasks (Tasks 7 to 11) to pick up later.
 
-Out: alerting on the content of the Federal Overview data itself, and changes to the collector's
-status thresholds.
+Out: alerting on the content of the Federal Overview data itself.
 
 **Definition of done**
 
-- The four must-have alerts are enabled in the production space and each has been proven to fire
-  and to recover (see each task).
-- On the day they are enabled, none fires falsely (checked against the previous 14 days of data).
+- The must-have alerts (Tasks 2, 3, 4 and 6) are enabled in the production space, and each has been
+  proven to fire and to recover (see each task).
+- On the day each is enabled, it does not fire falsely (checked against the previous 14 days).
 - The runbook lists, per alert, what it means and the first three things to check.
 
 **Dependencies and risks**
 
-- ALR-5 needs about two weeks of results (the schedule started around 10 November; run
-  `scripts/baseline.py --days 14`). The other three do not.
+- Task 6 needs two weeks of results (the schedule started around 10 November) and Task 5.
 - Creating rules needs Kibana alerting write access. The collector's key deliberately lacks it, so
   an administrator account creates them.
 - The Kibana alerts live in the cluster they watch. If Elasticsearch or Kibana is down, none of
-  them fires. ALR-3 covers that.
-- ES|QL rules (ALR-2) must be available in the production Kibana; a fallback is given.
+  them fires. Task 4 covers that.
+- ES|QL rules (Task 2) must be available in the production Kibana; a fallback is given.
+- Software Overview takes 92 to 169 s against a 180 s per-dashboard timeout (seen in the first
+  runs). Its threshold has to be set with that limit in mind (Task 5).
 
-**Order:** ALR-1, then ALR-2 and ALR-4 in parallel, then ALR-3, then ALR-5 once the baseline exists.
+**Order:** Task 1, then Tasks 2 and 3 in parallel, then Task 4, then (after the baseline) Task 5
+and Task 6. Tasks 7 to 11 only after the must-haves are enabled and quiet.
 
 ---
 
 ## Must-have
 
-### ALR-1: Notification setup: connector, routes, maintenance window
-- **Type:** Task · **Priority:** High · **Size:** M · **Blocks:** ALR-2 to ALR-5
+### Task 1 - Notification setup: connector, routes and maintenance window
+- **Type:** Task · **Priority:** High · **Size:** M · **Blocks:** Tasks 2 to 6
 - **Description:** Everything the alerts share. Decide who gets what, create the connector(s), and
   prepare the way to silence planned work.
 - **Work:**
@@ -96,8 +97,8 @@ status thresholds.
   - A maintenance window suppresses a test alert, and the alert resumes after it ends.
   - Runbook location agreed and linked from every alert message.
 
-### ALR-2: Collector stopped, or a run came back incomplete
-- **Type:** Task · **Priority:** Highest · **Size:** S · **Blocked by:** ALR-1
+### Task 2 - Collector stopped or run incomplete
+- **Type:** Task · **Priority:** Highest · **Size:** S · **Blocked by:** Task 1
 - **Description:** The monitor's own heartbeat. Fires when the collector has not produced results
   for all expected dashboards recently: it has stopped, crashed partway, or a dashboard dropped out.
 - **Rule design:**
@@ -122,9 +123,30 @@ status thresholds.
   - The expected count (22) is in the runbook as the value to change when dashboards are added.
   - `es/alerting/dead_mans_switch_rule.json` replaced to match.
 
-### ALR-3: Out-of-band heartbeat (AWS CloudWatch)
-- **Type:** Task · **Priority:** High · **Size:** M · **Blocked by:** ALR-1
-- **Description:** ALR-2 runs inside the Elasticsearch and Kibana it watches. If either is down,
+### Task 3 - Panels not ok on a dashboard (persisting)
+- **Type:** Task · **Priority:** High · **Size:** S · **Blocked by:** Task 1
+- **Description:** The monitor's reason for existing: a dashboard shows empty, errored, timed-out
+  or missing panels. Fires per dashboard, only when it persists.
+- **Rule design:**
+  - Rule type: Index threshold (or an Elasticsearch query rule with group-by, whichever groups by
+    `dashboard_title` in the production Kibana). Index `dashboard-health-monitor*`, time field
+    `@timestamp`, check every 15 minutes.
+  - Filter (KQL): `panels_not_ok > 0`. Group by `dashboard_title` (top 30). Count at or above 3
+    in the last 100 minutes, which is about three runs in a row.
+  - Route: **ticket**. Summary of alerts, one message per rule run. The message lists each
+    dashboard with `panels_not_ok` and the counts of empty, error, timeout and missing.
+  - Silence with a maintenance window during the agency upgrades.
+  - Does not look at load time.
+- **Acceptance criteria:**
+  - Query run over the previous 14 days returns no alert (today every panel is ok).
+  - Delivery proven by temporarily changing the filter to `panels_ok > 0` with the same threshold,
+    then restoring it.
+  - Recovery notice arrives when the dashboard returns to ok.
+  - `es/alerting/panel_health_rule.json` replaced; `es/alerting/load_time_rule.json` removed.
+
+### Task 4 - Out-of-band heartbeat in AWS CloudWatch
+- **Type:** Task · **Priority:** High · **Size:** M · **Blocked by:** Task 1
+- **Description:** Task 2 runs inside the Elasticsearch and Kibana it watches. If either is down,
   nothing fires. This alarm lives in AWS and only needs the collector host.
 - **Design:**
   - After a successful run, the cron job publishes a metric (for example `DHM/RunSucceeded = 1`
@@ -138,44 +160,50 @@ status thresholds.
   - A failed run (exit status not zero) does not publish the metric.
   - It recovers on the next successful run.
 
-### ALR-4: A dashboard has panels that are not ok (persisting)
-- **Type:** Task · **Priority:** High · **Size:** S · **Blocked by:** ALR-1
-- **Description:** The monitor's reason for existing: a dashboard shows empty, errored, timed-out
-  or missing panels. Fires per dashboard, only when it persists.
-- **Rule design:**
-  - Rule type: Index threshold (or an Elasticsearch query rule with group-by, whichever groups by
-    `dashboard_title` in the production Kibana). Index `dashboard-health-monitor*`, time field
-    `@timestamp`, check every 15 minutes.
-  - Filter (KQL): `panels_not_ok > 0`. Group by `dashboard_title` (top 30). Count at or above 3
-    in the last 100 minutes, which is about three runs in a row.
-  - Route: **ticket**. Summary of alerts, one message per rule run. The message lists each
-    dashboard with `panels_not_ok` and the counts of empty, error, timeout and missing.
-  - Silence with a maintenance window during the agency upgrades.
-  - Does not use `load_status`.
+### Task 5 - Per-dashboard load-time thresholds in the collector
+- **Type:** Task · **Priority:** High · **Size:** M · **Blocks:** Task 6
+- **Description:** Today `degraded_over_ms` (30 s) and `failed_over_ms` (120 s) are global, so
+  `load_status` cannot tell a normal slow dashboard from a regression. Let each dashboard have its
+  own thresholds, so `load_status` means the same thing everywhere: on the dashboard, in queries
+  and in alerts.
+- **Work:**
+  - Collector: a `collector.thresholds` map in `settings.yaml`, keyed by dashboard title, each with
+    `degraded_over_ms` and `failed_over_ms`. Dashboards not in the map keep the global values.
+    Reject `failed` below `degraded`, and warn when `failed` is at or above the per-dashboard
+    timeout (`dashboard_timeout_ms`, 180 s).
+  - Playbook: a variable and the template line in `deploy/settings.prod.yaml.j2`.
+  - Record the thresholds applied in every result (`degraded_over_ms`, `failed_over_ms`) so history
+    stays readable when they are retuned later. Update `es/index_template.json`, bump
+    `schema_version`, and roll the data stream over so the new fields are indexed.
+  - `scripts/baseline.py --yaml`: print the override block from the baseline numbers, using the
+    multiplier agreed on review.
+  - Software Overview (92 to 169 s against the 180 s timeout): decide whether to raise its
+    timeout, optimise the dashboard, or both, and record the decision.
+  - Update the Dashboard Health Monitor dashboard's reference panel, and decide whether "Overall
+    health" should include Slow now that it is meaningful.
+  - Review the thresholds every month or quarter; put the date in the runbook.
 - **Acceptance criteria:**
-  - Query run over the previous 14 days returns no alert (today every panel is ok).
-  - Delivery proven by temporarily changing the filter to `panels_ok > 0` with the same threshold,
-    then restoring it.
-  - Recovery notice arrives when the dashboard returns to ok.
-  - `es/alerting/panel_health_rule.json` replaced; `es/alerting/load_time_rule.json` removed.
+  - Shipped first with an empty map: statuses are identical to today's.
+  - A test override changes one dashboard's status and shows in its result document.
+  - After the two-week baseline, the block from `baseline.py --yaml` is loaded by the collector
+    and committed with the baseline numbers and review date.
+  - Tests cover the map, the fallback and the validation.
 
-### ALR-5: A dashboard is much slower than its own normal
-- **Type:** Task · **Priority:** High · **Size:** M · **Blocked by:** ALR-1 and two weeks of data
+### Task 6 - Dashboard load time above its own normal (persisting)
+- **Type:** Task · **Priority:** High · **Size:** S · **Blocked by:** Task 5 and two weeks of data
 - **Description:** A load-time regression per dashboard, judged against that dashboard's own
-  baseline instead of the global 30 s and 120 s.
+  thresholds, which the collector now applies in `load_status`.
 - **Rule design:**
-  - Run `scripts/baseline.py --days 14`. The threshold for each dashboard is 2 times its p95,
-    rounded up (the script prints 1.5 times as `degraded>`; use the multiplier agreed after
-    reviewing the numbers).
-  - One rule, same type as ALR-4. The KQL filter holds one clause per dashboard:
-    `(dashboard_title : "A" and load_time_ms > 12000) or (dashboard_title : "B" and load_time_ms > 190000) or ...`
-  - Group by `dashboard_title`, count at or above 3 in the last 100 minutes. Route: **ticket**.
-  - Add a `--kql` option to `scripts/baseline.py` to print that filter, so the rule can be
-    regenerated when the baseline is reviewed.
+  - Same rule type as Task 3. Filter (KQL):
+    `load_status : (degraded or failed) and panels_not_ok : 0`. The second part keeps it to
+    timing only, so a broken dashboard alerts once (Task 3), not twice.
+  - Group by `dashboard_title`. Count at or above 3 in the last 100 minutes. Route: **ticket**.
+  - Message shows the load time, the thresholds applied and the dashboard's median.
 - **Acceptance criteria:**
-  - Backtest: the filter run over the 14 baseline days gives no more than one alert a week in total.
+  - Backtest: run over the 14 baseline days with the final thresholds; no more than one alert a
+    week in total.
   - Delivery proven by temporarily lowering one dashboard's threshold below its normal.
-  - The baseline numbers and the review date are recorded in the task.
+  - Recovery notice arrives when the load time is back under the threshold.
 
 ---
 
@@ -183,34 +211,34 @@ status thresholds.
 
 Each is optional. Do not start these before the must-haves are enabled and quiet.
 
-### ALR-6: Dashboard in Action (half or more panels not ok)
+### Task 7 - Dashboard in Action: half or more panels not ok
 - **Type:** Task · **Priority:** Low · **Size:** S · **Importance:** Good to have
-- **Description:** A louder version of ALR-4 for a dashboard that is largely broken. Filter
+- **Description:** A louder version of Task 3 for a dashboard that is largely broken. Filter
   `panels_not_ok >= panel_count / 2` (computed in a runtime field, or ES|QL), 2 results in 70
-  minutes, route **page**. Build it only if ALR-4 turns out to be too slow for real outages.
+  minutes, route **page**. Build it only if Task 3 turns out to be too slow for real outages.
 - **Acceptance criteria:** fires on a test condition, recovers, and does not fire on the previous 14 days.
 
-### ALR-7: Platform-wide failure
+### Task 8 - Platform-wide failure: five or more dashboards affected
 - **Type:** Task · **Priority:** Low · **Size:** S · **Importance:** Good to have
 - **Description:** Five or more dashboards with not-ok panels in the same run points at the cluster,
   a remote cluster or Kibana rather than a dashboard. One alert instead of many. ES|QL: count
   dashboards with `panels_not_ok > 0` in the latest run, at least 5. Route **page**.
 - **Acceptance criteria:** fires when the threshold is lowered to 1 temporarily; the message says to check the platform first.
 
-### ALR-8: Collector run too long
+### Task 9 - Collector run too long
 - **Type:** Task · **Priority:** Low · **Size:** S · **Importance:** Good to have
 - **Description:** A run taking over 25 minutes is close to the 30 minute schedule; the next run
   is skipped by the lock. ES|QL: for each `collector_run_id`, latest minus earliest `@timestamp`
   over 25 minutes. Route **ticket**.
 - **Acceptance criteria:** fires with the threshold lowered to 5 minutes; stays quiet at 25.
 
-### ALR-9: Every dashboard is slow
-- **Type:** Task · **Priority:** Low · **Size:** S · **Importance:** Good to have · **Blocked by:** baseline
+### Task 10 - Every dashboard slow against its baseline
+- **Type:** Task · **Priority:** Low · **Size:** S · **Importance:** Good to have · **Blocked by:** Task 5
 - **Description:** The median load time across all dashboards is more than twice its baseline for
   three runs. Points at Kibana or the cluster. Route **ticket**.
 - **Acceptance criteria:** backtest over the baseline window gives no alerts.
 
-### ALR-10: Weekly digest
+### Task 11 - Weekly digest report
 - **Type:** Task · **Priority:** Low · **Size:** S · **Importance:** Good to have
 - **Description:** A scheduled weekly report (not an alert): share of ok results per dashboard,
   slowest movers against baseline, dashboards that had not-ok panels. Uses the Dashboard Health
