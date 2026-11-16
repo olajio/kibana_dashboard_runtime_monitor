@@ -142,6 +142,8 @@ blocked by DHM-F.**
     Elastic key authorizes both).
 
 ### DHM-G — Kibana alerting rules (dashboard failure + collector liveness)
+- **Superseded:** replaced by the alerting epic in `dashboard_health_monitor_alerting_epic.md`
+  (alerts reduced to the ones worth acting on). DHM-15 to DHM-18 below are superseded the same way.
 - **Type:** Story · **Size:** M · **Status:** To Do · **Blocked by:** DHM-F
 - **Description:** Configure Kibana Alerting rules so operators are notified
   when dashboards regress or when the collector itself stops running. Use
