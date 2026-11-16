@@ -1,9 +1,8 @@
 # Dashboard Health Monitor: alerting epic and tasks
 
-For Jira: the epic and the must-have tasks (Tasks 1 to 6), each with the three required fields
-(Summary, Description, Acceptance Criteria). The good-to-have tasks (Tasks 7 to 11) are added below
-once written. Tasks are numbered in the order of work; Jira assigns its own keys. **Nothing here
-has been created in Kibana.**
+For Jira: one epic and eleven tasks (Tasks 1 to 6 must-have, Tasks 7 to 11 good to have), each with
+the three required fields (Summary, Description, Acceptance Criteria). Tasks are numbered in the
+order of work; Jira assigns its own keys. **Nothing here has been created in Kibana.**
 
 ---
 
@@ -313,3 +312,230 @@ Known behaviour to document:
 - The message shows the load time, the thresholds and the median.
 - The runbook entry says what to check first: Kibana and cluster load, the Collector run duration
   panel, and the dashboard's own queries.
+
+---
+
+# TASKS: GOOD TO HAVE (less important, pick up later)
+
+Do not start these before the must-have alerts (Tasks 2, 3, 4 and 6) are enabled and quiet. Each one
+duplicates, escalates or summarises something the must-haves already cover, so build one only when
+real use shows it is needed.
+
+## Task 7 - Dashboard in Action: half or more panels not ok
+
+### Summary
+Task 7 - Dashboard in Action: half or more panels not ok
+
+### Description
+A louder version of Task 3 for a dashboard that is largely broken. Task 3 waits for 3 bad results
+(about 90 minutes) and sends a ticket. A dashboard with half or more of its panels not ok is
+effectively down for its users, so this rule pages after 2 bad results (about an hour). It matches the
+**Action** state on the Dashboard Health Monitor dashboard. Build it only if Task 3 turns out to be
+too slow for real outages. Depends on Task 1 and Task 3.
+
+Rule design:
+- **Rule type:** ES|QL (Elasticsearch query rule), checked every 15 minutes. **Route:** page.
+- **Query:**
+  ```
+  FROM dashboard-health-monitor
+  | WHERE @timestamp > NOW() - 70 minutes AND panel_count > 0
+  | EVAL share = TO_DOUBLE(panels_not_ok) / panel_count
+  | WHERE share >= 0.5
+  | STATS bad = COUNT(*) BY dashboard_title
+  | WHERE bad >= 2
+  ```
+  `TO_DOUBLE` matters: dividing two integers in ES|QL gives an integer, so without it the share is
+  0 or 1.
+- **Message:** the dashboard, `panels_not_ok` out of `panel_count`, and the counts of empty, error,
+  timeout and missing panels.
+- **Decision to record:** dashboards with few panels reach 50% easily (HVA Software has 3 data
+  panels, Remote Cluster Connectivity Status Details has 2). Decide whether to also require at least
+  2 not-ok panels. The dashboard's Action state does not, so the two would then differ.
+
+Known behaviour to document:
+- A dashboard in Action also trips Task 3 later, as a ticket. That is intended: the page comes first,
+  the ticket follows.
+- During the agency upgrade period, silence it with the maintenance window from Task 1.
+
+### Acceptance Criteria
+- The query, run over the previous 14 days, returns no rows.
+- Delivery is proven by temporarily changing the condition to `share >= 0` with a single bad result,
+  then restoring it.
+- The alert recovers when the dashboard's share falls below one half.
+- The message shows the panels not ok out of the total and the counts by kind.
+- The decision on the minimum number of not-ok panels is recorded.
+- The runbook entry says what to check first: the Panel health panel on the dashboard, then the
+  dashboard itself in Kibana.
+
+## Task 8 - Platform-wide failure: five or more dashboards affected
+
+### Summary
+Task 8 - Platform-wide failure: five or more dashboards affected
+
+### Description
+Five or more dashboards with not-ok panels at the same time points at the platform, meaning the
+cluster, a remote cluster or Kibana, rather than at five separate dashboards. The alert tells the
+responder to check the platform first instead of opening dashboards one by one. Task 3 already sends
+one summary message per rule run, so this does not prevent a flood of messages; its value is the
+diagnosis and the page. Build it only if responders keep chasing individual dashboards during platform
+incidents. Depends on Task 1.
+
+Rule design:
+- **Rule type:** ES|QL (Elasticsearch query rule), checked every 15 minutes. **Route:** page.
+- **Query:**
+  ```
+  FROM dashboard-health-monitor
+  | WHERE @timestamp > NOW() - 40 minutes AND panels_not_ok > 0
+  | STATS affected = COUNT_DISTINCT(dashboard_title)
+  | WHERE affected >= 5
+  ```
+  40 minutes is about one run (30 minute schedule plus the run itself).
+- **Message:** the number of dashboards affected and the list, and the first checks: the cluster's
+  health, `GET _remote/info` and the `cdm_remote_clusters_status` index (the Remote Cluster
+  Connectivity Status Details dashboard), and Kibana's own status.
+- Task 3 may fire at the same time for the same dashboards. That is acceptable: this alert is the
+  headline, Task 3 is the detail.
+
+Known behaviour to document:
+- During the agency upgrade period, many dashboards show empty panels; silence it with the
+  maintenance window from Task 1.
+- 5 of 22 is a starting point. Adjust it after the first real incident.
+
+### Acceptance Criteria
+- Temporarily lowering the threshold to 1 makes it fire, and restoring it stops it.
+- The query, run over the previous 14 days, returns no rows.
+- The message lists the affected dashboards and tells the responder to check the platform first.
+- The runbook entry lists the platform checks in order.
+- The alert recovers when fewer than 5 dashboards are affected.
+
+## Task 9 - Collector run too long
+
+### Summary
+Task 9 - Collector run too long
+
+### Description
+A collector run takes about 7 minutes today against a 30 minute schedule. A run that takes more than
+25 minutes is close to the schedule: the lock (`flock -n`) then skips the next run, and the results
+become sparse. The cause is usually a slow dashboard, a slow browser or a starved host. This is a
+capacity and early-warning alert, not an outage alert: Task 2 catches the effect if runs start being
+skipped. Build it if run times start to creep up. Depends on Task 1.
+
+Rule design:
+- **Rule type:** ES|QL (Elasticsearch query rule), checked every 30 minutes. **Route:** ticket.
+- **Query:**
+  ```
+  FROM dashboard-health-monitor
+  | WHERE @timestamp > NOW() - 2 hours
+  | STATS started = MIN(@timestamp), finished = MAX(@timestamp) BY collector_run_id
+  | EVAL minutes = DATE_DIFF("minute", started, finished)
+  | WHERE minutes > 25
+  ```
+  (Check that `DATE_DIFF` is available in the production Kibana. If it is not, compute the
+  difference in milliseconds from the two timestamps.)
+- **Message:** the run's start time, its duration, and a pointer to the Collector run duration panel.
+- Duration is measured from the first result to the last result of a run, so it is a little less than
+  the run's true length. Results are written when the run ends, so the alert is retrospective.
+
+Known behaviour to document:
+- The slowest dashboards (Software Overview, Priority Risks) take minutes each. If they get slower,
+  runs get longer.
+- 25 minutes is a starting point; adjust it from the Collector run duration panel.
+
+### Acceptance Criteria
+- Temporarily lowering the threshold to 5 minutes makes it fire, and restoring 25 stops it.
+- Run over the previous 14 days at 25 minutes, it returns no rows.
+- The message shows the run's start time and duration.
+- The runbook entry says what to check first: the slowest dashboards in the latest run, host memory
+  and CPU, and whether the browser is hung.
+
+## Task 10 - Many dashboards slow at the same time
+
+### Summary
+Task 10 - Many dashboards slow at the same time
+
+### Description
+When many dashboards are over their own load-time threshold in the same run, the cause is probably
+Kibana or the cluster, not the dashboards. A single dashboard being slow is Task 6. This alert says
+the platform is slow, so the responder checks it first. It depends on Task 5, because it relies on
+each dashboard's own thresholds being recorded in `load_status`, and on the two-week baseline for
+sensible thresholds. Build it after Tasks 5 and 6 are enabled and quiet.
+
+Rule design:
+- **Rule type:** ES|QL (Elasticsearch query rule), checked every 15 minutes. **Route:** ticket.
+- **Query:**
+  ```
+  FROM dashboard-health-monitor
+  | WHERE @timestamp > NOW() - 40 minutes AND panels_not_ok == 0
+  | WHERE load_status == "degraded" OR load_status == "failed"
+  | STATS slow = COUNT_DISTINCT(dashboard_title)
+  | WHERE slow >= 8
+  ```
+  Condition: 8 or more of the 22 dashboards over their own threshold in the same run, in 2 runs in a
+  row (a window of about 70 minutes, evaluated twice). 8 is about a third of the estate and is a
+  starting point.
+- **Message:** the number of slow dashboards, the list, and the first checks: Kibana and cluster load,
+  the Collector run duration panel, and any change or incident under way.
+
+Known behaviour to document:
+- The first Task 5 thresholds will probably be a little too tight or too loose. Review this alert's
+  count after the first month.
+- Panels not ok are excluded so a platform outage that also breaks panels alerts once, under Task 3
+  and Task 8.
+
+### Acceptance Criteria
+- A backtest over the 14 baseline days with the final thresholds returns no rows.
+- Temporarily lowering the count to 1 makes it fire, and restoring it stops it.
+- The message lists the slow dashboards with the load time and the threshold of each.
+- The alert recovers when fewer than 8 dashboards are over their threshold.
+- The runbook entry says what to check first.
+
+## Task 11 - Weekly digest report
+
+### Summary
+Task 11 - Weekly digest report
+
+### Description
+A report, not an alert: a weekly summary that tells the owners how the monitored dashboards have been
+doing without anyone opening Kibana. It is for trends the alerts do not show, such as a dashboard
+that gets a little slower each week. Build it when the alerts are quiet and people ask for trends.
+Depends on Task 1 for the delivery route (use the ticket route's recipients).
+
+Content, for the previous 7 days:
+- **Availability:** for each dashboard, the share of results that were ok.
+- **Slowest movers:** each dashboard's median and p95 load time against its baseline, with the ones
+  that moved most first.
+- **Not-ok panels:** the dashboards that had not-ok panels, with how often and which kind.
+- **Collector:** how many runs completed out of the expected 336, and the longest run.
+
+Options, to choose between at the start of the task:
+- **A: Kibana scheduled report** of the Dashboard Health Monitor dashboard as a PDF, with the time
+  range set to the last 7 days. Simple to build. It needs the Reporting scheduling feature, which may
+  require a particular license level, and an email connector with the recipients' domain allowed.
+- **B: a small script** (`scripts/weekly_digest.py`) on a weekly cron entry, which queries
+  Elasticsearch with the collector's key (it can read the index) and sends an email or posts to the
+  chat route. More work, but the content and format are fully controlled.
+
+### Acceptance Criteria
+- Option A or B is chosen and the reason is recorded.
+- The first report arrives on the first Monday after it is created, to the agreed recipients.
+- It covers the previous 7 days and says so.
+- It contains availability per dashboard, the slowest movers against baseline, the dashboards with
+  not-ok panels, and the number of collector runs completed.
+- It is readable without opening Kibana.
+- It stops if the recipients are removed from the route, and the way to stop it is in the runbook.
+
+---
+
+## Notes (not for Jira)
+
+What was cut from the earlier list, and why:
+- Alert on `load_status` with the global 30 s and 120 s thresholds: replaced by Tasks 5 and 6.
+- Separate rules for error, timeout and missing panels, and for a dashboard that will not load: all
+  are `panels_not_ok > 0`, covered by Task 3.
+- "Dashboard stopped being collected": folded into Task 2.
+- Hard load-time ceiling: covered by the per-dashboard thresholds in Task 5.
+- Slow single-panel alert: informational; the dashboard already shows it.
+
+Task 10 was first named "Every dashboard slow against its baseline" and described as the median
+across dashboards at twice its baseline. It is now "Many dashboards slow at the same time", using the
+per-dashboard thresholds from Task 5, because that needs no baseline lookup inside a rule.
