@@ -43,7 +43,7 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
-from dhm.config import load_settings  # noqa: E402
+from dhm.config import load_settings, threshold_problems, unknown_threshold_titles  # noqa: E402
 from dhm.es_writer import bulk_index  # noqa: E402
 from dhm.secrets import (  # noqa: E402
     connection_warnings,
@@ -149,6 +149,14 @@ def main() -> int:
               file=sys.stderr)
 
     registry = _load_registry(settings)
+
+    for warning in threshold_problems(settings)[1]:
+        print(f"WARNING: {warning}", file=sys.stderr)
+    stale = unknown_threshold_titles(
+        settings, [d.get("title", "") for d in registry.get("dashboards", [])])
+    if stale and registry.get("dashboards"):
+        print("WARNING: per-dashboard limits are set for dashboards this run does not collect "
+              f"(renamed or removed?): {', '.join(stale)}", file=sys.stderr)
 
     sel = settings.collector.selection
     if sel == "linked":

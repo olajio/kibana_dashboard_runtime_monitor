@@ -66,6 +66,11 @@ collector:
   # distro chromium at /usr/bin/chromium. When set it wins over browser_channel.
   browser_executable: "{{ dhm_browser_executable }}"
   dashboard_timeout_ms: {{ dhm_dashboard_timeout_ms }}
+  # Per-dashboard limits come from config/thresholds.yaml in the checkout (see the example file).
+  thresholds_file: thresholds.yaml
+  retry_on_timeout: false
+  consecutive_failure_limit: 3
+  max_run_seconds: 1500
   poll_interval_ms: 250
   concurrency: 1
   degraded_over_ms: 30000

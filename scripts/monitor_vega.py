@@ -31,7 +31,7 @@ THEMES: Dict[str, Dict[str, str]] = {
 
 # a dashboard is "Action" when this share of its panels is not ok
 ACTION_SHARE = 0.5
-DEGRADED_S, FAILED_S = 30, 120          # the collector's global thresholds, drawn on the baseline
+DEGRADED_S, FAILED_S = 30, 120          # the collector's global thresholds: used for dashboards with no limits of their own
 STALE_OK_MIN, STALE_WARN_MIN = 45, 90   # collector runs every 30 minutes
 
 
@@ -281,6 +281,7 @@ def baseline_chart(t: Dict[str, str]) -> Dict[str, Any]:
     body = {"size": 0, "aggs": {"d": {"terms": {"field": "dashboard_title", "size": 100}, "aggs": {
         "load": {"percentiles": {"field": "load_time_ms", "percents": [50, 95]}},
         "mx": {"max": {"field": "load_time_ms"}},
+        "dg": {"max": {"field": "degraded_over_ms"}}, "fl": {"max": {"field": "failed_over_ms"}},
         "ok": {"filter": {"term": {"load_status": "ok"}}}}}}}
     base = {"name": "base", "url": {"%context%": True, "%timefield%": TIME_FIELD, "index": INDEX, "body": body},
             "format": {"property": "aggregations.d.buckets"},
@@ -289,6 +290,9 @@ def baseline_chart(t: Dict[str, str]) -> Dict[str, Any]:
                 {"type": "formula", "as": "p50", "expr": "max(0.1, datum.load.values['50.0'] / 1000)"},
                 {"type": "formula", "as": "p95", "expr": "max(0.1, datum.load.values['95.0'] / 1000)"},
                 {"type": "formula", "as": "mx_s", "expr": "max(0.1, datum.mx.value / 1000)"},
+                # the dashboard's own limits (schema v2 documents); older documents and unlisted ones use the global limits
+                {"type": "formula", "as": "dg_s", "expr": f"datum.dg.value ? datum.dg.value / 1000 : {DEGRADED_S}"},
+                {"type": "formula", "as": "fl_s", "expr": f"datum.fl.value ? datum.fl.value / 1000 : {FAILED_S}"},
                 {"type": "formula", "as": "ok_pct", "expr": "datum.doc_count > 0 ? datum.ok.doc_count / datum.doc_count : 0"},
                 {"type": "collect", "sort": {"field": "p95", "order": "descending"}},
                 {"type": "window", "ops": ["row_number"], "as": ["idx"]},
@@ -302,7 +306,7 @@ def baseline_chart(t: Dict[str, str]) -> Dict[str, Any]:
     marks: List[Dict[str, Any]] = [
         _rect(0, 0, S("width"), 28, t["card"], radius=4),
         _txt(12, 19, "Dashboard", t["muted"], 11, "600"),
-        _txt(S("left"), 19, "bar = median to p95 · dot = median · tick = slowest   (seconds, log scale)", t["muted"], 11, "600"),
+        _txt(S("left"), 19, "bar = median to p95 · dot = median · grey tick = slowest · amber / red = its own degraded / failed limit   (s, log)", t["muted"], 11, "600"),
         _txt(S("width - 8"), 19, "median · p95 · slowest · ok %", t["muted"], 11, "600", "right"),
     ]
     for secs in (0.1, 1, 10, 100):
@@ -310,12 +314,6 @@ def baseline_chart(t: Dict[str, str]) -> Dict[str, Any]:
             "x": S(f"scale('x', {secs})"), "x2": S(f"scale('x', {secs})"), "y": V(32), "y2": S("height - 14"),
             "stroke": V(t["line"]), "opacity": V(0.8)}}})
         marks.append(_txt(S(f"scale('x', {secs})"), S("height - 2"), f"{secs:g} s", t["muted"], 10, align="center"))
-    for secs, label, col in ((DEGRADED_S, f"{DEGRADED_S} s degraded", t["amber"]), (FAILED_S, f"{FAILED_S} s failed", t["red"])):
-        marks.append({"type": "rule", "encode": {"update": {
-            "x": S(f"scale('x', {secs})"), "x2": S(f"scale('x', {secs})"), "y": V(32), "y2": S("height - 14"),
-            "stroke": V(col), "strokeDash": V([4, 3]), "opacity": V(0.7)}}})
-        marks.append(_txt(S(f"scale('x', {secs}) " + ("- 4" if secs == DEGRADED_S else "+ 4")), S("height - 18"), label, col, 10,
-                          align="right" if secs == DEGRADED_S else "left"))
     marks += [
         {"type": "text", "from": {"data": "base"}, "encode": {"update": {
             "x": V(12), "y": {"field": "y", "offset": 14}, "text": {"field": "name"}, "fill": V(t["text"]),
@@ -325,12 +323,18 @@ def baseline_chart(t: Dict[str, str]) -> Dict[str, Any]:
             "y": {"field": "y", "offset": 6}, "height": V(8), "cornerRadius": V(4), "fill": V(t["blue"]),
             "fillOpacity": V(0.45),
             "tooltip": S("{'Dashboard': datum.name, 'Median (s)': format(datum.p50, '.1f'), 'p95 (s)': format(datum.p95, '.1f'), "
-                         "'Slowest (s)': format(datum.mx_s, '.1f'), 'Runs': datum.doc_count}")}}},
+                         "'Slowest (s)': format(datum.mx_s, '.1f'), 'Degraded over (s)': format(datum.dg_s, '.0f'), 'Failed over (s)': format(datum.fl_s, '.0f'), 'Runs': datum.doc_count}")}}},
         {"type": "symbol", "from": {"data": "base"}, "encode": {"update": {
             "x": S("scale('x', datum.p50)"), "y": {"field": "y", "offset": 10}, "size": V(60), "fill": V(t["blue"])}}},
         {"type": "rect", "from": {"data": "base"}, "encode": {"update": {
             "x": S("scale('x', datum.mx_s) - 1"), "width": V(2), "y": {"field": "y", "offset": 4}, "height": V(12),
-            "fill": V(t["amber"])}}},
+            "fill": V(t["muted"])}}},
+        {"type": "rect", "from": {"data": "base"}, "encode": {"update": {
+            "x": S("scale('x', datum.dg_s) - 1"), "width": V(2), "y": {"field": "y", "offset": 3}, "height": V(14),
+            "fill": V(t["amber"]), "tooltip": S("'Degraded over ' + format(datum.dg_s, '.0f') + ' s'")}}},
+        {"type": "rect", "from": {"data": "base"}, "encode": {"update": {
+            "x": S("scale('x', datum.fl_s) - 1"), "width": V(2), "y": {"field": "y", "offset": 3}, "height": V(14),
+            "fill": V(t["red"]), "tooltip": S("'Failed over ' + format(datum.fl_s, '.0f') + ' s'")}}},
         {"type": "text", "from": {"data": "base"}, "encode": {"update": {
             "x": S("width - 8"), "y": {"field": "y", "offset": 14}, "align": V("right"), "fill": V(t["muted"]), "fontSize": V(11),
             "text": S("format(datum.p50, '.1f') + '  ·  ' + format(datum.p95, '.1f') + '  ·  ' + format(datum.mx_s, '.1f') + "

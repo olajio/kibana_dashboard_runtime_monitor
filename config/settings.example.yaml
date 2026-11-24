@@ -171,6 +171,22 @@ collector:
   # for prod with time_from=now-30d and heavy dashboards (e.g. Priority Risks,
   # 35 panels); raise if some dashboards still hit the cap.
   dashboard_timeout_ms: 180000
+  # Per-dashboard limits. A dashboard listed in thresholds.yaml (next to this file) or in the
+  # inline `thresholds:` map below is judged against its own degraded_over_ms / failed_over_ms /
+  # timeout_ms; any key it leaves out, and every dashboard not listed, uses the global values
+  # on this page. Inline entries win over the file. A bad entry stops the collector at startup.
+  thresholds_file: thresholds.yaml           # relative to this file; "" turns the file off
+  thresholds: {}
+  #  "Software Overview": {timeout_ms: 300000}
+  #  "Agency Details": {degraded_over_ms: 100000, failed_over_ms: 170000}
+  # Fail fast when Kibana is down. Retrying a dashboard that timed out doubles the wait for
+  # nothing, so by default a timeout is not retried (load_retries still covers navigation errors).
+  retry_on_timeout: false
+  # After this many dashboards in a row fail to load, the rest of the run is skipped (recorded as
+  # failed, "skipped: ...", so there are still 22 documents) instead of waiting out each timeout.
+  consecutive_failure_limit: 3
+  # Stop starting new dashboards after this long, so a run never overlaps the next 30-minute one.
+  max_run_seconds: 1500
   # How often we poll the page for per-panel render progress.
   poll_interval_ms: 250
   # How many dashboards to load concurrently. Start at 1; raise only after

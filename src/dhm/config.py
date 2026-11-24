@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 import yaml
 
@@ -110,6 +110,24 @@ class CollectorConfig:
     inter_request_delay_ms: int = 500
     # Retry a dashboard once if the initial navigation fails.
     load_retries: int = 1
+    # A navigation that TIMED OUT is not retried: the second attempt would only wait the
+    # full timeout again. (In the 20 Nov outage every dashboard took 2 x 180 s, so one run
+    # lasted over two hours and four scheduled runs were skipped.) Set true to retry anyway.
+    retry_on_timeout: bool = False
+    # Fail fast when the platform is down: after this many dashboards in a row fail to load,
+    # the rest of the run is recorded as skipped and the next scheduled run tries again.
+    # 0 disables it.
+    consecutive_failure_limit: int = 3
+    # Hard cap on one run, in seconds; the dashboards not yet loaded are recorded as skipped.
+    # The schedule is 30 minutes and a healthy run takes about 7. 0 disables it.
+    max_run_seconds: int = 1500
+    # Per-dashboard overrides, keyed by dashboard title: degraded_over_ms, failed_over_ms
+    # and timeout_ms. A dashboard (or a key) that is not listed uses the global value above.
+    # Normally read from `thresholds_file`, which scripts/baseline.py --yaml can generate.
+    thresholds: Dict[str, Dict[str, int]] = field(default_factory=dict)
+    # YAML file holding a `thresholds:` mapping, relative to the settings file's folder.
+    # Missing file = no overrides. Entries under collector.thresholds win over the file.
+    thresholds_file: str = "thresholds.yaml"
 
 
 @dataclass
@@ -240,9 +258,95 @@ def load_settings(path: str = "config/settings.yaml") -> Settings:
             failed_not_ok_pct=float(col.get("failed_not_ok_pct", 50.0)),
             inter_request_delay_ms=int(col.get("inter_request_delay_ms", 500)),
             load_retries=int(col.get("load_retries", 1)),
+            retry_on_timeout=str(col.get("retry_on_timeout", False)).lower()
+            in ("true", "1", "yes"),
+            consecutive_failure_limit=int(col.get("consecutive_failure_limit", 3)),
+            max_run_seconds=int(col.get("max_run_seconds", 1500)),
+            thresholds_file=str(col.get("thresholds_file", "thresholds.yaml") or ""),
+            thresholds=_merge_thresholds(
+                _read_thresholds_file(path, col.get("thresholds_file", "thresholds.yaml")),
+                col.get("thresholds") or {},
+            ),
         ),
     )
+    errors, _warnings = threshold_problems(s)
+    if errors:
+        raise ValueError("invalid per-dashboard thresholds:\n  " + "\n  ".join(errors))
     return s
+
+
+# --------------------------------------------------------------------------- thresholds
+THRESHOLD_KEYS = ("degraded_over_ms", "failed_over_ms", "timeout_ms")
+
+
+def _read_thresholds_file(settings_path: str, file_name: Any) -> Dict[str, Any]:
+    """The `thresholds:` mapping from the thresholds file, or {} when there is none."""
+    if not file_name:
+        return {}
+    file_path = str(file_name)
+    if not os.path.isabs(file_path):
+        file_path = os.path.join(os.path.dirname(os.path.abspath(settings_path)), file_path)
+    if not os.path.exists(file_path):
+        return {}
+    with open(file_path) as f:
+        data = yaml.safe_load(f) or {}
+    return data.get("thresholds") or {}
+
+
+def _merge_thresholds(from_file: Dict[str, Any], inline: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
+    merged: Dict[str, Dict[str, Any]] = {}
+    for source in (from_file, inline):
+        for title, entry in (source or {}).items():
+            merged.setdefault(str(title), {}).update(entry if isinstance(entry, dict) else {"_bad": entry})
+    return merged
+
+
+def dashboard_limits(settings: Settings, title: str) -> Dict[str, int]:
+    """Effective degraded / failed / timeout limits for one dashboard, in ms: its own override
+    where it has one, else the global value."""
+    c = settings.collector
+    own = c.thresholds.get(title) or {}
+    return {
+        "degraded_over_ms": int(own.get("degraded_over_ms", c.degraded_over_ms)),
+        "failed_over_ms": int(own.get("failed_over_ms", c.failed_over_ms)),
+        "timeout_ms": int(own.get("timeout_ms", c.dashboard_timeout_ms)),
+    }
+
+
+def threshold_problems(settings: Settings):
+    """(errors, warnings) for the per-dashboard overrides.
+
+    Errors stop the collector at start-up, because a typo would silently classify a dashboard
+    with the wrong limits. Warnings are for settings that work but cannot do what was meant."""
+    errors: List[str] = []
+    warnings: List[str] = []
+    for title, entry in sorted(settings.collector.thresholds.items()):
+        bad = [k for k in entry if k not in THRESHOLD_KEYS]
+        if bad:
+            errors.append(f"{title!r}: unknown key(s) {', '.join(map(str, bad))}; "
+                          f"allowed: {', '.join(THRESHOLD_KEYS)}")
+            continue
+        try:
+            lim = dashboard_limits(settings, title)
+        except (TypeError, ValueError):
+            errors.append(f"{title!r}: values must be whole numbers of milliseconds")
+            continue
+        if min(lim.values()) <= 0:
+            errors.append(f"{title!r}: limits must be positive")
+        elif lim["failed_over_ms"] < lim["degraded_over_ms"]:
+            errors.append(f"{title!r}: failed_over_ms ({lim['failed_over_ms']}) is below "
+                          f"degraded_over_ms ({lim['degraded_over_ms']})")
+        elif lim["failed_over_ms"] >= lim["timeout_ms"]:
+            warnings.append(f"{title!r}: failed_over_ms ({lim['failed_over_ms']}) is not below "
+                            f"its timeout ({lim['timeout_ms']}), so only a timeout can make it "
+                            f"failed on load time; raise timeout_ms or lower the threshold")
+    return errors, warnings
+
+
+def unknown_threshold_titles(settings: Settings, titles) -> List[str]:
+    """Override keys that match no monitored dashboard (a typo, or a renamed dashboard)."""
+    known = set(titles)
+    return sorted(t for t in settings.collector.thresholds if t not in known)
 
 
 
