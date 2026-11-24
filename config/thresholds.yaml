@@ -1,0 +1,36 @@
+# Per-dashboard load-time limits, in milliseconds. First draft from the 15 to 23 Nov 2026
+# baseline (8.6 days, 22 dashboards; the one outage run, results with not-ok panels and results
+# cut off by the timeout are left out). degraded = 1.5 x p95, failed = 2 x degraded, both rounded
+# up to 5 s and failed kept 10 s under the timeout.
+#
+# A dashboard that is not listed uses the global limits (degraded over 30 s, failed over 120 s,
+# timeout 180 s). Regenerate the numbers with:  python scripts/baseline.py --yaml
+# Review them once a month, and again after a Kibana upgrade or a big data change.
+#
+# Software Overview and Priority Risks normally take 143 s and 93 s, so the old 180 s timeout
+# cut off about one result in ten. They get a 300 s timeout here and NO degraded/failed limits yet
+# (the global ones would apply). Let two weeks of uncapped results build up, then run
+# scripts/baseline.py --timeout-s 300 --yaml and add their limits.
+thresholds:
+  "Software Overview": {timeout_ms: 300000}                                          # p50 143.5 s, p95 173.1 s (capped at 180 s)
+  "Priority Risks": {timeout_ms: 300000}                                             # p50 93.4 s, p95 126.6 s (capped at 180 s)
+  "Agency Details": {degraded_over_ms: 100000, failed_over_ms: 170000}               # p50 39.5 s, p95 63.5 s
+  "SSVC Overview": {degraded_over_ms: 55000, failed_over_ms: 110000}                 # p50 21.4 s, p95 33.8 s
+  "Vulnerability Overview": {degraded_over_ms: 35000, failed_over_ms: 70000}         # p50 14.2 s, p95 22.1 s
+  "Misconfiguration Overview": {degraded_over_ms: 20000, failed_over_ms: 40000}      # p50 8.9 s, p95 11.6 s
+  "Remediated Vulnerabilities": {degraded_over_ms: 20000, failed_over_ms: 40000}     # p50 6.4 s, p95 11.4 s
+  "Federal Overview": {degraded_over_ms: 15000, failed_over_ms: 30000}               # p50 6.4 s, p95 9.6 s
+  "Hardware Overview": {degraded_over_ms: 10000, failed_over_ms: 20000}              # p50 3.3 s, p95 6.3 s
+  "Vulnerability Records": {degraded_over_ms: 10000, failed_over_ms: 20000}          # p50 3.6 s, p95 5.0 s
+  "Misconfiguration Records": {degraded_over_ms: 10000, failed_over_ms: 20000}       # p50 3.1 s, p95 4.2 s
+  "SCuBA Overview": {degraded_over_ms: 10000, failed_over_ms: 20000}                 # p50 3.2 s, p95 3.9 s
+  "SCuBA Overview - All": {degraded_over_ms: 10000, failed_over_ms: 20000}           # p50 3.2 s, p95 3.7 s
+  "HVA Vulnerabilities": {degraded_over_ms: 10000, failed_over_ms: 20000}            # p50 2.0 s, p95 3.4 s
+  "CyHy Overview": {degraded_over_ms: 5000, failed_over_ms: 10000}                   # p50 1.3 s, p95 1.5 s
+  "HVA System Boundaries": {degraded_over_ms: 5000, failed_over_ms: 10000}           # p50 0.7 s, p95 1.2 s
+  "HVA Devices": {degraded_over_ms: 5000, failed_over_ms: 10000}                     # p50 0.6 s, p95 1.2 s
+  "AIM Score Overview": {degraded_over_ms: 5000, failed_over_ms: 10000}              # p50 0.7 s, p95 1.1 s
+  "Federal Landing Page": {degraded_over_ms: 5000, failed_over_ms: 10000}            # p50 0.5 s, p95 0.7 s
+  "Remote Cluster Connectivity Status Details": {degraded_over_ms: 5000, failed_over_ms: 10000}   # p50 0.3 s, p95 0.5 s
+  "HVA Misconfigurations": {degraded_over_ms: 5000, failed_over_ms: 10000}           # p50 0.2 s, p95 0.5 s
+  "HVA Software": {degraded_over_ms: 5000, failed_over_ms: 10000}                    # p50 0.2 s, p95 0.4 s

@@ -1,3 +1,67 @@
+# Roll out per-dashboard thresholds and fail-fast (collector 0.2.0)
+
+Run on the prd appserver as `root`. Every command names `.venv/bin/python`, so no alias can
+interfere. Nothing here prints a secret.
+
+**1. Get the code and check it**
+
+```bash
+cd /opt/kibana_dashboard_runtime_monitor && git pull origin main
+.venv/bin/python -c "import dhm; print(dhm.__version__)"      # 0.2.0
+.venv/bin/python scripts/run_collector.py --dry-run --out /var/lib/dhm/run.json 2>&1 | tail -30
+```
+
+The dry run reads `config/thresholds.yaml`. A bad entry stops it with `invalid per-dashboard
+thresholds`; a dashboard named there that Kibana does not return is a WARNING. Look for
+`(skipped)` rows: there should be none.
+
+**2. Update the index template** (new fields `degraded_over_ms`, `failed_over_ms`, `timeout_ms`,
+`load_attempts`, `elapsed_ms`)
+
+```bash
+sudo -u dhm env HOME=/var/lib/dhm bash -c \
+  'cd /opt/kibana_dashboard_runtime_monitor && .venv/bin/python scripts/setup_elasticsearch.py'
+```
+
+If it answers 403, the collector key lacks `manage_index_templates`: have an admin run the same
+script, or paste `es/index_template.json` into Dev Tools as `PUT _index_template/dashboard-health-monitor`.
+
+**3. Roll the data stream over** (an admin, in Dev Tools on `cdm-fdb`). The template only applies to
+new backing indices, and the new fields are searchable only in those.
+
+```
+POST dashboard-health-monitor/_rollover
+```
+
+**4. Run the collector once, then let the schedule carry on**
+
+```bash
+sudo -u dhm env HOME=/var/lib/dhm bash -c \
+  'cd /opt/kibana_dashboard_runtime_monitor && .venv/bin/python scripts/run_collector.py' 2>&1 | tail -30
+```
+
+**5. Import the dashboard again** (steps below): its baseline chart now marks each dashboard's own
+degraded (amber) and failed (red) limit.
+
+**6. In about two weeks**, once Software Overview and Priority Risks have uncapped results
+(timeout 300 s instead of 180 s), regenerate their limits and everyone else's:
+
+```bash
+.venv/bin/python scripts/baseline.py --days 14 --timeout-s 300 --yaml > /tmp/thresholds.new.yaml
+diff config/thresholds.yaml /tmp/thresholds.new.yaml
+```
+
+Review the difference, put the new values into `config/thresholds.yaml` (keep `timeout_ms:
+300000` on the two slow dashboards), commit and pull. The report lists what was left out: outage
+runs, results with not-ok panels, load errors, and results cut off by the timeout.
+
+What changed in behaviour: a timeout is no longer retried; three dashboards in a row failing to
+load skips the rest of the run (recorded as `failed`, `load_error: "skipped: ..."`, so every run
+still has 22 documents); no run starts new dashboards after 25 minutes. `load_time_ms` is now the
+last attempt only; `elapsed_ms` is the total wall time and `load_attempts` the number of tries.
+
+---
+
 # Import the redesigned Dashboard Health Monitor dashboard
 
 Two files, one dashboard. Import the one that matches your Kibana theme (Kibana's Vega panels

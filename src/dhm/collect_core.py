@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Protocol
 
 from . import __version__
-from .config import Settings
+from .config import Settings, dashboard_limits
 from .render_detection import is_resolved, reconcile, summarize
 
 
@@ -44,7 +44,11 @@ def panel_key(state: Dict[str, Any]) -> str:
 
 
 def load_status(
-    settings: Settings, load_time_ms: int, roll: Dict[str, int], load_error: Optional[str]
+    settings: Settings,
+    load_time_ms: int,
+    roll: Dict[str, int],
+    load_error: Optional[str],
+    title: str = "",
 ) -> str:
     """Classify a dashboard's health.
 
@@ -52,11 +56,14 @@ def load_status(
       - a dashboard-level load_error, or
       - any panel showed a Kibana `error` state (real regression), or
       - the fraction of not-ok panels is >= `failed_not_ok_pct` (default 50%), or
-      - the load time exceeded `failed_over_ms`.
+      - the load time exceeded the dashboard's `failed_over_ms`.
 
     degraded:
       - any panel is not ok (empty/error/missing/timeout), or
-      - the load time exceeded `degraded_over_ms`.
+      - the load time exceeded the dashboard's `degraded_over_ms`.
+
+    The two load-time limits are the dashboard's own where `collector.thresholds` has an
+    entry for `title`, otherwise the global values.
 
     Otherwise ok.
 
@@ -75,9 +82,10 @@ def load_status(
 
     if pct >= settings.collector.failed_not_ok_pct:
         return "failed"
-    if load_time_ms >= settings.collector.failed_over_ms:
+    limits = dashboard_limits(settings, title)
+    if load_time_ms >= limits["failed_over_ms"]:
         return "failed"
-    if not_ok > 0 or load_time_ms >= settings.collector.degraded_over_ms:
+    if not_ok > 0 or load_time_ms >= limits["degraded_over_ms"]:
         return "degraded"
     return "ok"
 
@@ -91,12 +99,15 @@ def _assemble_doc(
     load_error: Optional[str],
     panel_records: List[Dict[str, Any]],
     roll: Dict[str, int],
+    attempts: int = 1,
+    elapsed_ms: int = 0,
 ) -> Dict[str, Any]:
     """Build the single ES document. One place owns the schema."""
     expected_panels = dashboard.get("panels", [])
+    limits = dashboard_limits(settings, dashboard["title"])
     return {
         "@timestamp": _now_iso(),
-        "schema_version": 1,
+        "schema_version": 2,
         "app": settings.app,
         "cluster": settings.cluster,
         "kibana_space": settings.kibana_space,
@@ -105,8 +116,15 @@ def _assemble_doc(
         "is_hub": dashboard.get("is_hub", False),
         "dashboard_url": url,
         "load_time_ms": load_time_ms,
-        "load_status": load_status(settings, load_time_ms, roll, load_error),
+        "load_status": load_status(settings, load_time_ms, roll, load_error, dashboard["title"]),
         "load_error": load_error,
+        # The limits this result was judged against, so history stays readable after they
+        # are retuned; and how much work it took (load_time_ms is the LAST attempt only).
+        "degraded_over_ms": limits["degraded_over_ms"],
+        "failed_over_ms": limits["failed_over_ms"],
+        "timeout_ms": limits["timeout_ms"],
+        "load_attempts": attempts,
+        "elapsed_ms": elapsed_ms,
         "expected_data_panels": dashboard.get("data_panel_count", len(expected_panels)),
         "panel_count": dashboard.get("panel_count"),
         **roll,
@@ -124,19 +142,21 @@ def collect_dashboard(
 ) -> Dict[str, Any]:
     """Load one dashboard through `driver` and return its health document."""
     url = dashboard_url(settings, dashboard["dashboard_id"])
-    timeout_ms = settings.collector.dashboard_timeout_ms
+    timeout_ms = dashboard_limits(settings, dashboard["title"])["timeout_ms"]
     poll_ms = settings.collector.poll_interval_ms
     attempts = max(1, settings.collector.load_retries + 1)
 
     resolve_times: Dict[str, int] = {}
     last_states: List[Dict[str, Any]] = []
     load_error: Optional[str] = None
-    t0 = time.monotonic()
+    t_begin = t0 = time.monotonic()
+    attempts_made = 0
 
     # Navigate, retrying the whole load a bounded number of times.
     for attempt in range(1, attempts + 1):
         t0 = time.monotonic()
         load_error = None
+        attempts_made = attempt
         try:
             driver.goto(url, timeout_ms)
             # Wait until at least one panel exists (dashboard shell rendered).
@@ -144,6 +164,8 @@ def collect_dashboard(
             break
         except Exception as exc:  # navigation/auth failure
             load_error = f"navigation failed (attempt {attempt}/{attempts}): {type(exc).__name__}: {exc}"
+            if is_timeout(exc) and not settings.collector.retry_on_timeout:
+                break      # a second attempt would only wait the whole timeout again
 
     if load_error is None:
         deadline = t0 + timeout_ms / 1000.0
@@ -177,8 +199,27 @@ def collect_dashboard(
     load_time_ms = max(panel_times) if panel_times else int((time.monotonic() - t0) * 1000)
 
     return _assemble_doc(
-        settings, dashboard, run_id, url, load_time_ms, load_error, panel_records, roll
+        settings, dashboard, run_id, url, load_time_ms, load_error, panel_records, roll,
+        attempts=attempts_made, elapsed_ms=int((time.monotonic() - t_begin) * 1000),
     )
+
+
+def is_timeout(exc: BaseException) -> bool:
+    """True for a browser-driver timeout (Playwright TimeoutError, Selenium
+    TimeoutException) or Python's own."""
+    return isinstance(exc, TimeoutError) or "timeout" in type(exc).__name__.lower()
+
+
+def skipped_doc(
+    settings: Settings, dashboard: Dict[str, Any], run_id: str, reason: str
+) -> Dict[str, Any]:
+    """A result for a dashboard that was not loaded, so every run still has one document
+    per dashboard. It is `failed` with a load_error that starts "skipped:", and carries
+    no load time (0) and no attempts."""
+    url = dashboard_url(settings, dashboard.get("dashboard_id", ""))
+    records = reconcile(dashboard.get("panels", []), [], {})
+    return _assemble_doc(settings, dashboard, run_id, url, 0, f"skipped: {reason}", records,
+                         summarize(records), attempts=0, elapsed_ms=0)
 
 
 def safe_collect_dashboard(
@@ -202,23 +243,47 @@ def collect_all(
     driver: Driver, settings: Settings, dashboards: List[Dict[str, Any]], run_id: str
 ) -> List[Dict[str, Any]]:
     """Collect every dashboard in order, pacing between loads and isolating
-    per-dashboard failures. Shared by both browser backends."""
+    per-dashboard failures. Shared by both browser backends.
+
+    Fails fast when the platform is down. If `consecutive_failure_limit` dashboards in a row
+    fail to load, or the run exceeds `max_run_seconds`, the rest are recorded as skipped
+    instead of each waiting out its own timeout, so one outage cannot hold the run (and,
+    through the lock, the next runs) for hours."""
     docs: List[Dict[str, Any]] = []
-    delay = settings.collector.inter_request_delay_ms / 1000.0
+    c = settings.collector
+    delay = c.inter_request_delay_ms / 1000.0
     total = len(dashboards)
+    started = time.monotonic()
+    streak = 0
+    skip_reason: Optional[str] = None
     for i, d in enumerate(dashboards):
+        if skip_reason is None and c.max_run_seconds and time.monotonic() - started >= c.max_run_seconds:
+            skip_reason = f"run time limit of {c.max_run_seconds} s reached"
+            print(f"WARNING: {skip_reason}; skipping the remaining {total - i} dashboard(s).")
+        if skip_reason:
+            doc = skipped_doc(settings, d, run_id, skip_reason)
+            docs.append(doc)
+            print_row(doc)
+            continue
         doc = safe_collect_dashboard(driver, settings, d, run_id)
         docs.append(doc)
         print_row(doc)
-        if delay and i < total - 1:
+        streak = streak + 1 if doc.get("load_error") else 0
+        if c.consecutive_failure_limit and streak >= c.consecutive_failure_limit:
+            skip_reason = (f"{streak} dashboards in a row failed to load, "
+                           f"so Kibana looks unreachable")
+            print(f"WARNING: {skip_reason}; skipping the remaining {total - i - 1} dashboard(s).")
+        if delay and i < total - 1 and not skip_reason:
             time.sleep(delay)
     return docs
 
 
 def print_row(doc: Dict[str, Any]) -> None:
+    skipped = str(doc.get("load_error") or "").startswith("skipped:")
     print(
         f"  {doc['dashboard_title'][:40]:40s} "
         f"{doc['load_status']:8s} "
         f"{doc['load_time_ms']:6d}ms "
         f"ok={doc['panels_ok']} not_ok={doc['panels_not_ok']}"
+        + ("  (skipped)" if skipped else "")
     )

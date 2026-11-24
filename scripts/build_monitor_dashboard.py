@@ -194,20 +194,18 @@ hours); the trends and the baseline use every result in the range.
 
 | State | Meaning |
 |---|---|
-| **Healthy** | every panel rendered and the load time is under {mv.DEGRADED_S} s |
-| **Slow** | every panel rendered, but the collector rated the load time `degraded` ({mv.DEGRADED_S} s or more) or `failed` ({mv.FAILED_S} s or more) |
+| **Healthy** | every panel rendered and the load time is under that dashboard's own degraded limit |
+| **Slow** | every panel rendered, but the collector rated the load time `degraded` or `failed` against that dashboard's own limits (`config/thresholds.yaml`; {mv.DEGRADED_S} s and {mv.FAILED_S} s for a dashboard with none) |
 | **Attention** | some panels were empty, errored, timed out or never appeared |
 | **Action** | half or more of the panels were not ok |
 
 **Overall health** is Action if any dashboard is in Action, Attention if any is in Attention, otherwise
-Healthy. Slow dashboards do not change it: the load-time thresholds are global, so a dashboard that
-is always slow (Software Overview) would otherwise keep the page red. Judge those against their own
-baseline.
+Healthy. Slow dashboards do not change it: load time is judged on the Slow row and in the baseline.
 
 **Baseline** shows, per dashboard, the median to p95 range and the slowest load over the time range,
-with the {mv.DEGRADED_S} s and {mv.FAILED_S} s thresholds drawn across it. Make the time range longer (7 to 14 days) for it
-to mean something. Run `python scripts/baseline.py` on the collector host for suggested per-dashboard
-thresholds.
+with each dashboard's own degraded (amber) and failed (red) limit marked on its row; a dashboard with no limits of its own,
+or results from before they were recorded, show {mv.DEGRADED_S} s and {mv.FAILED_S} s. Make the time range longer (7 to 14
+days) for it to mean something. Run `python scripts/baseline.py --yaml` on the collector host for suggested limits.
 
 **Last run** turns amber after {mv.STALE_OK_MIN} minutes and red after {mv.STALE_WARN_MIN}: the collector missed runs.
 
